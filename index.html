@@ -8,6 +8,8 @@
 <title>GereBoleto</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<!-- Tesseract.js: OCR 100% gratuito, roda no navegador, sem API key -->
+<script src="https://unpkg.com/tesseract.js@v4/dist/tesseract.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -380,8 +382,8 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   <img id="scanPreview" class="scan-preview" style="display:none">
   <div class="scan-loading" id="scanLoading" style="display:none">
     <div class="spin" style="width:28px;height:28px;border:3px solid #2a2a27;border-top-color:var(--accent);"></div>
-    <div style="font-size:13px;color:var(--accent);font-weight:600">Lendo boleto com IA…</div>
-    <div style="font-size:11px;color:var(--muted)">Extraindo dados automaticamente</div>
+    <div style="font-size:13px;color:var(--accent);font-weight:600">Carregando motor OCR…</div>
+    <div style="font-size:11px;color:var(--muted)">Tesseract.js — gratuito, roda no seu navegador</div>
   </div>
   <div id="scanErr" style="display:none;background:#e05c3a12;border:1px solid #e05c3a44;border-radius:7px;padding:10px 12px;font-size:12px;color:#ff9988;margin-top:10px"></div>
   <div id="scanResult" style="display:none"></div>
@@ -408,6 +410,8 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 <script>
 // ══════════════════════════════════════════════
 // FIREBASE CONFIG
+// A apiKey do Firebase para Web Apps é segura de expor publicamente.
+// O que protege são as Security Rules do Realtime Database.
 // ══════════════════════════════════════════════
 const FB_CFG = {
   apiKey: "AIzaSyDoQAoAwfPrNf3cpfzuywbIpwCN63p0Gvk",
@@ -419,8 +423,7 @@ const FB_CFG = {
   appId: "1:535157319092:web:da29510d03803dad313ee1"
 };
 
-// GOOGLE VISION API KEY
-const VISION_KEY = "AIzaSyAVxlw09YdpbO7uQI0b0cF_kXuTi5OZLd8";
+// Scanner OCR: Tesseract.js — 100% gratuito, roda no navegador, SEM API KEY.
 
 firebase.initializeApp(FB_CFG);
 const db = firebase.database();
@@ -1021,7 +1024,7 @@ function saveSaldos(){
 }
 
 // ══════════════════════════════════════════════
-// SCANNER (Google Vision)
+// SCANNER — Tesseract.js (OCR gratuito, sem API key)
 // ══════════════════════════════════════════════
 function openScanner(){resetScanner();document.getElementById("moScan").classList.add("open");}
 function closeScanner(){document.getElementById("moScan").classList.remove("open");}
@@ -1063,39 +1066,45 @@ function processScanFile(file){
   const reader=new FileReader();
   reader.onload=e=>{
     const dataUrl=e.target.result;
-    const base64=dataUrl.split(",")[1];
     document.getElementById("scanDrop").style.display="none";
     document.getElementById("scanPreview").src=dataUrl;
     document.getElementById("scanPreview").style.display="block";
     document.getElementById("scanLoading").style.display="flex";
-    callVisionAPI(base64);
+    runTesseract(dataUrl);
   };
   reader.readAsDataURL(file);
 }
 
-async function callVisionAPI(base64){
+async function runTesseract(dataUrl){
   try{
-    // Step 1: OCR via Google Vision
-    const vResp=await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({requests:[{image:{content:base64},features:[{type:"TEXT_DETECTION",maxResults:1}]}]})
-    });
-    const vData=await vResp.json();
-    const textoCompleto=vData.responses?.[0]?.fullTextAnnotation?.text||vData.responses?.[0]?.textAnnotations?.[0]?.description||"";
+    // Atualiza o texto de loading enquanto processa
+    const loadEl=document.getElementById("scanLoading");
+    const msgs=["Carregando motor OCR…","Analisando imagem…","Lendo texto do boleto…","Extraindo dados…"];
+    let mi=0;
+    const interval=setInterval(()=>{
+      const txt=loadEl.querySelector("div:nth-child(2)");
+      if(txt){txt.textContent=msgs[mi%msgs.length];mi++;}
+    },1800);
 
-    if(!textoCompleto){
-      showScanError("Não foi possível ler texto na imagem. Tente foto mais nítida.");
+    const result = await Tesseract.recognize(dataUrl, 'por+eng', {
+      logger: () => {}
+    });
+
+    clearInterval(interval);
+    const textoCompleto = result.data.text || "";
+
+    if(!textoCompleto.trim()){
+      showScanError("Não foi possível ler texto na imagem. Use uma foto nítida com boa iluminação.");
       return;
     }
 
-    // Step 2: Parse the extracted text
-    const resultado=parseBoleto(textoCompleto);
-    lastScanResult=resultado;
-    showScanResult(resultado,textoCompleto);
+    const resultado = parseBoleto(textoCompleto);
+    lastScanResult = resultado;
+    showScanResult(resultado, textoCompleto);
 
-  }catch(e){
-    showScanError("Erro ao conectar com a API. Verifique sua conexão e tente novamente.");
+  } catch(e){
+    console.error("Tesseract error:", e);
+    showScanError("Erro ao processar a imagem. Tente novamente com uma foto mais nítida.");
   }
 }
 
@@ -1103,40 +1112,40 @@ function parseBoleto(txt){
   const r={fornecedor:"",valor:null,vencimento:"",linha_digitavel:"",grupo_sugerido:"",confianca:"media"};
   const linhas=txt.split("\n").map(l=>l.trim()).filter(Boolean);
 
-  // Linha digitável: 47 or 48 digit groups
+  // Linha digitável: sequência de 47/48 dígitos (ignora espaços)
   const ldMatch=txt.replace(/\s/g,"").match(/\d{47,48}/);
   if(ldMatch)r.linha_digitavel=ldMatch[0];
 
-  // Valor: padrões brasileiros
-  const valMatch=txt.match(/R\$\s*([\d.,]+)|[Vv]alor[\s:R$]*([\d.,]+)|[Tt]otal[\s:R$]*([\d.,]+)/);
+  // Valor em reais — padrões brasileiros
+  const valMatch=txt.match(/R\$\s*([\d.]+,[\d]{2})|[Vv]alor[\s:=R$]*([\d.]+,[\d]{2})|[Tt]otal[\s:=R$]*([\d.]+,[\d]{2})/);
   if(valMatch){
     const raw=(valMatch[1]||valMatch[2]||valMatch[3]).replace(/\./g,"").replace(",",".");
     r.valor=parseFloat(raw)||null;
   }
 
-  // Vencimento
-  const dtMatch=txt.match(/[Vv]enc[a-z.]*[\s:]*(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{2,4})/);
+  // Vencimento — "Venc. dd/mm/aaaa" ou variações
+  const dtMatch=txt.match(/[Vv]enc[a-z.]*[\s:]*(\d{2})[\/.\-](\d{2})[\/.\-](\d{2,4})/);
   if(dtMatch){
     let y=dtMatch[3];if(y.length===2)y="20"+y;
     r.vencimento=`${y}-${dtMatch[2]}-${dtMatch[1]}`;
     r.confianca="alta";
   }
 
-  // Fornecedor/Cedente
+  // Cedente / Beneficiário / Fornecedor
   const cedMatch=txt.match(/[Cc]edente[\s:]*([^\n]+)|[Bb]enefici[aá]rio[\s:]*([^\n]+)|[Ff]ornecedor[\s:]*([^\n]+)/);
   if(cedMatch)r.fornecedor=(cedMatch[1]||cedMatch[2]||cedMatch[3]||"").trim().slice(0,60);
   else{
-    // Tenta pegar a linha mais longa como fornecedor
-    const longLine=linhas.filter(l=>l.length>10&&!/\d{5}/.test(l)).sort((a,b)=>b.length-a.length)[0];
+    // Fallback: linha mais longa sem série de números
+    const longLine=linhas.filter(l=>l.length>8&&!/\d{5,}/.test(l)&&!/^[\d\s\/\.]+$/.test(l)).sort((a,b)=>b.length-a.length)[0];
     if(longLine)r.fornecedor=longLine.slice(0,60);
   }
 
-  // Tentar identificar grupo pelo CNPJ ou nome no texto
+  // Identificar grupo pelo CNPJ ou nome no texto
   const groups=getGroups();
   for(const g of groups){
     if(!g.isCasa&&g.num){
       const digits=g.num.replace(/\D/g,"");
-      if(txt.replace(/\D/g,"").includes(digits)){r.grupo_sugerido=g.name;break;}
+      if(digits.length>8&&txt.replace(/\D/g,"").includes(digits)){r.grupo_sugerido=g.name;break;}
     }
     if(g.name&&txt.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])){
       r.grupo_sugerido=g.name;break;
@@ -1157,12 +1166,12 @@ function showScanResult(r,textoRaw){
   document.getElementById("scanLoading").style.display="none";
   const conf=r.confianca==="alta"?"🟢 Alta":r.confianca==="media"?"🟡 Média":"🔴 Baixa";
   const rows=[
-    ["Fornecedor",r.fornecedor||"—"],
-    ["Valor",r.valor?fmtR(r.valor):"—"],
-    ["Vencimento",r.vencimento?fmtD(r.vencimento):"—"],
-    ["Grupo sugerido",r.grupo_sugerido||"—"],
+    ["Fornecedor/Cedente", r.fornecedor||"—"],
+    ["Valor",              r.valor?fmtR(r.valor):"—"],
+    ["Vencimento",         r.vencimento?fmtD(r.vencimento):"—"],
+    ["Grupo sugerido",     r.grupo_sugerido||"—"],
   ];
-  if(r.linha_digitavel)rows.push(["Linha digitável",r.linha_digitavel.slice(0,40)+"…"]);
+  if(r.linha_digitavel)rows.push(["Linha digitável", r.linha_digitavel.slice(0,44)+"…"]);
 
   let h=`<div class="scan-result">
     <div style="font-size:11px;font-weight:700;color:var(--ok);margin-bottom:6px">✓ Dados extraídos — Confiança: ${conf}</div>
@@ -1186,7 +1195,7 @@ function applyScan(){
   }
   closeScanner();
   populateGrupoSel();
-  document.getElementById("moTit").textContent="📄 Novo Boleto (lido por IA)";
+  document.getElementById("moTit").textContent="📄 Novo Boleto (lido por OCR)";
   document.getElementById("fDesc").value=r.fornecedor||"";
   document.getElementById("fGrupo").value=grupo||"";
   document.getElementById("fValor").value=r.valor||"";

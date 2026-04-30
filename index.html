@@ -8,14 +8,13 @@
 <title>GereBoleto</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<!-- Sem dependências externas para o scanner — Gemini API chamada direto -->
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0f0f0d;--surf:#181816;--card:#1e1e1c;--card2:#242422;
   --border:#2a2a27;--text:#e4e4dc;--muted:#6a6a62;
   --accent:#f0c040;--danger:#e05c3a;--ok:#4caf7d;--warn:#f0c040;
-  --blue:#6f8fff;--pink:#ff9fdf;
+  --blue:#6f8fff;--pink:#ff9fdf;--notion:#37352f;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
@@ -87,6 +86,8 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .btn-ok{background:transparent;color:var(--ok);border:1px solid var(--ok);}
 .btn-ok:hover{background:var(--ok);color:#fff;}
 .btn-sm{padding:4px 8px;font-size:11px;border-radius:4px;}
+.btn-notion{background:#37352f;color:#fff;border:1px solid #555;}
+.btn-notion:hover{background:#4a4845;border-color:var(--accent);}
 
 /* SEARCH */
 .sinp{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none;width:150px;transition:.12s;}
@@ -148,6 +149,9 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .vd.vok{background:var(--ok);border-color:var(--ok);color:#fff;}
 .vd.vbad{background:var(--danger);border-color:var(--danger);color:#fff;}
 
+/* RECORRENTE tag */
+.rec-tag{display:inline-block;font-size:8px;font-weight:700;background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30;border-radius:3px;padding:1px 4px;margin-left:3px;}
+
 /* ACTION BTNS in table */
 .act-btns{display:flex;gap:3px;flex-wrap:nowrap;}
 
@@ -168,18 +172,42 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .casa-box.show{display:grid;}
 .casa-box .full{grid-column:1/-1;}
 
-/* SCANNER */
-.scan-tabs{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:12px;}
-.scan-tab{flex:1;padding:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:transparent;border:none;color:var(--muted);cursor:pointer;transition:.12s;}
-.scan-tab.active{background:var(--accent);color:#0f0f0d;font-weight:700;}
-.scan-drop{border:2px dashed var(--border);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:.15s;background:#1a1a18;}
-.scan-drop:hover,.scan-drop.drag{border-color:var(--accent);background:#1e1e1b;}
-.scan-preview{width:100%;max-height:180px;object-fit:contain;border-radius:7px;border:1px solid var(--border);margin-top:8px;}
-.scan-result{background:#4caf7d10;border:1px solid #4caf7d40;border-radius:8px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:5px;}
-.scan-row{display:flex;gap:8px;font-size:12px;}
-.scan-lbl{color:var(--muted);min-width:110px;font-size:11px;flex-shrink:0;}
-.scan-val{color:var(--text);font-weight:600;}
-.scan-loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px;}
+/* RECORRENTE BOX */
+.rec-box{grid-column:1/-1;border:1px solid #6f8fff30;border-radius:7px;padding:11px;background:#6f8fff06;}
+.rec-toggle{display:flex;align-items:center;gap:8px;cursor:pointer;}
+.rec-toggle input[type=checkbox]{width:15px;height:15px;accent-color:var(--blue);cursor:pointer;}
+.rec-toggle span{font-size:12px;color:var(--text);font-weight:500;}
+.rec-opts{display:none;margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+.rec-opts.hidden{display:none;}
+
+/* LINHA DIGITAVEL MODAL */
+.ld-inp{background:var(--card);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'DM Mono',monospace;font-size:14px;padding:12px;outline:none;width:100%;transition:.12s;letter-spacing:1px;}
+.ld-inp:focus{border-color:var(--accent);}
+.ld-result{background:#4caf7d10;border:1px solid #4caf7d40;border-radius:8px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:6px;}
+.ld-row{display:flex;gap:8px;font-size:13px;align-items:center;}
+.ld-lbl{color:var(--muted);min-width:120px;font-size:11px;flex-shrink:0;}
+.ld-val{color:var(--text);font-weight:700;font-family:'DM Mono',monospace;}
+.ld-err{background:#e05c3a12;border:1px solid #e05c3a44;border-radius:7px;padding:10px 12px;font-size:12px;color:#ff9988;margin-top:10px;}
+
+/* NOTION CONFIG BOX */
+.notion-cfg{background:#37352f18;border:1px solid #37352f55;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.notion-status{display:flex;align-items:center;gap:6px;font-size:11px;}
+.notion-dot{width:7px;height:7px;border-radius:50%;}
+.notion-dot.on{background:var(--ok);}
+.notion-dot.off{background:var(--muted);}
+.notion-sync-log{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);max-height:80px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
+.log-ok{color:var(--ok);}
+.log-err{color:var(--danger);}
+.log-info{color:var(--blue);}
+
+/* CSV DROPDOWN */
+.csv-wrap{position:relative;display:inline-block;}
+.csv-menu{display:none;position:absolute;bottom:calc(100% + 4px);left:0;background:var(--surf);border:1px solid var(--border);border-radius:7px;min-width:200px;z-index:100;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.csv-menu.open{display:block;}
+.csv-item{padding:8px 12px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background .1s;border-bottom:1px solid var(--border);}
+.csv-item:last-child{border-bottom:none;}
+.csv-item:hover{background:var(--card);}
+.csv-item .csv-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
 
 /* LOADING */
 .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg);color:var(--muted);gap:12px;}
@@ -189,6 +217,14 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 /* CONFIRM MODAL */
 .confirm-box{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:22px;width:100%;max-width:360px;}
 .confirm-msg{font-size:14px;margin-bottom:16px;line-height:1.5;}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
+.toast-item{background:var(--surf);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-size:12px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,.4);animation:slideIn .2s ease;pointer-events:auto;}
+.toast-item.ok{border-color:#4caf7d55;background:#4caf7d12;color:var(--ok);}
+.toast-item.err{border-color:#e05c3a55;background:#e05c3a12;color:var(--danger);}
+.toast-item.info{border-color:#6f8fff55;background:#6f8fff12;color:var(--blue);}
+@keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
 
 @media(max-width:800px){
   .layout{grid-template-columns:1fr;}
@@ -203,6 +239,9 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 </head>
 <body>
 
+<!-- TOAST CONTAINER -->
+<div class="toast" id="toastContainer"></div>
+
 <!-- LOADING -->
 <div class="loading-screen" id="loadingScreen">
   <div class="spin" style="width:32px;height:32px;border:3px solid #2a2a27;border-top-color:var(--accent);"></div>
@@ -216,8 +255,9 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   <div class="hright">
     <span class="sync ok" id="syncBadge">✓ Online</span>
     <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="renderAll()">
-    <button class="btn btn-g btn-sm" onclick="openScanner()">📷 Ler Boleto</button>
+    <button class="btn btn-g btn-sm" onclick="openLD()">🔢 Linha Digitável</button>
     <button class="btn btn-g btn-sm" onclick="openCNPJModal()">⚙ CNPJs</button>
+    <button class="btn btn-g btn-sm btn-notion" onclick="openNotionModal()">🔗 Notion</button>
     <button class="btn btn-p" onclick="openModal()">＋ Boleto</button>
   </div>
 </header>
@@ -257,7 +297,17 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
     <div style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;">
       <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()">💰 Atualizar Saldos</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="loadData()">🔄 Atualizar</button>
-      <button class="btn btn-g btn-sm" style="width:100%" onclick="exportCSV()">⬇ Exportar CSV</button>
+      <!-- CSV DROPDOWN -->
+      <div class="csv-wrap" style="width:100%">
+        <button class="btn btn-g btn-sm" style="width:100%" onclick="toggleCSVMenu(event)">⬇ Exportar CSV ▾</button>
+        <div class="csv-menu" id="csvMenu">
+          <div class="csv-item" onclick="exportCSV('todos')">
+            <div class="csv-dot" style="background:var(--muted)"></div>
+            <span>Todos os grupos</span>
+          </div>
+          <div id="csvGrupoItems"></div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -287,7 +337,9 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ -->
 <!-- MODAL BOLETO -->
+<!-- ═══════════════════════════════════════════ -->
 <div class="mo" id="moB">
 <div class="mbox">
   <div class="mtit" id="moTit">📄 Novo Boleto</div>
@@ -321,6 +373,21 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
     <div class="fi"><label>Valor (R$)</label><input type="number" id="fValor" placeholder="0,00" step="0.01" min="0"></div>
     <div class="fi"><label>Vencimento</label><input type="date" id="fVenc"></div>
     <div class="fi full"><label>Observação (NF, linha digitável, fone...)</label><textarea id="fObs" placeholder="NF 1234 · linha digitável · (11) 9999-9999"></textarea></div>
+
+    <!-- ── RECORRENTE BOX ── -->
+    <div class="rec-box full">
+      <label class="rec-toggle">
+        <input type="checkbox" id="fRecorrente" onchange="onRecorrenteChange()">
+        <span>🔁 Repetir mensalmente (boleto recorrente)</span>
+      </label>
+      <div class="rec-opts hidden" id="recOpts">
+        <div class="fi" style="flex-direction:row;align-items:center;gap:8px;">
+          <label style="font-size:11px;color:var(--muted);white-space:nowrap">Por quantos meses?</label>
+          <input type="number" id="fRecMeses" value="6" min="2" max="24" style="width:70px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 8px;outline:none;">
+        </div>
+        <span style="font-size:10px;color:var(--muted)">Cria um boleto por mês, ajustando o vencimento automaticamente.</span>
+      </div>
+    </div>
   </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
@@ -329,7 +396,29 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL LINHA DIGITÁVEL -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="mo" id="moLD">
+<div class="mbox" style="max-width:480px">
+  <div class="mtit">🔢 Decodificar Linha Digitável</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Cole os 47 ou 48 dígitos da linha digitável do boleto. O sistema extrai valor e vencimento automaticamente, sem Internet.</p>
+  <div class="fi">
+    <label>Linha Digitável (só números, sem espaços ou pontos)</label>
+    <textarea class="ld-inp" id="ldInput" rows="3" placeholder="10491.23456 78901.234567 89012.345678 9 12340000015000" oninput="onLDInput()"></textarea>
+  </div>
+  <div id="ldResult" style="display:none"></div>
+  <div id="ldErr" style="display:none" class="ld-err"></div>
+  <div class="mact">
+    <button class="btn btn-g" onclick="closeLD()">Cancelar</button>
+    <button class="btn btn-p" id="ldUseBtn" style="display:none" onclick="applyLD()">✓ Usar esses dados</button>
+  </div>
+</div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
 <!-- MODAL CNPJ -->
+<!-- ═══════════════════════════════════════════ -->
 <div class="mo" id="moC">
 <div class="mbox">
   <div class="mtit">🏢 Meus CNPJs</div>
@@ -345,7 +434,9 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ -->
 <!-- MODAL SALDO -->
+<!-- ═══════════════════════════════════════════ -->
 <div class="mo" id="moS">
 <div class="mbox">
   <div class="mtit">💰 Atualizar Saldos</div>
@@ -358,43 +449,67 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 </div>
 </div>
 
-<!-- MODAL SCANNER -->
-<div class="mo" id="moScan">
-<div class="mbox" style="max-width:460px">
-  <div class="mtit">📷 Ler Boleto por IA</div>
-  <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Tire foto ou faça upload. O Gemini AI extrai fornecedor, valor e vencimento automaticamente.</p>
-  <div class="scan-tabs">
-    <button class="scan-tab active" id="stab-upload" onclick="setScanTab('upload')">📁 Upload / Galeria</button>
-    <button class="scan-tab" id="stab-camera" onclick="setScanTab('camera')">📸 Câmera</button>
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL NOTION -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="mo" id="moNotion">
+<div class="mbox" style="max-width:520px">
+  <div class="mtit">🔗 Integração com Notion</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
+    Ao clicar <strong>✓ Pago</strong>, o sistema envia automaticamente o lançamento para uma Database no Notion. Configure abaixo.
+  </p>
+
+  <div class="notion-cfg">
+    <div class="notion-status">
+      <div class="notion-dot" id="notionDot" style="background:var(--muted)"></div>
+      <span id="notionStatusTxt" style="color:var(--muted)">Não configurado</span>
+    </div>
+    <div class="fi">
+      <label>Integration Token (Internal)</label>
+      <input type="password" id="nToken" placeholder="secret_xxxxxxxxxxxxxxxxxxxx" oninput="onNotionInputChange()">
+    </div>
+    <div class="fi">
+      <label>Database ID</label>
+      <input type="text" id="nDbId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" oninput="onNotionInputChange()">
+      <span style="font-size:10px;color:var(--muted)">Abra a database → Share → Copy link → o ID é a parte antes do ?v=</span>
+    </div>
+
+    <!-- Mapeamento de propriedades -->
+    <div style="border-top:1px solid var(--border);padding-top:10px">
+      <div class="slbl" style="margin-bottom:7px">Propriedades da sua Database</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+        <div class="fi"><label>Nome da coluna "Descrição"</label><input type="text" id="nPDesc" value="Nome" placeholder="Nome"></div>
+        <div class="fi"><label>Nome da coluna "Valor"</label><input type="text" id="nPValor" value="Valor" placeholder="Valor"></div>
+        <div class="fi"><label>Nome da coluna "Data"</label><input type="text" id="nPData" value="Data" placeholder="Data"></div>
+        <div class="fi"><label>Nome da coluna "Categoria"</label><input type="text" id="nPCat" value="Categoria" placeholder="Categoria"></div>
+        <div class="fi"><label>Nome da coluna "Grupo/CNPJ"</label><input type="text" id="nPGrupo" value="Grupo" placeholder="Grupo"></div>
+        <div class="fi"><label>Nome da coluna "Status"</label><input type="text" id="nPStatus" value="Status" placeholder="Status"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-g btn-sm" onclick="testNotion()">🧪 Testar Conexão</button>
+      <button class="btn btn-p btn-sm" onclick="saveNotionCfg()">💾 Salvar Configuração</button>
+    </div>
+
+    <!-- LOG -->
+    <div>
+      <div class="slbl" style="margin-bottom:4px">Log de Sincronização</div>
+      <div class="notion-sync-log" id="notionLog">
+        <span class="log-info">Aguardando configuração…</span>
+      </div>
+    </div>
   </div>
-  <div id="scanDrop" class="scan-drop"
-    ondragover="event.preventDefault();this.classList.add('drag')"
-    ondragleave="this.classList.remove('drag')"
-    ondrop="onScanDrop(event)"
-    onclick="triggerScanInput()">
-    <div style="font-size:36px;margin-bottom:8px" id="scanIcon">📄</div>
-    <div style="font-size:13px;color:var(--text);font-weight:600" id="scanTxt">Clique ou arraste o boleto aqui</div>
-    <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG ou PNG — foto nítida e boa iluminação</div>
-  </div>
-  <input type="file" id="scanFile" accept="image/*" style="display:none" onchange="onScanFile(this)">
-  <input type="file" id="scanCam"  accept="image/*" capture="environment" style="display:none" onchange="onScanFile(this)">
-  <img id="scanPreview" class="scan-preview" style="display:none">
-  <div class="scan-loading" id="scanLoading" style="display:none">
-    <div class="spin" style="width:28px;height:28px;border:3px solid #2a2a27;border-top-color:var(--accent);"></div>
-    <div style="font-size:13px;color:var(--accent);font-weight:600">Enviando para Gemini AI…</div>
-    <div style="font-size:11px;color:var(--muted)">Gemini Flash — grátis até 1.500 req/dia</div>
-  </div>
-  <div id="scanErr" style="display:none;background:#e05c3a12;border:1px solid #e05c3a44;border-radius:7px;padding:10px 12px;font-size:12px;color:#ff9988;margin-top:10px"></div>
-  <div id="scanResult" style="display:none"></div>
+
   <div class="mact">
-    <button class="btn btn-g" onclick="closeScanner()">Cancelar</button>
-    <button class="btn btn-g" id="scanRetry" style="display:none" onclick="resetScanner()">Trocar imagem</button>
-    <button class="btn btn-p" id="scanUse"   style="display:none" onclick="applyScan()">✓ Usar esses dados</button>
+    <button class="btn btn-g" onclick="closeNotionModal()">Fechar</button>
   </div>
 </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ -->
 <!-- MODAL CONFIRMAR EXCLUSÃO -->
+<!-- ═══════════════════════════════════════════ -->
 <div class="mo" id="moConfirm">
 <div class="confirm-box">
   <div class="mtit">⚠ Confirmar exclusão</div>
@@ -409,8 +524,6 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 <script>
 // ══════════════════════════════════════════════
 // FIREBASE CONFIG
-// A apiKey do Firebase para Web Apps é segura de expor publicamente.
-// O que protege são as Security Rules do Realtime Database.
 // ══════════════════════════════════════════════
 const FB_CFG = {
   apiKey: "AIzaSyDoQAoAwfPrNf3cpfzuywbIpwCN63p0Gvk",
@@ -421,10 +534,6 @@ const FB_CFG = {
   messagingSenderId: "535157319092",
   appId: "1:535157319092:web:da29510d03803dad313ee1"
 };
-
-// Scanner: Gemini Flash (Google AI) — grátis até 1500 req/dia.
-// Obtenha sua chave em: https://aistudio.google.com/app/apikey
-const GEMINI_KEY = "AIzaSyAr8k_-J1aJZ5fB0MFiUTyepbmYRNCQ8-Q";
 
 firebase.initializeApp(FB_CFG);
 const db = firebase.database();
@@ -443,10 +552,24 @@ let qfAtual="todos", cnpjFil="todos";
 let calSel=null, duSel=null;
 let calY, calM;
 let editId=null;
-let scanTabAtual="upload";
-let lastScanResult=null;
+
+// NOTION state
+let notionCfg = JSON.parse(localStorage.getItem("notionCfg")||"{}");
+let notionLog = [];
 
 const TODAY=(()=>{const d=new Date();d.setHours(0,0,0,0);return d;})();
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+function toast(msg, type="ok", dur=3000){
+  const c=document.getElementById("toastContainer");
+  const el=document.createElement("div");
+  el.className=`toast-item ${type}`;
+  el.innerHTML=`${type==="ok"?"✓":type==="err"?"✕":"ℹ"} ${msg}`;
+  c.appendChild(el);
+  setTimeout(()=>{el.style.opacity="0";el.style.transform="translateX(20px)";el.style.transition=".3s";setTimeout(()=>el.remove(),300);},dur);
+}
 
 // ══════════════════════════════════════════════
 // FIREBASE
@@ -503,6 +626,7 @@ function p2(n){return String(n).padStart(2,"0");}
 function dstr(d){return`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;}
 function toDate(s){const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
 function fmtD(s){if(!s)return"—";const[y,m,d]=s.split("-");return`${d}/${m}/${y}`;}
+function fmtMesAno(s){if(!s)return"—";const[y,m]=s.split("-");return`${MESES[parseInt(m)-1].slice(0,3)}/${y}`;}
 function fmtR(v){return"R$ "+Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 let _fc={};
@@ -546,6 +670,140 @@ function getGroups(){
 }
 
 function boletoArr(){return Object.entries(boletos).map(([id,b])=>({...b,id}));}
+
+// ══════════════════════════════════════════════
+// TAREFA 1: LINHA DIGITÁVEL — DECODIFICAÇÃO MATEMÁTICA
+// Suporte a boletos bancários (47 dígitos) e arrecadação (48 dígitos)
+// ══════════════════════════════════════════════
+const BANCOS_CONHECIDOS={
+  "001":"Banco do Brasil","033":"Santander","104":"Caixa Econômica",
+  "237":"Bradesco","341":"Itaú","356":"Banco Real","422":"Safra",
+  "453":"Banco Rural","745":"Citibank","756":"SICOOB","748":"Sicredi",
+  "070":"BRB","389":"Mercantil","399":"HSBC","041":"Banrisul",
+  "004":"BNB","021":"Banestes","047":"Banese","655":"Votorantim",
+  "085":"Cecred","136":"Unicred","085":"AILOS","197":"Stone",
+  "077":"Banco Inter","260":"Nu Pagamentos (Nubank)","336":"C6 Bank",
+  "290":"Pagseguro","323":"Mercado Pago","380":"PicPay","364":"Efí"
+};
+
+function decodeLinha(raw){
+  // Remove tudo que não for dígito
+  const digits = raw.replace(/\D/g,"");
+
+  // ── BOLETO BANCÁRIO: 47 dígitos ──────────────────────────────────────
+  if(digits.length === 47){
+    // Monta o código de barras: campo1(9) + campo2(10) + campo3(10) + dv(1) + fator(4) + valor(10)
+    // Estrutura da linha digitável bancária:
+    // AAABC.CCCCX DDDDD.DDDDDY EEEEE.EEEEEZ K UUUUVVVVVVVVVV
+    // A=banco(3) B=moeda(1) C=campo_livre_inicio K=dv_geral U=fator_venc V=valor
+    const campo1 = digits.slice(0,9);   // banco+moeda+campo livre (sem dv)
+    const campo2 = digits.slice(10,20); // campo livre
+    const campo3 = digits.slice(21,31); // campo livre
+    const dvGeral = digits.slice(32,33);
+    const fatorVenc = digits.slice(33,37);
+    const valorStr = digits.slice(37,47);
+
+    const banco = digits.slice(0,3);
+    const nomeBanco = BANCOS_CONHECIDOS[banco] || `Banco ${banco}`;
+
+    // Valor
+    const valor = parseInt(valorStr,10) / 100;
+
+    // Data de vencimento: fator 1000 = 03/07/2000 (base FEBRABAN)
+    let vencimento = "";
+    const fator = parseInt(fatorVenc,10);
+    if(fator > 0){
+      const base = new Date(1997,9,7); // 07/10/1997
+      base.setDate(base.getDate() + fator);
+      vencimento = dstr(base);
+    }
+
+    return { tipo:"bancario", banco, nomeBanco, valor, vencimento, valido: valor > 0 };
+  }
+
+  // ── BOLETO ARRECADAÇÃO: 48 dígitos ───────────────────────────────────
+  if(digits.length === 48){
+    // Produto 6,7,8,9 — Segmento na posição 1
+    // Valor: posições 4 a 15 (12 dígitos)
+    const produto = digits.slice(0,1);
+    const segmento = digits.slice(1,2);
+    const realValor = digits.slice(3,15);
+    const valor = parseInt(realValor,10) / 100;
+
+    return { tipo:"arrecadacao", banco:"—", nomeBanco:"Arrecadação/Concessionária", valor, vencimento:"", valido: valor > 0 };
+  }
+
+  return null;
+}
+
+let lastLD = null;
+
+function openLD(){
+  lastLD=null;
+  document.getElementById("ldInput").value="";
+  document.getElementById("ldResult").style.display="none";
+  document.getElementById("ldErr").style.display="none";
+  document.getElementById("ldUseBtn").style.display="none";
+  document.getElementById("moLD").classList.add("open");
+}
+function closeLD(){document.getElementById("moLD").classList.remove("open");}
+
+function onLDInput(){
+  const raw = document.getElementById("ldInput").value;
+  const digits = raw.replace(/\D/g,"");
+
+  document.getElementById("ldResult").style.display="none";
+  document.getElementById("ldErr").style.display="none";
+  document.getElementById("ldUseBtn").style.display="none";
+  lastLD = null;
+
+  if(digits.length < 47) return;
+
+  const r = decodeLinha(raw);
+  if(!r || !r.valido){
+    document.getElementById("ldErr").style.display="block";
+    document.getElementById("ldErr").textContent="⚠ Linha digitável inválida ou não reconhecida. Verifique se copiou todos os dígitos.";
+    return;
+  }
+
+  lastLD = r;
+  const rows = [
+    ["Tipo", r.tipo === "bancario" ? "Boleto Bancário" : "Arrecadação/Concessionária"],
+    ["Banco", `${r.nomeBanco} (${r.banco})`],
+    ["Valor", fmtR(r.valor)],
+    ["Vencimento", r.vencimento ? fmtD(r.vencimento) : "Não informado (arrecadação)"],
+  ];
+
+  document.getElementById("ldResult").innerHTML=`
+    <div class="ld-result">
+      <div style="font-size:11px;font-weight:700;color:var(--ok);margin-bottom:6px">✓ Linha decodificada com sucesso (offline)</div>
+      ${rows.map(([l,v])=>`<div class="ld-row"><span class="ld-lbl">${l}</span><span class="ld-val">${escHTML(v)}</span></div>`).join("")}
+      <div style="margin-top:6px;font-size:10px;color:var(--muted)">Confira o valor. A linha digitável é a fonte oficial — nenhum dado é enviado para Internet.</div>
+    </div>`;
+  document.getElementById("ldResult").style.display="block";
+  document.getElementById("ldUseBtn").style.display="inline-flex";
+}
+
+function applyLD(){
+  if(!lastLD) return;
+  closeLD();
+  populateGrupoSel();
+  document.getElementById("moTit").textContent="📄 Novo Boleto (linha digitável)";
+  document.getElementById("fDesc").value="";
+  document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
+  document.getElementById("fValor").value=lastLD.valor||"";
+  document.getElementById("fVenc").value=lastLD.vencimento||dstr(TODAY);
+  document.getElementById("fCat").value="Mercadoria";
+  const obs = `Banco: ${lastLD.nomeBanco}`;
+  document.getElementById("fObs").value=obs;
+  document.getElementById("fCasaCat").value="Água";
+  document.getElementById("fCartao").value="";
+  document.getElementById("fRecorrente").checked=false;
+  onRecorrenteChange();
+  onGrupoChange();onCasaCatChange();
+  editId=null;
+  document.getElementById("moB").classList.add("open");
+}
 
 // ══════════════════════════════════════════════
 // CALENDAR
@@ -786,6 +1044,7 @@ function renderGroups(){
           html+=`<tr style="${in7?"background:rgba(111,143,255,.04)":""}">
             <td>
               <strong style="font-size:12px">${escHTML(b.desc||"")}</strong>
+              ${b.recorrente?`<span class="rec-tag">🔁 rec</span>`:""}
               ${in7?`<span style="margin-left:4px;font-size:8px;background:#6f8fff15;color:var(--blue);border:1px solid #6f8fff30;border-radius:3px;padding:1px 3px">7DU</span>`:""}
               ${catLabel?`<br><span style="color:var(--muted);font-size:10px">${escHTML(catLabel)}</span>`:""}
             </td>
@@ -836,6 +1095,7 @@ function renderAll(){
   renderChip();
   renderSaldoPanel();
   renderGroups();
+  renderCSVMenu();
 }
 
 // ══════════════════════════════════════════════
@@ -847,7 +1107,14 @@ function tck(id,k){
   fbSet("boletos/"+id+"/checks",ck);
 }
 
-function markPago(id){fbSet("boletos/"+id+"/pago",true);}
+function markPago(id){
+  const b = boletos[id];
+  if(!b) return;
+  fbSet("boletos/"+id+"/pago", true).then(()=>{
+    // Notion sync automático ao marcar pago
+    notionSyncPagamento(id, b);
+  });
+}
 
 // Confirm delete modal
 let _pendingDelId=null;
@@ -880,11 +1147,17 @@ function onGrupoChange(){
 function onCasaCatChange(){
   document.getElementById("cartaoRow").style.display=document.getElementById("fCasaCat").value==="Cartão de Crédito"?"":"none";
 }
+function onRecorrenteChange(){
+  const checked = document.getElementById("fRecorrente").checked;
+  document.getElementById("recOpts").classList.toggle("hidden", !checked);
+}
 
 function openModal(id){
   editId=id||null;
   populateGrupoSel();
   document.getElementById("moTit").textContent=id?"✏ Editar Boleto":"📄 Novo Boleto";
+  document.getElementById("fRecorrente").checked=false;
+  onRecorrenteChange();
   if(id){
     const b=boletos[id];
     if(!b){alert("Boleto não encontrado.");return;}
@@ -917,6 +1190,9 @@ function closeModal(){
   editId=null;
 }
 
+// ══════════════════════════════════════════════
+// TAREFA 2: SALVAR COM RECORRÊNCIA
+// ══════════════════════════════════════════════
 function saveB(){
   const desc=document.getElementById("fDesc").value.trim();
   const grupo=document.getElementById("fGrupo").value;
@@ -926,13 +1202,15 @@ function saveB(){
   const obs=document.getElementById("fObs").value.trim();
   const casaCat=document.getElementById("fCasaCat").value;
   const cartao=document.getElementById("fCartao").value.trim();
+  const recorrente=document.getElementById("fRecorrente").checked;
+  const recMeses=parseInt(document.getElementById("fRecMeses").value)||6;
 
   if(!desc){alert("Informe a descrição.");return;}
   if(!grupo){alert("Selecione o grupo.");return;}
   if(!venc){alert("Informe o vencimento.");return;}
 
-  const obj={
-    desc,grupo,valor,vencimento:venc,
+  const baseObj={
+    desc,grupo,valor,
     cat:grupo!==CASA?cat:"",
     casaCat:grupo===CASA?casaCat:"",
     cartao:grupo===CASA&&casaCat==="Cartão de Crédito"?cartao:"",
@@ -940,12 +1218,50 @@ function saveB(){
   };
 
   if(editId){
+    // Edição simples — sem recorrência
     const cur=boletos[editId]||{};
-    fbSet("boletos/"+editId,{...cur,...obj});
-  } else {
-    const newId="b"+Date.now();
-    fbSet("boletos/"+newId,{...obj,pago:false,checks:{}});
+    fbSet("boletos/"+editId,{...cur,...baseObj});
+    toast("Boleto atualizado com sucesso!","ok");
+    closeModal();
+    return;
   }
+
+  if(recorrente && recMeses >= 2){
+    // Gera série recorrente
+    const serieId = "s"+Date.now();
+    const [baseY, baseM, baseD] = venc.split("-").map(Number);
+    const promises = [];
+
+    for(let i=0; i<recMeses; i++){
+      let m = baseM - 1 + i;   // 0-indexed
+      let y = baseY + Math.floor(m / 12);
+      m = m % 12;
+      // Ajusta dia para o último dia do mês se necessário
+      const maxDia = new Date(y, m+1, 0).getDate();
+      const dia = Math.min(baseD, maxDia);
+      const dataVenc = `${y}-${p2(m+1)}-${p2(dia)}`;
+
+      const newId = "b"+Date.now()+"_"+i;
+      promises.push(fbSet("boletos/"+newId, {
+        ...baseObj,
+        vencimento: dataVenc,
+        pago: false,
+        checks: {},
+        recorrente: true,
+        serieId
+      }));
+    }
+
+    Promise.all(promises).then(()=>{
+      toast(`${recMeses} boletos recorrentes criados!`, "ok");
+    });
+  } else {
+    // Boleto avulso normal
+    const newId = "b"+Date.now();
+    fbSet("boletos/"+newId, {...baseObj, vencimento:venc, pago:false, checks:{}, recorrente:false});
+    toast("Boleto salvo!", "ok");
+  }
+
   closeModal();
 }
 
@@ -1025,335 +1341,248 @@ function saveSaldos(){
 }
 
 // ══════════════════════════════════════════════
-// SCANNER — Gemini Flash (Google AI, grátis 1500 req/dia)
+// TAREFA 3: EXPORT CSV INTELIGENTE — PIVOT TABLE
 // ══════════════════════════════════════════════
-function openScanner(){resetScanner();document.getElementById("moScan").classList.add("open");}
-function closeScanner(){document.getElementById("moScan").classList.remove("open");}
-
-function setScanTab(t){
-  scanTabAtual=t;
-  document.getElementById("stab-upload").classList.toggle("active",t==="upload");
-  document.getElementById("stab-camera").classList.toggle("active",t==="camera");
-  document.getElementById("scanIcon").textContent=t==="camera"?"📸":"📄";
-  document.getElementById("scanTxt").textContent=t==="camera"?"Abrir câmera":"Clique ou arraste o boleto aqui";
+function toggleCSVMenu(e){
+  e.stopPropagation();
+  const m = document.getElementById("csvMenu");
+  m.classList.toggle("open");
 }
 
-function triggerScanInput(){
-  if(scanTabAtual==="camera")document.getElementById("scanCam").click();
-  else document.getElementById("scanFile").click();
+function renderCSVMenu(){
+  const groups = getGroups();
+  let h = "";
+  groups.forEach(g=>{
+    h += `<div class="csv-item" onclick="exportCSV('${g.id}')">
+      <div class="csv-dot" style="background:${g.color}"></div>
+      <span>${g.isCasa?"🏠 ":""}${g.name}</span>
+    </div>`;
+  });
+  document.getElementById("csvGrupoItems").innerHTML = h;
 }
 
-function onScanDrop(e){
-  e.preventDefault();e.currentTarget.classList.remove("drag");
-  const f=e.dataTransfer.files[0];if(f)processScanFile(f);
+function exportCSV(filtroGrupo){
+  document.getElementById("csvMenu").classList.remove("open");
+
+  const header = ["Data de Vencimento","Mês/Ano","CNPJ/Grupo","Categoria","Descrição","Valor","Status"];
+
+  const rows = boletoArr()
+    .filter(b => filtroGrupo === "todos" || b.grupo === filtroGrupo)
+    .sort((a,b)=>toDate(a.vencimento)-toDate(b.vencimento))
+    .map(b=>{
+      const s = status(b);
+      const grp = getGroups().find(g=>g.isCasa ? b.grupo===CASA && g.id===CASA : g.id===b.grupo);
+      const grupoNome = grp ? grp.name : "—";
+      const grupoNum  = grp && !grp.isCasa ? (cnpjs[grp.id]||{}).num||"" : "Casa/Pessoal";
+      const cat = b.grupo===CASA
+        ? (b.casaCat||"") + (b.cartao ? ` · ${b.cartao}` : "")
+        : (b.cat||"");
+      const statusPtBR = {pago:"Pago",pendente:"Pendente",vencido:"Vencido",hoje:"Vence Hoje"}[s] || s;
+      return [
+        fmtD(b.vencimento),
+        fmtMesAno(b.vencimento),
+        `${grupoNome}${grupoNum?" ("+grupoNum+")":""}`,
+        cat,
+        b.desc||"",
+        Number(b.valor||0).toFixed(2).replace(".",","),
+        statusPtBR
+      ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
+    });
+
+  const nomeGrupo = filtroGrupo==="todos" ? "Todos" : (getGroups().find(g=>g.id===filtroGrupo)||{}).name||filtroGrupo;
+  const csv = [header.join(","), ...rows].join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download = `GereBoleto_${nomeGrupo.replace(/[\/\s]/g,"_")}_${dstr(TODAY)}.csv`;
+  a.click();
+  toast(`CSV exportado: ${rows.length} boletos`, "ok");
 }
 
-function onScanFile(inp){if(inp.files[0])processScanFile(inp.files[0]);}
+// Fecha CSV menu ao clicar fora
+document.addEventListener("click",()=>{
+  document.getElementById("csvMenu").classList.remove("open");
+});
 
-function resetScanner(){
-  lastScanResult=null;
-  document.getElementById("scanDrop").style.display="";
-  document.getElementById("scanPreview").style.display="none";
-  document.getElementById("scanLoading").style.display="none";
-  document.getElementById("scanErr").style.display="none";
-  document.getElementById("scanResult").style.display="none";
-  document.getElementById("scanRetry").style.display="none";
-  document.getElementById("scanUse").style.display="none";
-  document.getElementById("scanFile").value="";
-  document.getElementById("scanCam").value="";
+// ══════════════════════════════════════════════
+// TAREFA 4: NOTION INTEGRATION
+// ══════════════════════════════════════════════
+function openNotionModal(){
+  // Preenche campos com config salva
+  if(notionCfg.token) document.getElementById("nToken").value = notionCfg.token;
+  if(notionCfg.dbId)  document.getElementById("nDbId").value  = notionCfg.dbId;
+  if(notionCfg.props){
+    document.getElementById("nPDesc").value   = notionCfg.props.desc   || "Nome";
+    document.getElementById("nPValor").value  = notionCfg.props.valor  || "Valor";
+    document.getElementById("nPData").value   = notionCfg.props.data   || "Data";
+    document.getElementById("nPCat").value    = notionCfg.props.cat    || "Categoria";
+    document.getElementById("nPGrupo").value  = notionCfg.props.grupo  || "Grupo";
+    document.getElementById("nPStatus").value = notionCfg.props.status || "Status";
+  }
+  updateNotionStatusUI();
+  renderNotionLog();
+  document.getElementById("moNotion").classList.add("open");
+}
+function closeNotionModal(){document.getElementById("moNotion").classList.remove("open");}
+
+function onNotionInputChange(){
+  // Resetar status visual ao digitar
+  document.getElementById("notionDot").style.background="var(--muted)";
+  document.getElementById("notionStatusTxt").style.color="var(--muted)";
+  document.getElementById("notionStatusTxt").textContent="Não testado";
 }
 
-function processScanFile(file){
-  const reader=new FileReader();
-  reader.onload=e=>{
-    const dataUrl=e.target.result;
-    document.getElementById("scanDrop").style.display="none";
-    document.getElementById("scanPreview").src=dataUrl;
-    document.getElementById("scanPreview").style.display="block";
-    document.getElementById("scanLoading").style.display="flex";
-    callGemini(dataUrl);
+function saveNotionCfg(){
+  notionCfg = {
+    token: document.getElementById("nToken").value.trim(),
+    dbId:  document.getElementById("nDbId").value.trim().replace(/-/g,""),
+    props:{
+      desc:   document.getElementById("nPDesc").value.trim()   || "Nome",
+      valor:  document.getElementById("nPValor").value.trim()  || "Valor",
+      data:   document.getElementById("nPData").value.trim()   || "Data",
+      cat:    document.getElementById("nPCat").value.trim()    || "Categoria",
+      grupo:  document.getElementById("nPGrupo").value.trim()  || "Grupo",
+      status: document.getElementById("nPStatus").value.trim() || "Status",
+    }
   };
-  reader.readAsDataURL(file);
+  localStorage.setItem("notionCfg", JSON.stringify(notionCfg));
+  toast("Configuração do Notion salva!","ok");
+  updateNotionStatusUI();
 }
 
-async function callGemini(dataUrl){
-  const loadMsgs=["Enviando para Gemini AI…","Analisando o boleto…","Extraindo dados…","Quase pronto…"];
-  let mi=0;
-  const loadEl=document.getElementById("scanLoading");
-  const interval=setInterval(()=>{
-    const t=loadEl.querySelector("div:nth-child(2)");
-    if(t){t.textContent=loadMsgs[mi%loadMsgs.length];mi++;}
-  },1800);
+function updateNotionStatusUI(){
+  const ok = !!(notionCfg.token && notionCfg.dbId);
+  document.getElementById("notionDot").style.background = ok ? "var(--ok)" : "var(--muted)";
+  document.getElementById("notionStatusTxt").style.color = ok ? "var(--ok)" : "var(--muted)";
+  document.getElementById("notionStatusTxt").textContent = ok ? "Configurado" : "Não configurado";
+}
+
+function addNotionLog(msg, tipo="info"){
+  const ts = new Date().toLocaleTimeString("pt-BR");
+  notionLog.unshift({msg,tipo,ts});
+  if(notionLog.length > 20) notionLog.pop();
+  renderNotionLog();
+}
+
+function renderNotionLog(){
+  const el = document.getElementById("notionLog");
+  if(!el) return;
+  if(!notionLog.length){ el.innerHTML=`<span class="log-info">Nenhuma atividade ainda.</span>`; return; }
+  el.innerHTML = notionLog.map(l=>`<span class="log-${l.tipo}">[${l.ts}] ${escHTML(l.msg)}</span>`).join("");
+}
+
+async function testNotion(){
+  saveNotionCfg();
+  if(!notionCfg.token || !notionCfg.dbId){
+    toast("Configure o Token e o Database ID primeiro.","err"); return;
+  }
+  addNotionLog("Testando conexão com o Notion…","info");
+  try{
+    const resp = await notionFetch(`databases/${notionCfg.dbId}`, "GET");
+    if(resp.ok){
+      const data = await resp.json();
+      const nome = data.title?.[0]?.plain_text || "Database sem nome";
+      addNotionLog(`✓ Conectado! Database: "${nome}"`, "ok");
+      toast(`Notion conectado: ${nome}`,"ok");
+      document.getElementById("notionDot").style.background="var(--ok)";
+      document.getElementById("notionStatusTxt").style.color="var(--ok)";
+      document.getElementById("notionStatusTxt").textContent="Conectado ✓";
+    } else {
+      const err = await resp.json();
+      addNotionLog(`✕ Erro ${resp.status}: ${err.message||""}`, "err");
+      toast("Falha ao conectar no Notion — verifique o token e o DB ID.","err");
+    }
+  } catch(e){
+    addNotionLog("✕ Erro de rede: "+e.message, "err");
+    toast("Erro de rede ao testar Notion.","err");
+  }
+}
+
+// Proxy via allOrigins para contornar CORS no browser
+function notionFetch(endpoint, method="GET", body=null){
+  const url = `https://api.notion.com/v1/${endpoint}`;
+  // Notion requer CORS permissão — no browser puro, usamos um proxy simples
+  // Para produção, mova para um backend/Cloud Function. Aqui usamos proxy público de dev.
+  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+  const opts = {
+    method,
+    headers:{
+      "Authorization": `Bearer ${notionCfg.token}`,
+      "Notion-Version": "2022-06-28",
+      "Content-Type": "application/json"
+    }
+  };
+  if(body) opts.body = JSON.stringify(body);
+  return fetch(proxyUrl, opts);
+}
+
+async function notionSyncPagamento(id, boletoData){
+  if(!notionCfg.token || !notionCfg.dbId){
+    // Silencioso se não configurado
+    return;
+  }
+
+  const b = boletoData;
+  const grp = getGroups().find(g => g.isCasa ? b.grupo===CASA : g.id===b.grupo);
+  const grupoNome = grp ? grp.name : "—";
+  const cat = b.grupo===CASA
+    ? (b.casaCat||"") + (b.cartao ? ` · ${b.cartao}` : "")
+    : (b.cat||"");
+
+  const p = notionCfg.props || {};
+
+  // Monta propriedades dinamicamente conforme o mapeamento do usuário
+  const properties = {};
+
+  // Título (Nome)
+  if(p.desc) properties[p.desc] = { title:[{text:{content: b.desc||""}}] };
+
+  // Número (Valor)
+  if(p.valor) properties[p.valor] = { number: Number(b.valor||0) };
+
+  // Data
+  if(p.data && b.vencimento) properties[p.data] = { date:{ start: b.vencimento } };
+
+  // Select (Categoria)
+  if(p.cat && cat) properties[p.cat] = { select:{ name: cat } };
+
+  // Select (Grupo)
+  if(p.grupo) properties[p.grupo] = { select:{ name: grupoNome } };
+
+  // Select (Status)
+  if(p.status) properties[p.status] = { select:{ name: "Pago" } };
+
+  addNotionLog(`Enviando "${b.desc}" para o Notion…`, "info");
 
   try{
-    const base64=dataUrl.split(",")[1];
-    const mime=dataUrl.split(";")[0].split(":")[1]||"image/jpeg";
+    const resp = await notionFetch(`pages`, "POST", {
+      parent:{ database_id: notionCfg.dbId },
+      properties
+    });
 
-    const prompt=`Você é um especialista em boletos bancários brasileiros.
-Analise a imagem e extraia EXATAMENTE estes campos em JSON válido:
-{
-  "fornecedor": "nome do Beneficiário ou Cedente (só o nome, sem CNPJ)",
-  "valor": número decimal (ex: 157.92),
-  "vencimento": "YYYY-MM-DD",
-  "linha_digitavel": "sequência de dígitos da linha digitável (sem espaços)"
-}
-Regras:
-- Se não encontrar um campo, use null
-- valor deve ser número, não string
-- vencimento no formato ISO YYYY-MM-DD
-- Responda SOMENTE com o JSON, sem markdown, sem explicação`;
-
-    const body={
-      contents:[{parts:[
-        {text:prompt},
-        {inline_data:{mime_type:mime,data:base64}}
-      ]}],
-      generationConfig:{temperature:0,maxOutputTokens:256}
-    };
-
-    const resp=await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
-      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}
-    );
-
-    clearInterval(interval);
-
-    if(!resp.ok){
-      const err=await resp.json();
-      const msg=err?.error?.message||resp.statusText;
-      showScanError("Erro Gemini: "+msg);
-      return;
+    if(resp.ok){
+      addNotionLog(`✓ "${b.desc}" (${fmtR(b.valor)}) enviado ao Notion!`, "ok");
+      toast(`Notion: "${b.desc}" registrado!`, "ok");
+    } else {
+      const err = await resp.json();
+      addNotionLog(`✕ Erro Notion "${b.desc}": ${err.message||resp.status}`, "err");
+      toast(`Notion: erro ao enviar "${b.desc}"`, "err");
     }
-
-    const data=await resp.json();
-    const rawText=(data?.candidates?.[0]?.content?.parts?.[0]?.text||"").trim();
-
-    let parsed;
-    try{
-      const clean=rawText.replace(/```json|```/g,"").trim();
-      parsed=JSON.parse(clean);
-    }catch(e){
-      showScanError("Não foi possível interpretar a resposta da IA. Tente foto mais nítida.");
-      return;
-    }
-
-    const resultado={
-      fornecedor:(parsed.fornecedor||"").toString().trim().slice(0,60),
-      valor:parsed.valor?parseFloat(parsed.valor):null,
-      vencimento:parsed.vencimento||"",
-      linha_digitavel:(parsed.linha_digitavel||"").replace(/\s/g,""),
-      grupo_sugerido:"",
-      confianca: (parsed.fornecedor&&parsed.valor&&parsed.vencimento)?"alta":"media"
-    };
-
-    // Tenta identificar grupo pelo nome do fornecedor ou CNPJ
-    const groups=getGroups();
-    for(const g of groups){
-      if(!g.isCasa&&g.num){
-        const digits=g.num.replace(/\D/g,"");
-        if(digits.length>8&&(parsed.linha_digitavel||"").replace(/\D/g,"").includes(digits)){
-          resultado.grupo_sugerido=g.name;break;
-        }
-      }
-      if(g.name&&resultado.fornecedor.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])){
-        resultado.grupo_sugerido=g.name;break;
-      }
-    }
-
-    lastScanResult=resultado;
-    showScanResult(resultado,"");
-
-  }catch(e){
-    clearInterval(interval);
-    console.error("Gemini error:",e);
-    showScanError("Erro ao conectar com a IA. Verifique sua conexão e tente novamente.");
+  } catch(e){
+    addNotionLog(`✕ Falha de rede: ${e.message}`, "err");
   }
-}
-
-function parseBoleto(txt){
-  const r={fornecedor:"",valor:null,vencimento:"",linha_digitavel:"",grupo_sugerido:"",confianca:"media"};
-  const linhas=txt.split("\n").map(l=>l.trim()).filter(Boolean);
-
-  // LINHA DIGITAVEL
-  const ldMatch=txt.replace(/\s/g,"").match(/\d{47,48}/);
-  if(ldMatch)r.linha_digitavel=ldMatch[0];
-
-  // VENCIMENTO
-  // Estrategia 1: label "Vencimento" sozinho -> data na proxima linha
-  for(let i=0;i<linhas.length-1;i++){
-    if(/^[Vv]encimento\s*$/.test(linhas[i])){
-      const dtM=linhas[i+1].match(/(\d{2})[\/\.\-](\d{2})[\/\.\-](\d{4})/);
-      if(dtM){r.vencimento=dtM[3]+"-"+dtM[2]+"-"+dtM[1];r.confianca="alta";break;}
-    }
-  }
-  // Estrategia 2: "Venc..." + data na mesma linha
-  if(!r.vencimento){
-    const dtM=txt.match(/[Vv]enc[a-z.]*[\s:]*(\d{2})[\/\.\-](\d{2})[\/\.\-](\d{2,4})/);
-    if(dtM){let y=dtM[3];if(y.length===2)y="20"+y;r.vencimento=y+"-"+dtM[2]+"-"+dtM[1];r.confianca="alta";}
-  }
-  // Estrategia 3: qualquer data dd/mm/aaaa com ano >= 2025
-  if(!r.vencimento){
-    for(const m of txt.matchAll(/(\d{2})[\/\.\-](\d{2})[\/\.\-](\d{4})/g)){
-      if(parseInt(m[3])>=2025){r.vencimento=m[3]+"-"+m[2]+"-"+m[1];break;}
-    }
-  }
-
-  // VALOR
-  // Estrategia 1: linha apos "Valor do documento"
-  for(let i=0;i<linhas.length-1;i++){
-    if(/valor do documento/i.test(linhas[i])){
-      for(let j=i+1;j<Math.min(i+5,linhas.length);j++){
-        const vM=linhas[j].match(/^([\d.]+,\d{2})$/);
-        if(vM){const raw=vM[1].replace(/\./g,"").replace(",",".");r.valor=parseFloat(raw)||null;if(r.valor)break;}
-      }
-      if(r.valor)break;
-    }
-  }
-  // Estrategia 2: R$ valor
-  if(!r.valor){
-    const vM=txt.match(/R\$\s*([\d.]+,\d{2})/);
-    if(vM){const raw=vM[1].replace(/\./g,"").replace(",",".");r.valor=parseFloat(raw)||null;}
-  }
-  // Estrategia 3: palavra "valor" + numero
-  if(!r.valor){
-    const vM=txt.match(/[Vv]alor[\s\S]{0,30}?([\d]{1,6}[,.]\d{2})\b/);
-    if(vM){const raw=vM[1].replace(/\./g,"").replace(",",".");r.valor=parseFloat(raw)||null;}
-  }
-  // Estrategia 4: qualquer nnn,nn razoavel
-  if(!r.valor){
-    const candidates=[...txt.matchAll(/\b(\d{1,6}[,]\d{2})\b/g)]
-      .map(m=>parseFloat(m[1].replace(",",".")))
-      .filter(v=>v>5&&v<999999);
-    if(candidates.length)r.valor=candidates[0];
-  }
-
-  // FORNECEDOR / BENEFICIARIO
-  // Estrategia 1: linha logo apos label "Beneficiario"
-  for(let i=0;i<linhas.length-1;i++){
-    if(/^[Bb]enefici[\u00e1a]rio\s*$/.test(linhas[i])){
-      const next=linhas[i+1];
-      if(next.length>3&&!/^(CNPJ|CPF|\d)/.test(next)){r.fornecedor=next.slice(0,60);break;}
-    }
-  }
-  // Estrategia 2: linha apos Cedente / Favorecido
-  if(!r.fornecedor){
-    for(let i=0;i<linhas.length-1;i++){
-      if(/^(Cedente|Favorecido)\s*$/i.test(linhas[i])){
-        const next=linhas[i+1];
-        if(next.length>3)r.fornecedor=next.slice(0,60);
-        break;
-      }
-    }
-  }
-  // Estrategia 3: regex inline "Beneficiario: NOME"
-  if(!r.fornecedor){
-    const cm=txt.match(/[Bb]enefici[aá]rio[\s:]+([^\n]+)/);
-    if(cm)r.fornecedor=cm[1].trim().slice(0,60);
-  }
-  // Estrategia 4: linha toda em MAIUSCULAS (nome da empresa)
-  if(!r.fornecedor){
-    const skip=/^(CNPJ|CPF|CEP|RUA|AV\.|PAGAV|LOCAL|BANCO|DATA|TIPO|MOEDA|ACEITE|CART)/;
-    const upper=linhas.filter(l=>l.length>4&&/^[A-Z\u00C0-\u00DC\s\/\-\.&,]{4,}$/.test(l)&&!skip.test(l));
-    if(upper.length)r.fornecedor=upper[0].slice(0,60);
-  }
-  // Limpa sufixos indesejados
-  if(r.fornecedor)r.fornecedor=r.fornecedor.replace(/CNPJ.*$/i,"").replace(/CPF.*$/i,"").trim();
-
-  // GRUPO SUGERIDO
-  const groups=getGroups();
-  for(const g of groups){
-    if(!g.isCasa&&g.num){
-      const digits=g.num.replace(/\D/g,"");
-      if(digits.length>8&&txt.replace(/\D/g,"").includes(digits)){r.grupo_sugerido=g.name;break;}
-    }
-    if(g.name&&txt.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])){r.grupo_sugerido=g.name;break;}
-  }
-
-  return r;
-}
-
-function showScanError(msg){
-  document.getElementById("scanLoading").style.display="none";
-  document.getElementById("scanErr").style.display="block";
-  document.getElementById("scanErr").textContent="⚠ "+msg;
-  document.getElementById("scanRetry").style.display="inline-flex";
-}
-
-function showScanResult(r,textoRaw){
-  document.getElementById("scanLoading").style.display="none";
-  const conf=r.confianca==="alta"?"🟢 Alta":r.confianca==="media"?"🟡 Média":"🔴 Baixa";
-  const rows=[
-    ["Fornecedor/Cedente", r.fornecedor||"—"],
-    ["Valor",              r.valor?fmtR(r.valor):"—"],
-    ["Vencimento",         r.vencimento?fmtD(r.vencimento):"—"],
-    ["Grupo sugerido",     r.grupo_sugerido||"—"],
-  ];
-  if(r.linha_digitavel)rows.push(["Linha digitável", r.linha_digitavel.slice(0,44)+"…"]);
-
-  let h=`<div class="scan-result">
-    <div style="font-size:11px;font-weight:700;color:var(--ok);margin-bottom:6px">✓ Dados extraídos — Confiança: ${conf}</div>
-    ${rows.map(([l,v])=>`<div class="scan-row"><span class="scan-lbl">${l}</span><span class="scan-val">${escHTML(v)}</span></div>`).join("")}
-    <div style="margin-top:8px;font-size:10px;color:var(--muted)">Confira os dados antes de salvar. Edite no formulário se necessário.</div>
-  </div>`;
-  document.getElementById("scanResult").innerHTML=h;
-  document.getElementById("scanResult").style.display="block";
-  document.getElementById("scanRetry").style.display="inline-flex";
-  document.getElementById("scanUse").style.display="inline-flex";
-}
-
-function applyScan(){
-  if(!lastScanResult)return;
-  const r=lastScanResult;
-  const groups=getGroups();
-  let grupo="";
-  if(r.grupo_sugerido){
-    const m=groups.find(g=>g.name.toLowerCase().includes(r.grupo_sugerido.toLowerCase().split(" ")[0]));
-    if(m)grupo=m.id;
-  }
-  closeScanner();
-  populateGrupoSel();
-  document.getElementById("moTit").textContent="📄 Novo Boleto (lido por OCR)";
-  document.getElementById("fDesc").value=r.fornecedor||"";
-  document.getElementById("fGrupo").value=grupo||"";
-  document.getElementById("fValor").value=r.valor||"";
-  document.getElementById("fVenc").value=r.vencimento||dstr(TODAY);
-  document.getElementById("fCat").value="Mercadoria";
-  document.getElementById("fObs").value=r.linha_digitavel?`Linha: ${r.linha_digitavel}`:"";
-  document.getElementById("fCasaCat").value="Água";
-  document.getElementById("fCartao").value="";
-  onGrupoChange();onCasaCatChange();
-  editId=null;
-  document.getElementById("moB").classList.add("open");
-}
-
-// ══════════════════════════════════════════════
-// EXPORT CSV
-// ══════════════════════════════════════════════
-function exportCSV(){
-  const h=["Grupo","Descrição","Valor","Vencimento","DiasUteisAte","Status","Categoria","Pedido","ValorConf","Chutado","Obs"];
-  const rows=boletoArr().map(b=>{
-    const s=status(b),ck=b.checks||{},du=duAte(b.vencimento);
-    const gname=b.grupo===CASA?"Casa":(cnpjs[b.grupo]||{}).nome||"—";
-    const cat=b.grupo===CASA?(b.casaCat||"")+(b.cartao?" · "+b.cartao:""):(b.cat||"");
-    return [gname,b.desc,b.valor,fmtD(b.vencimento),du??'atrasado',s,cat,ck.pedido?"Sim":"Não",ck.valor?"Sim":"Não",ck.chutado?"Sim":"Não",b.obs||""].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
-  });
-  const csv=[h.join(","),...rows].join("\n");
-  const a=document.createElement("a");
-  a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));
-  a.download=`GereBoleto_${dstr(TODAY)}.csv`;
-  a.click();
 }
 
 // ══════════════════════════════════════════════
 // CLOSE MODALS ON BACKDROP
 // ══════════════════════════════════════════════
-["moB","moC","moS","moScan","moConfirm"].forEach(id=>{
+["moB","moC","moS","moLD","moNotion","moConfirm"].forEach(id=>{
   document.getElementById(id).addEventListener("click",e=>{
     if(e.target===e.currentTarget){
       if(id==="moB")closeModal();
       if(id==="moC")closeCNPJ();
       if(id==="moS")closeSaldo();
-      if(id==="moScan")closeScanner();
+      if(id==="moLD")closeLD();
+      if(id==="moNotion")closeNotionModal();
       if(id==="moConfirm")closeConfirm();
     }
   });

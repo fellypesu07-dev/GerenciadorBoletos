@@ -8,8 +8,7 @@
 <title>GereBoleto</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-<!-- Tesseract.js: OCR 100% gratuito, roda no navegador, sem API key -->
-<script src="https://unpkg.com/tesseract.js@v4/dist/tesseract.min.js"></script>
+<!-- Sem dependências externas para o scanner — Gemini API chamada direto -->
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -363,7 +362,7 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 <div class="mo" id="moScan">
 <div class="mbox" style="max-width:460px">
   <div class="mtit">📷 Ler Boleto por IA</div>
-  <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Tire foto ou faça upload. A IA extrai fornecedor, valor e vencimento automaticamente.</p>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Tire foto ou faça upload. O Gemini AI extrai fornecedor, valor e vencimento automaticamente.</p>
   <div class="scan-tabs">
     <button class="scan-tab active" id="stab-upload" onclick="setScanTab('upload')">📁 Upload / Galeria</button>
     <button class="scan-tab" id="stab-camera" onclick="setScanTab('camera')">📸 Câmera</button>
@@ -382,8 +381,8 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   <img id="scanPreview" class="scan-preview" style="display:none">
   <div class="scan-loading" id="scanLoading" style="display:none">
     <div class="spin" style="width:28px;height:28px;border:3px solid #2a2a27;border-top-color:var(--accent);"></div>
-    <div style="font-size:13px;color:var(--accent);font-weight:600">Carregando motor OCR…</div>
-    <div style="font-size:11px;color:var(--muted)">Tesseract.js — gratuito, roda no seu navegador</div>
+    <div style="font-size:13px;color:var(--accent);font-weight:600">Enviando para Gemini AI…</div>
+    <div style="font-size:11px;color:var(--muted)">Gemini Flash — grátis até 1.500 req/dia</div>
   </div>
   <div id="scanErr" style="display:none;background:#e05c3a12;border:1px solid #e05c3a44;border-radius:7px;padding:10px 12px;font-size:12px;color:#ff9988;margin-top:10px"></div>
   <div id="scanResult" style="display:none"></div>
@@ -423,7 +422,9 @@ const FB_CFG = {
   appId: "1:535157319092:web:da29510d03803dad313ee1"
 };
 
-// Scanner OCR: Tesseract.js — 100% gratuito, roda no navegador, SEM API KEY.
+// Scanner: Gemini Flash (Google AI) — grátis até 1500 req/dia.
+// Obtenha sua chave em: https://aistudio.google.com/app/apikey
+const GEMINI_KEY = "AIzaSyBcH7XJuSmCqzjC3sUNLMEef5LCNUmvuSs";
 
 firebase.initializeApp(FB_CFG);
 const db = firebase.database();
@@ -1024,7 +1025,7 @@ function saveSaldos(){
 }
 
 // ══════════════════════════════════════════════
-// SCANNER — Tesseract.js (OCR gratuito, sem API key)
+// SCANNER — Gemini Flash (Google AI, grátis 1500 req/dia)
 // ══════════════════════════════════════════════
 function openScanner(){resetScanner();document.getElementById("moScan").classList.add("open");}
 function closeScanner(){document.getElementById("moScan").classList.remove("open");}
@@ -1070,41 +1071,102 @@ function processScanFile(file){
     document.getElementById("scanPreview").src=dataUrl;
     document.getElementById("scanPreview").style.display="block";
     document.getElementById("scanLoading").style.display="flex";
-    runTesseract(dataUrl);
+    callGemini(dataUrl);
   };
   reader.readAsDataURL(file);
 }
 
-async function runTesseract(dataUrl){
-  try{
-    // Atualiza o texto de loading enquanto processa
-    const loadEl=document.getElementById("scanLoading");
-    const msgs=["Carregando motor OCR…","Analisando imagem…","Lendo texto do boleto…","Extraindo dados…"];
-    let mi=0;
-    const interval=setInterval(()=>{
-      const txt=loadEl.querySelector("div:nth-child(2)");
-      if(txt){txt.textContent=msgs[mi%msgs.length];mi++;}
-    },1800);
+async function callGemini(dataUrl){
+  const loadMsgs=["Enviando para Gemini AI…","Analisando o boleto…","Extraindo dados…","Quase pronto…"];
+  let mi=0;
+  const loadEl=document.getElementById("scanLoading");
+  const interval=setInterval(()=>{
+    const t=loadEl.querySelector("div:nth-child(2)");
+    if(t){t.textContent=loadMsgs[mi%loadMsgs.length];mi++;}
+  },1800);
 
-    const result = await Tesseract.recognize(dataUrl, 'por+eng', {
-      logger: () => {}
-    });
+  try{
+    const base64=dataUrl.split(",")[1];
+    const mime=dataUrl.split(";")[0].split(":")[1]||"image/jpeg";
+
+    const prompt=`Você é um especialista em boletos bancários brasileiros.
+Analise a imagem e extraia EXATAMENTE estes campos em JSON válido:
+{
+  "fornecedor": "nome do Beneficiário ou Cedente (só o nome, sem CNPJ)",
+  "valor": número decimal (ex: 157.92),
+  "vencimento": "YYYY-MM-DD",
+  "linha_digitavel": "sequência de dígitos da linha digitável (sem espaços)"
+}
+Regras:
+- Se não encontrar um campo, use null
+- valor deve ser número, não string
+- vencimento no formato ISO YYYY-MM-DD
+- Responda SOMENTE com o JSON, sem markdown, sem explicação`;
+
+    const body={
+      contents:[{parts:[
+        {text:prompt},
+        {inline_data:{mime_type:mime,data:base64}}
+      ]}],
+      generationConfig:{temperature:0,maxOutputTokens:256}
+    };
+
+    const resp=await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_KEY}`,
+      {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}
+    );
 
     clearInterval(interval);
-    const textoCompleto = result.data.text || "";
 
-    if(!textoCompleto.trim()){
-      showScanError("Não foi possível ler texto na imagem. Use uma foto nítida com boa iluminação.");
+    if(!resp.ok){
+      const err=await resp.json();
+      const msg=err?.error?.message||resp.statusText;
+      showScanError("Erro Gemini: "+msg);
       return;
     }
 
-    const resultado = parseBoleto(textoCompleto);
-    lastScanResult = resultado;
-    showScanResult(resultado, textoCompleto);
+    const data=await resp.json();
+    const rawText=(data?.candidates?.[0]?.content?.parts?.[0]?.text||"").trim();
 
-  } catch(e){
-    console.error("Tesseract error:", e);
-    showScanError("Erro ao processar a imagem. Tente novamente com uma foto mais nítida.");
+    let parsed;
+    try{
+      const clean=rawText.replace(/```json|```/g,"").trim();
+      parsed=JSON.parse(clean);
+    }catch(e){
+      showScanError("Não foi possível interpretar a resposta da IA. Tente foto mais nítida.");
+      return;
+    }
+
+    const resultado={
+      fornecedor:(parsed.fornecedor||"").toString().trim().slice(0,60),
+      valor:parsed.valor?parseFloat(parsed.valor):null,
+      vencimento:parsed.vencimento||"",
+      linha_digitavel:(parsed.linha_digitavel||"").replace(/\s/g,""),
+      grupo_sugerido:"",
+      confianca: (parsed.fornecedor&&parsed.valor&&parsed.vencimento)?"alta":"media"
+    };
+
+    // Tenta identificar grupo pelo nome do fornecedor ou CNPJ
+    const groups=getGroups();
+    for(const g of groups){
+      if(!g.isCasa&&g.num){
+        const digits=g.num.replace(/\D/g,"");
+        if(digits.length>8&&(parsed.linha_digitavel||"").replace(/\D/g,"").includes(digits)){
+          resultado.grupo_sugerido=g.name;break;
+        }
+      }
+      if(g.name&&resultado.fornecedor.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])){
+        resultado.grupo_sugerido=g.name;break;
+      }
+    }
+
+    lastScanResult=resultado;
+    showScanResult(resultado,"");
+
+  }catch(e){
+    clearInterval(interval);
+    console.error("Gemini error:",e);
+    showScanError("Erro ao conectar com a IA. Verifique sua conexão e tente novamente.");
   }
 }
 

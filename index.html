@@ -3,30 +3,41 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GereBoleto">
 <title>GereBoleto</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0f0f0d;--surf:#181816;--card:#1e1e1c;--card2:#242422;
-  --border:#2a2a27;--text:#e4e4dc;--muted:#6a6a62;--muted2:#4a4a44;
+  --border:#2a2a27;--text:#e4e4dc;--muted:#6a6a62;
   --accent:#f0c040;--danger:#e05c3a;--ok:#4caf7d;--warn:#f0c040;
   --blue:#6f8fff;--pink:#ff9fdf;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
+
+/* HEADER */
 header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:200;}
 .logo{font-family:'Syne',sans-serif;font-weight:800;font-size:17px;color:var(--accent);}
 .logo span{color:var(--text);}
-.hright{display:flex;align-items:center;gap:8px;}
-.sync-badge{font-size:10px;padding:3px 8px;border-radius:4px;}
-.sync-ok{background:#4caf7d18;color:var(--ok);border:1px solid #4caf7d33;}
-.sync-saving{background:#f0c04018;color:var(--warn);border:1px solid #f0c04033;}
-.sync-err{background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a33;}
-.layout{display:grid;grid-template-columns:268px 1fr;min-height:calc(100vh - 52px);}
+.hright{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.sync{font-size:10px;padding:3px 8px;border-radius:4px;white-space:nowrap;}
+.sync.ok{background:#4caf7d18;color:var(--ok);border:1px solid #4caf7d33;}
+.sync.saving{background:#f0c04018;color:var(--warn);border:1px solid #f0c04033;}
+.sync.err{background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a33;}
+
+/* LAYOUT */
+.layout{display:grid;grid-template-columns:260px 1fr;min-height:calc(100vh - 52px);}
 .sidebar{background:var(--surf);border-right:1px solid var(--border);padding:14px 12px;display:flex;flex-direction:column;gap:12px;position:sticky;top:52px;height:calc(100vh - 52px);overflow-y:auto;}
-.main{padding:14px 16px;display:flex;flex-direction:column;gap:13px;overflow-x:hidden;}
-.s-lbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
-.divider{border-top:1px solid var(--border);}
+.main{padding:14px 16px;display:flex;flex-direction:column;gap:13px;}
+
+.slbl{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.div{border-top:1px solid var(--border);}
+
+/* CALENDAR */
 .cal-head{display:flex;align-items:center;justify-content:space-between;}
 .cal-title{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;text-transform:capitalize;}
 .cal-nav{background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);padding:2px 9px;cursor:pointer;font-size:13px;transition:.12s;}
@@ -38,28 +49,33 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .ce{cursor:default;}
 .ct{background:#f0c04015;color:var(--accent);font-weight:700;border:1px solid #f0c04030;}
 .cs{background:var(--accent)!important;color:#0f0f0d!important;font-weight:700;}
-.cwe{color:var(--muted2);}
-.cfer{color:var(--danger);}
+.cwe{color:#4a4a44;}.cfer{color:var(--danger);}
 .dot-row{display:flex;gap:2px;justify-content:center;}
 .bd{width:3px;height:3px;border-radius:50%;}
-.bd-pago{background:var(--ok);}.bd-pendente{background:var(--warn);}.bd-vencido{background:var(--danger);}.bd-hoje{background:#ff9988;}
+
+/* QF */
 .qf{display:flex;align-items:center;justify-content:space-between;padding:6px 9px;border-radius:5px;cursor:pointer;border:1px solid transparent;background:transparent;color:var(--text);font-size:12px;font-family:'DM Sans',sans-serif;width:100%;text-align:left;transition:.12s;}
 .qf:hover{background:var(--card);border-color:var(--border);}
-.qf.active{background:var(--accent);color:#0f0f0d;font-weight:700;border-color:var(--accent);}
-.qf-ct{background:rgba(0,0,0,.18);border-radius:8px;padding:1px 6px;font-size:10px;font-family:'DM Mono',monospace;}
+.qf.active{background:var(--accent);color:#0f0f0d;font-weight:700;}
+.qct{background:rgba(0,0,0,.18);border-radius:8px;padding:1px 6px;font-size:10px;font-family:'DM Mono',monospace;}
+
+/* CNPJ PILLS */
 .cprow{display:flex;align-items:center;gap:7px;padding:6px 9px;border-radius:5px;cursor:pointer;border:1px solid transparent;font-size:12px;transition:.12s;}
-.cprow:hover{background:var(--card);border-color:var(--border);}
+.cprow:hover{background:var(--card);}
 .cprow.active{background:var(--card);border-color:var(--accent);}
 .cpdot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+
+/* 7DU */
 .du-strip{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;}
-.du-card{flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;min-width:68px;cursor:pointer;text-align:center;transition:.12s;}
-.du-card:hover{border-color:var(--accent);}
-.du-card.dut{border-color:#f0c04055;}
-.du-card.dus{border-color:var(--accent);background:#f0c04010;}
+.duc{flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;min-width:66px;cursor:pointer;text-align:center;transition:.12s;}
+.duc:hover,.duc.ds{border-color:var(--accent);background:#f0c04010;}
+.duc.dt{border-color:#f0c04055;}
 .du-wd{font-size:8px;color:var(--muted);text-transform:uppercase;font-weight:700;}
 .du-n{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;margin:2px 0;}
 .du-i{font-size:10px;color:var(--muted);}
 .du-i.dh{color:var(--warn);font-weight:700;}
+
+/* BTNS */
 .btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;border:none;border-radius:6px;padding:6px 12px;cursor:pointer;transition:.12s;display:inline-flex;align-items:center;gap:5px;}
 .btn-p{background:var(--accent);color:#0f0f0d;font-weight:700;}
 .btn-p:hover{filter:brightness(1.08);}
@@ -67,17 +83,28 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .btn-g:hover{border-color:var(--accent);color:var(--accent);}
 .btn-d{background:transparent;color:var(--danger);border:1px solid var(--danger);}
 .btn-d:hover{background:var(--danger);color:#fff;}
-.btn-sm{padding:3px 7px;font-size:11px;border-radius:4px;}
+.btn-ok{background:transparent;color:var(--ok);border:1px solid var(--ok);}
+.btn-ok:hover{background:var(--ok);color:#fff;}
+.btn-sm{padding:4px 8px;font-size:11px;border-radius:4px;}
+
+/* SEARCH */
 .sinp{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none;width:150px;transition:.12s;}
 .sinp:focus{border-color:var(--accent);}
+
+/* STATS */
 .stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;}
 .sc{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px;}
 .sl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:3px;}
 .sv{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;}
-.alert-bar{background:#e05c3a12;border:1px solid #e05c3a44;border-radius:6px;padding:8px 13px;font-size:12px;color:#ff9988;display:flex;align-items:center;gap:7px;}
-.toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;}
+
+/* ALERT */
+.alertbar{background:#e05c3a12;border:1px solid #e05c3a44;border-radius:6px;padding:8px 13px;font-size:12px;color:#ff9988;display:flex;align-items:center;gap:7px;}
+
+/* CHIP */
 .chip{display:inline-flex;align-items:center;gap:4px;background:var(--accent);color:#0f0f0d;border-radius:20px;padding:3px 9px 3px 11px;font-size:11px;font-weight:700;}
-.chip-x{background:none;border:none;cursor:pointer;font-size:13px;color:#0f0f0d;line-height:1;padding:0;margin-left:2px;}
+.chip-x{background:none;border:none;cursor:pointer;font-size:13px;color:#0f0f0d;line-height:1;padding:0;}
+
+/* SALDO */
 .saldo-panel{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;}
 .sg{background:var(--card);border:1px solid var(--border);border-radius:8px;overflow:hidden;}
 .sg-head{padding:8px 11px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;}
@@ -90,6 +117,8 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .sg-foot{border-top:1px solid var(--border);padding:5px 11px;display:flex;justify-content:space-between;align-items:center;}
 .sg-bol{color:var(--muted);font-size:10px;}
 .sg-sobra{font-family:'DM Mono',monospace;font-size:12px;font-weight:700;}
+
+/* GROUPS */
 .gb{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:10px;}
 .gb-head{display:flex;align-items:center;justify-content:space-between;padding:9px 13px;background:var(--surf);border-bottom:1px solid var(--border);cursor:pointer;user-select:none;}
 .gb-head:hover{background:#1a1a18;}
@@ -98,11 +127,11 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .gb-name{font-family:'Syne',sans-serif;font-weight:700;font-size:13px;}
 .gb-cnpj{font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;}
 .gb-hr{display:flex;align-items:center;gap:10px;}
-.gb-tot{text-align:right;}
-.gb-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:700;}
 .gb-arr{color:var(--muted);font-size:12px;transition:transform .18s;display:inline-block;}
 .gb-arr.cl{transform:rotate(-90deg);}
 .gb-empty{text-align:center;padding:18px;color:var(--muted);font-size:12px;}
+
+/* TABLE */
 table{width:100%;border-collapse:collapse;}
 thead tr{background:#161614;border-bottom:1px solid var(--border);}
 th{text-align:left;padding:7px 10px;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap;}
@@ -111,12 +140,17 @@ tbody tr:last-child{border-bottom:none;}
 tbody tr:hover{background:rgba(240,192,64,.03);}
 td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .mono{font-family:'DM Mono',monospace;}
-.badge{display:inline-flex;align-items:center;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;white-space:nowrap;}
+.badge{display:inline-flex;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;white-space:nowrap;}
 .dtag{display:inline-block;border-radius:3px;font-size:10px;padding:1px 5px;font-family:'DM Mono',monospace;font-weight:700;}
 .vdots{display:flex;gap:3px;}
-.vd{width:19px;height:19px;border-radius:50%;border:1.5px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;transition:.12s;color:transparent;flex-shrink:0;}
+.vd{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;transition:.12s;color:transparent;flex-shrink:0;}
 .vd.vok{background:var(--ok);border-color:var(--ok);color:#fff;}
 .vd.vbad{background:var(--danger);border-color:var(--danger);color:#fff;}
+
+/* ACTION BTNS in table */
+.act-btns{display:flex;gap:3px;flex-wrap:nowrap;}
+
+/* MODAL */
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:300;align-items:center;justify-content:center;padding:16px;}
 .mo.open{display:flex;}
 .mbox{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:22px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;}
@@ -132,51 +166,63 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .casa-box{grid-column:1/-1;border:1px solid #ff9fdf30;border-radius:7px;padding:11px;background:#ff9fdf06;display:none;grid-template-columns:1fr 1fr;gap:9px;}
 .casa-box.show{display:grid;}
 .casa-box .full{grid-column:1/-1;}
+
+/* SCANNER */
+.scan-tabs{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:12px;}
+.scan-tab{flex:1;padding:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:transparent;border:none;color:var(--muted);cursor:pointer;transition:.12s;}
+.scan-tab.active{background:var(--accent);color:#0f0f0d;font-weight:700;}
 .scan-drop{border:2px dashed var(--border);border-radius:10px;padding:24px 16px;text-align:center;cursor:pointer;transition:.15s;background:#1a1a18;}
 .scan-drop:hover,.scan-drop.drag{border-color:var(--accent);background:#1e1e1b;}
 .scan-preview{width:100%;max-height:180px;object-fit:contain;border-radius:7px;border:1px solid var(--border);margin-top:8px;}
 .scan-result{background:#4caf7d10;border:1px solid #4caf7d40;border-radius:8px;padding:12px;margin-top:10px;display:flex;flex-direction:column;gap:5px;}
 .scan-row{display:flex;gap:8px;font-size:12px;}
-.scan-lbl{color:var(--muted);min-width:100px;font-size:11px;flex-shrink:0;}
+.scan-lbl{color:var(--muted);min-width:110px;font-size:11px;flex-shrink:0;}
 .scan-val{color:var(--text);font-weight:600;}
-.scan-tabs{display:flex;border:1px solid var(--border);border-radius:7px;overflow:hidden;margin-bottom:12px;}
-.scan-tab{flex:1;padding:8px;font-size:12px;font-family:'DM Sans',sans-serif;background:transparent;border:none;color:var(--muted);cursor:pointer;transition:.12s;}
-.scan-tab.active{background:var(--accent);color:#0f0f0d;font-weight:700;}
 .scan-loading{display:flex;flex-direction:column;align-items:center;gap:10px;padding:24px;}
-.spin{width:30px;height:30px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg)}}
+
+/* LOADING */
 .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg);color:var(--muted);gap:12px;}
+.spin{border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* CONFIRM MODAL */
+.confirm-box{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:22px;width:100%;max-width:360px;}
+.confirm-msg{font-size:14px;margin-bottom:16px;line-height:1.5;}
+
 @media(max-width:800px){
   .layout{grid-template-columns:1fr;}
   .sidebar{position:relative;top:0;height:auto;border-right:none;border-bottom:1px solid var(--border);}
   .stats-row{grid-template-columns:repeat(3,1fr);}
   .saldo-panel{grid-template-columns:repeat(2,1fr);}
   .fg{grid-template-columns:1fr;}.fg .full{grid-column:1;}
-  .casa-box.show{grid-template-columns:1fr;}
   .sinp{width:120px;}
+  .hright{gap:5px;}
 }
 </style>
 </head>
 <body>
 
+<!-- LOADING -->
 <div class="loading-screen" id="loadingScreen">
-  <div class="spin"></div>
+  <div class="spin" style="width:32px;height:32px;border:3px solid #2a2a27;border-top-color:var(--accent);"></div>
   <div style="font-size:13px;">Conectando ao banco de dados…</div>
 </div>
 
 <div id="app" style="display:none;">
+
 <header>
   <div class="logo">Gere<span>Boleto</span></div>
   <div class="hright">
-    <span class="sync-badge sync-saving" id="syncBadge">⏳ Conectando</span>
+    <span class="sync ok" id="syncBadge">✓ Online</span>
     <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="renderAll()">
-    <button class="btn btn-g btn-sm" onclick="openScanner()">📷 Ler</button>
+    <button class="btn btn-g btn-sm" onclick="openScanner()">📷 Ler Boleto</button>
     <button class="btn btn-g btn-sm" onclick="openCNPJModal()">⚙ CNPJs</button>
     <button class="btn btn-p" onclick="openModal()">＋ Boleto</button>
   </div>
 </header>
 
 <div class="layout">
+  <!-- SIDEBAR -->
   <div class="sidebar">
     <div>
       <div class="cal-head">
@@ -186,35 +232,37 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
       </div>
       <div class="cal-grid" id="calGrid"></div>
     </div>
-    <div class="divider"></div>
+    <div class="div"></div>
     <div>
-      <div class="s-lbl">Filtros</div>
-      <button class="qf" id="qf-todos"    onclick="setQF('todos')">📋 Todos            <span class="qf-ct" id="qn-todos">0</span></button>
-      <button class="qf" id="qf-7du"      onclick="setQF('7du')"> 📅 7 Dias Úteis     <span class="qf-ct" id="qn-7du">0</span></button>
-      <button class="qf" id="qf-hoje"     onclick="setQF('hoje')">🔥 Vence Hoje        <span class="qf-ct" id="qn-hoje">0</span></button>
-      <button class="qf" id="qf-vencido"  onclick="setQF('vencido')">⚠ Vencidos        <span class="qf-ct" id="qn-vencido">0</span></button>
-      <button class="qf" id="qf-pendente" onclick="setQF('pendente')">⏳ Pendentes     <span class="qf-ct" id="qn-pendente">0</span></button>
-      <button class="qf" id="qf-pago"     onclick="setQF('pago')">✓ Pagos mês          <span class="qf-ct" id="qn-pago">0</span></button>
-      <button class="qf" id="qf-casa"     onclick="setQF('casa')">🏠 Só Casa           <span class="qf-ct" id="qn-casa">0</span></button>
+      <div class="slbl">Filtros</div>
+      <button class="qf" id="qf-todos"    onclick="setQF('todos')">📋 Todos            <span class="qct" id="qn-todos">0</span></button>
+      <button class="qf" id="qf-7du"      onclick="setQF('7du')"> 📅 7 Dias Úteis     <span class="qct" id="qn-7du">0</span></button>
+      <button class="qf" id="qf-hoje"     onclick="setQF('hoje')">🔥 Vence Hoje        <span class="qct" id="qn-hoje">0</span></button>
+      <button class="qf" id="qf-vencido"  onclick="setQF('vencido')">⚠ Vencidos        <span class="qct" id="qn-vencido">0</span></button>
+      <button class="qf" id="qf-pendente" onclick="setQF('pendente')">⏳ Pendentes     <span class="qct" id="qn-pendente">0</span></button>
+      <button class="qf" id="qf-pago"     onclick="setQF('pago')">✓ Pagos mês          <span class="qct" id="qn-pago">0</span></button>
+      <button class="qf" id="qf-casa"     onclick="setQF('casa')">🏠 Só Casa           <span class="qct" id="qn-casa">0</span></button>
     </div>
-    <div class="divider"></div>
+    <div class="div"></div>
     <div>
-      <div class="s-lbl">Filtrar por Grupo</div>
+      <div class="slbl">Filtrar por Grupo</div>
       <div id="cnpjPills"></div>
     </div>
-    <div class="divider"></div>
+    <div class="div"></div>
     <div>
-      <div class="s-lbl">7 Dias Úteis</div>
+      <div class="slbl">7 Dias Úteis</div>
       <div class="du-strip" id="duStrip"></div>
     </div>
     <div style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;">
       <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()">💰 Atualizar Saldos</button>
+      <button class="btn btn-g btn-sm" style="width:100%" onclick="loadData()">🔄 Atualizar</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="exportCSV()">⬇ Exportar CSV</button>
     </div>
   </div>
 
+  <!-- MAIN -->
   <div class="main">
-    <div class="alert-bar" id="alertBar" style="display:none">⚠️ <span id="alertMsg"></span></div>
+    <div class="alertbar" id="alertBar" style="display:none">⚠️ <span id="alertMsg"></span></div>
     <div class="stats-row">
       <div class="sc"><div class="sl">Em Aberto</div><div class="sv" style="color:var(--warn)" id="stAberto">R$ 0,00</div></div>
       <div class="sc"><div class="sl">Vencem Hoje</div><div class="sv" style="color:var(--danger)" id="stHoje">0</div></div>
@@ -223,12 +271,12 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
       <div class="sc"><div class="sl">🏠 Casa Aberto</div><div class="sv" style="color:var(--pink)" id="stCasa">R$ 0,00</div></div>
     </div>
     <div>
-      <div class="s-lbl" style="margin-bottom:7px">💰 Saldo de Caixa por Empresa</div>
+      <div class="slbl" style="margin-bottom:7px">💰 Saldo de Caixa por Empresa</div>
       <div class="saldo-panel" id="saldoPanel"></div>
     </div>
-    <div class="toolbar">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap" id="chipArea"></div>
-      <div style="display:flex;gap:5px">
+      <div style="display:flex;gap:5px;">
         <button class="btn btn-g btn-sm" onclick="toggleAll(true)">▼ Expandir</button>
         <button class="btn btn-g btn-sm" onclick="toggleAll(false)">▶ Recolher</button>
       </div>
@@ -244,19 +292,22 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   <div class="mtit" id="moTit">📄 Novo Boleto</div>
   <div class="fg">
     <div class="fi full"><label>Descrição / Fornecedor</label><input type="text" id="fDesc" placeholder="Ex: Distribuidora JK"></div>
-    <div class="fi full"><label>Grupo</label><select id="fGrupo" onchange="onGrupoChange()"><option value="">Selecione…</option></select></div>
-    <div class="fi" id="fCatRow"><label>Categoria</label>
+    <div class="fi full">
+      <label>Grupo</label>
+      <select id="fGrupo" onchange="onGrupoChange()"><option value="">Selecione…</option></select>
+    </div>
+    <div class="fi" id="fCatRow">
+      <label>Categoria</label>
       <select id="fCat">
         <option>Mercadoria</option><option>Aluguel</option><option>Energia</option>
         <option>Água</option><option>Telefone/Internet</option><option>Fornecedor</option>
         <option>Imposto/DAS</option><option>Manutenção</option><option>Outro</option>
       </select>
     </div>
-    <div class="fi"><label>Valor (R$)</label><input type="number" id="fValor" placeholder="0,00" step="0.01" min="0"></div>
-    <div class="fi"><label>Vencimento</label><input type="date" id="fVenc"></div>
     <div class="casa-box" id="casaBox">
       <div class="full" style="font-size:9px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:.8px">🏠 Casa / Pessoal</div>
-      <div class="fi full"><label>Categoria</label>
+      <div class="fi full">
+        <label>Categoria</label>
         <select id="fCasaCat" onchange="onCasaCatChange()">
           <option>Água</option><option>Energia Elétrica</option><option>Gás</option>
           <option>Internet/TV/Fone</option><option>Aluguel Residencial</option><option>Condomínio</option>
@@ -264,9 +315,11 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
           <option>Cartão de Crédito</option><option>Escola / Faculdade</option><option>Seguro</option><option>Outro Pessoal</option>
         </select>
       </div>
-      <div class="fi full" id="cartaoRow" style="display:none"><label>Cartão</label><input type="text" id="fCartao" placeholder="Ex: Nubank, Itaú Visa"></div>
+      <div class="fi full" id="cartaoRow" style="display:none"><label>Cartão (bandeira/banco)</label><input type="text" id="fCartao" placeholder="Ex: Nubank, Itaú Visa"></div>
     </div>
-    <div class="fi full"><label>Obs.</label><textarea id="fObs" placeholder="NF 1234 · linha digitável…"></textarea></div>
+    <div class="fi"><label>Valor (R$)</label><input type="number" id="fValor" placeholder="0,00" step="0.01" min="0"></div>
+    <div class="fi"><label>Vencimento</label><input type="date" id="fVenc"></div>
+    <div class="fi full"><label>Observação (NF, linha digitável, fone...)</label><textarea id="fObs" placeholder="NF 1234 · linha digitável · (11) 9999-9999"></textarea></div>
   </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
@@ -295,6 +348,7 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 <div class="mo" id="moS">
 <div class="mbox">
   <div class="mtit">💰 Atualizar Saldos</div>
+  <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Informe o saldo atual de cada conta. O sistema calcula o que sobra após os boletos em aberto.</p>
   <div id="saldoForm" style="display:flex;flex-direction:column;gap:16px"></div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeSaldo()">Cancelar</button>
@@ -312,117 +366,140 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
     <button class="scan-tab active" id="stab-upload" onclick="setScanTab('upload')">📁 Upload / Galeria</button>
     <button class="scan-tab" id="stab-camera" onclick="setScanTab('camera')">📸 Câmera</button>
   </div>
-  <div id="scanDropArea" class="scan-drop"
+  <div id="scanDrop" class="scan-drop"
     ondragover="event.preventDefault();this.classList.add('drag')"
     ondragleave="this.classList.remove('drag')"
     ondrop="onScanDrop(event)"
     onclick="triggerScanInput()">
     <div style="font-size:36px;margin-bottom:8px" id="scanIcon">📄</div>
-    <div style="font-size:13px;color:var(--text);font-weight:600" id="scanDropText">Clique ou arraste o boleto aqui</div>
-    <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG, PNG — foto nítida e boa iluminação</div>
+    <div style="font-size:13px;color:var(--text);font-weight:600" id="scanTxt">Clique ou arraste o boleto aqui</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:4px">JPG ou PNG — foto nítida e boa iluminação</div>
   </div>
-  <input type="file" id="scanFileInput" accept="image/*" style="display:none" onchange="onScanFile(this)">
-  <input type="file" id="scanCamInput" accept="image/*" capture="environment" style="display:none" onchange="onScanFile(this)">
+  <input type="file" id="scanFile" accept="image/*" style="display:none" onchange="onScanFile(this)">
+  <input type="file" id="scanCam"  accept="image/*" capture="environment" style="display:none" onchange="onScanFile(this)">
   <img id="scanPreview" class="scan-preview" style="display:none">
   <div class="scan-loading" id="scanLoading" style="display:none">
-    <div class="spin"></div>
+    <div class="spin" style="width:28px;height:28px;border:3px solid #2a2a27;border-top-color:var(--accent);"></div>
     <div style="font-size:13px;color:var(--accent);font-weight:600">Lendo boleto com IA…</div>
+    <div style="font-size:11px;color:var(--muted)">Extraindo dados automaticamente</div>
   </div>
-  <div id="scanError" style="display:none;background:#e05c3a12;border:1px solid #e05c3a44;border-radius:7px;padding:10px 12px;font-size:12px;color:#ff9988;margin-top:10px"></div>
+  <div id="scanErr" style="display:none;background:#e05c3a12;border:1px solid #e05c3a44;border-radius:7px;padding:10px 12px;font-size:12px;color:#ff9988;margin-top:10px"></div>
   <div id="scanResult" style="display:none"></div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeScanner()">Cancelar</button>
     <button class="btn btn-g" id="scanRetry" style="display:none" onclick="resetScanner()">Trocar imagem</button>
-    <button class="btn btn-p" id="scanUse" style="display:none" onclick="applyScanResult()">✓ Usar esses dados</button>
+    <button class="btn btn-p" id="scanUse"   style="display:none" onclick="applyScan()">✓ Usar esses dados</button>
+  </div>
+</div>
+</div>
+
+<!-- MODAL CONFIRMAR EXCLUSÃO -->
+<div class="mo" id="moConfirm">
+<div class="confirm-box">
+  <div class="mtit">⚠ Confirmar exclusão</div>
+  <div class="confirm-msg" id="confirmMsg">Tem certeza que deseja remover este boleto?</div>
+  <div class="mact">
+    <button class="btn btn-g" onclick="closeConfirm()">Cancelar</button>
+    <button class="btn btn-d" id="confirmOkBtn">Remover</button>
   </div>
 </div>
 </div>
 
 <script>
 // ══════════════════════════════════════════════
-// FIREBASE REST API (sem SDK)
+// FIREBASE CONFIG
 // ══════════════════════════════════════════════
-const DB = "https://gerenciador-boletos-1d534-default-rtdb.firebaseio.com";
+const FB_CFG = {
+  apiKey: "AIzaSyDoQAoAwfPrNf3cpfzuywbIpwCN63p0Gvk",
+  authDomain: "gerenciador-boletos-1d534.firebaseapp.com",
+  databaseURL: "https://gerenciador-boletos-1d534-default-rtdb.firebaseio.com",
+  projectId: "gerenciador-boletos-1d534",
+  storageBucket: "gerenciador-boletos-1d534.firebasestorage.app",
+  messagingSenderId: "535157319092",
+  appId: "1:535157319092:web:da29510d03803dad313ee1"
+};
 
-async function fbGet(path) {
-  try {
-    const r = await fetch(`${DB}/${path}.json`);
-    if (!r.ok) throw new Error(r.status);
-    return await r.json();
-  } catch(e) { setSyncBadge("err","⚠ Erro"); return null; }
-}
+// GOOGLE VISION API KEY
+const VISION_KEY = "AIzaSyAVxlw09YdpbO7uQI0b0cF_kXuTi5OZLd8";
 
-async function fbPut(path, val) {
-  setSyncBadge("saving","Salvando…");
-  try {
-    const r = await fetch(`${DB}/${path}.json`, {
-      method: "PUT",
-      headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(val)
-    });
-    if (!r.ok) throw new Error(r.status);
-    setSyncBadge("ok","✓ Online");
-  } catch(e) { setSyncBadge("err","⚠ Erro"); }
-}
-
-async function fbDel(path) {
-  setSyncBadge("saving","Salvando…");
-  try {
-    await fetch(`${DB}/${path}.json`, { method: "DELETE" });
-    setSyncBadge("ok","✓ Online");
-  } catch(e) { setSyncBadge("err","⚠ Erro"); }
-}
-
-// Polling para atualizações em tempo real
-let _poll;
-async function startPolling() {
-  async function load() {
-    const [b, c, s, g] = await Promise.all([
-      fbGet("boletos"), fbGet("cnpjs"), fbGet("saldos"), fbGet("gcoll")
-    ]);
-    boletos = b || {};
-    cnpjs   = c || {};
-    saldos  = s || {};
-    gcoll   = g || {};
-    setSyncBadge("ok","✓ Online");
-    document.getElementById("loadingScreen").style.display = "none";
-    document.getElementById("app").style.display = "block";
-    renderAll();
-  }
-  await load();
-  _poll = setInterval(load, 8000); // atualiza a cada 8s
-}
-
-function setSyncBadge(cls, txt) {
-  const el = document.getElementById("syncBadge");
-  el.className = "sync-badge sync-" + cls;
-  el.textContent = txt;
-}
+firebase.initializeApp(FB_CFG);
+const db = firebase.database();
 
 // ══════════════════════════════════════════════
 // STATE
 // ══════════════════════════════════════════════
-const CASA = "__casa__";
-const GCOLS = ["#6f8fff","#f07f40","#40c0a0","#b07fff","#f0c040","#40a0ff"];
-const CASACOL = "#ff9fdf";
-const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
-const DIAS = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+const CASA="__casa__";
+const GCOLS=["#6f8fff","#f07f40","#40c0a0","#b07fff","#f0c040","#40a0ff"];
+const CASACOL="#ff9fdf";
+const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const DIAS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
-let boletos = {}, cnpjs = {}, saldos = {}, gcoll = {};
-let qfAtual = "todos", cnpjFil = "todos";
-let calSel = null, duSel = null, calY, calM, editId = null;
-let scanTabAtual = "upload", lastScanResult = null;
+let boletos={}, cnpjs={}, saldos={}, gcoll={};
+let qfAtual="todos", cnpjFil="todos";
+let calSel=null, duSel=null;
+let calY, calM;
+let editId=null;
+let scanTabAtual="upload";
+let lastScanResult=null;
 
-const TODAY = (()=>{ const d=new Date(); d.setHours(0,0,0,0); return d; })();
+const TODAY=(()=>{const d=new Date();d.setHours(0,0,0,0);return d;})();
 
 // ══════════════════════════════════════════════
-// UTILS
+// FIREBASE
 // ══════════════════════════════════════════════
-function p2(n){ return String(n).padStart(2,"0"); }
-function dstr(d){ return `${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`; }
-function toDate(s){ const[y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); }
-function fmtD(s){ if(!s)return"—"; const[y,m,d]=s.split("-"); return`${d}/${m}/${y}`; }
-function fmtR(v){ return"R$ "+Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function initFirebase(){
+  setSyncBadge("saving","Conectando…");
+  db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};renderAll();});
+  db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};renderAll();});
+  db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};renderAll();});
+  db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};renderAll();});
+  db.ref(".info/connected").on("value",snap=>{
+    setSyncBadge(snap.val()?"ok":"err",snap.val()?"✓ Online":"⚠ Offline");
+    if(snap.val()){
+      document.getElementById("loadingScreen").style.display="none";
+      document.getElementById("app").style.display="block";
+    }
+  });
+}
+
+function setSyncBadge(cls,txt){
+  const el=document.getElementById("syncBadge");
+  el.className="sync "+cls; el.textContent=txt;
+}
+
+function fbSet(path,val){
+  setSyncBadge("saving","Salvando…");
+  return db.ref(path).set(val)
+    .then(()=>setSyncBadge("ok","✓ Online"))
+    .catch(()=>setSyncBadge("err","⚠ Erro ao salvar"));
+}
+
+function fbRemove(path){
+  setSyncBadge("saving","Removendo…");
+  return db.ref(path).remove()
+    .then(()=>setSyncBadge("ok","✓ Online"))
+    .catch(()=>setSyncBadge("err","⚠ Erro"));
+}
+
+function loadData(){
+  setSyncBadge("saving","Atualizando…");
+  db.ref("/").once("value",snap=>{
+    const d=snap.val()||{};
+    boletos=d.boletos||{}; cnpjs=d.cnpjs||{};
+    saldos=d.saldos||{}; gcoll=d.gcoll||{};
+    setSyncBadge("ok","✓ Online");
+    renderAll();
+  }).catch(()=>setSyncBadge("err","⚠ Erro"));
+}
+
+// ══════════════════════════════════════════════
+// DATE / FERIADOS / DU
+// ══════════════════════════════════════════════
+function p2(n){return String(n).padStart(2,"0");}
+function dstr(d){return`${d.getFullYear()}-${p2(d.getMonth()+1)}-${p2(d.getDate())}`;}
+function toDate(s){const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);}
+function fmtD(s){if(!s)return"—";const[y,m,d]=s.split("-");return`${d}/${m}/${y}`;}
+function fmtR(v){return"R$ "+Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});}
 
 let _fc={};
 function feriadosAno(y){
@@ -433,51 +510,73 @@ function feriadosAno(y){
   return new Set([...fx,...mv]);
 }
 function isFer(s){const y=+s.slice(0,4);if(!_fc[y])_fc[y]=feriadosAno(y);return _fc[y].has(s);}
-function isWE(d){const w=d.getDay();return w===0||w===6;}
-function isDU(s){return !isWE(toDate(s))&&!isFer(s);}
+function isWE(d){return d.getDay()===0||d.getDay()===6;}
+function isDU(s){return!isWE(toDate(s))&&!isFer(s);}
 function next7DU(){const r=[];let d=new Date(TODAY);while(r.length<7){const s=dstr(d);if(isDU(s))r.push(s);d.setDate(d.getDate()+1);}return r;}
 function duAte(s){const v=toDate(s);if(v<TODAY)return null;let n=0,d=new Date(TODAY);while(d<v){if(isDU(dstr(d)))n++;d.setDate(d.getDate()+1);}return n;}
-function status(b){if(b.pago)return"pago";const d=toDate(b.vencimento);if(d<TODAY)return"vencido";if(d.getTime()===TODAY.getTime())return"hoje";return"pendente";}
-function getGroups(){
-  const arr=Object.entries(cnpjs).sort((a,b)=>(a[1].ordem||0)-(b[1].ordem||0)).map(([id,c],i)=>({id,name:c.nome,num:c.num,color:GCOLS[i%6],isCasa:false}));
-  arr.push({id:CASA,name:"Casa / Pessoal",num:"",color:CASACOL,isCasa:true});
-  return arr;
+
+function status(b){
+  if(b.pago)return"pago";
+  const d=toDate(b.vencimento);
+  if(d<TODAY)return"vencido";
+  if(d.getTime()===TODAY.getTime())return"hoje";
+  return"pendente";
 }
-function boletoList(){ return Object.entries(boletos).map(([id,b])=>({...b,id})); }
-function bancosDoGrupo(nome){const n=(nome||"").toLowerCase();if(n.includes("lanchonete"))return["Stone Matriz","Itaú","Santander"];if(n.includes("restaurante"))return["Stone Filial","Itaú","Santander"];if(n.includes("vicfel"))return["Santander","Stone"];return["Banco 1","Banco 2"];}
+
+// ══════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════
+function bancosDoGrupo(nome){
+  const n=(nome||"").toLowerCase();
+  if(n.includes("lanchonete"))return["Stone Matriz","Itaú","Santander"];
+  if(n.includes("restaurante"))return["Stone Filial","Itaú","Santander"];
+  if(n.includes("vicfel"))return["Santander","Stone"];
+  return["Banco 1","Banco 2"];
+}
+
+function getGroups(){
+  return[
+    ...Object.entries(cnpjs).sort((a,b)=>(a[1].ordem||0)-(b[1].ordem||0)).map(([id,c],i)=>({id,name:c.nome,num:c.num,color:GCOLS[i%6],isCasa:false})),
+    {id:CASA,name:"Casa / Pessoal",num:"",color:CASACOL,isCasa:true}
+  ];
+}
+
+function boletoArr(){return Object.entries(boletos).map(([id,b])=>({...b,id}));}
 
 // ══════════════════════════════════════════════
 // CALENDAR
 // ══════════════════════════════════════════════
-function initCal(){ calY=TODAY.getFullYear(); calM=TODAY.getMonth(); }
-function calNav(d){ calM+=d; if(calM>11){calM=0;calY++;} if(calM<0){calM=11;calY--;} renderCal(); }
+function initCal(){calY=TODAY.getFullYear();calM=TODAY.getMonth();}
+function calNav(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
+
 function renderCal(){
   document.getElementById("calTitle").textContent=`${MESES[calM]} ${calY}`;
   const first=new Date(calY,calM,1).getDay(),days=new Date(calY,calM+1,0).getDate();
-  const bmap={};boletoList().forEach(b=>{if(!bmap[b.vencimento])bmap[b.vencimento]=[];bmap[b.vencimento].push(b);});
+  const bmap={};boletoArr().forEach(b=>{if(!bmap[b.vencimento])bmap[b.vencimento]=[];bmap[b.vencimento].push(b);});
   let h=DIAS.map(d=>`<div class="cdow">${d}</div>`).join("");
-  for(let i=0;i<first;i++) h+=`<div class="cc ce"></div>`;
+  for(let i=0;i<first;i++)h+=`<div class="cc ce"></div>`;
   for(let d=1;d<=days;d++){
     const s=`${calY}-${p2(calM+1)}-${p2(d)}`,dt=toDate(s);
     const isTod=s===dstr(TODAY),isSel=s===calSel,we=isWE(dt),fer=isFer(s),bs=bmap[s]||[];
     let cls="cc";if(we&&!fer)cls+=" cwe";if(fer)cls+=" cfer";if(isTod&&!isSel)cls+=" ct";if(isSel)cls+=" cs";
-    const dots=bs.length?`<div class="dot-row">${bs.slice(0,4).map(b=>`<div class="bd bd-${status(b)}"></div>`).join("")}</div>`:"";
+    const dots=bs.length?`<div class="dot-row">${bs.slice(0,4).map(b=>{const c=status(b)==="pago"?"#4caf7d":status(b)==="vencido"?"#e05c3a":status(b)==="hoje"?"#ff9988":"#f0c040";return`<div class="bd" style="background:${c}"></div>`;}).join("")}</div>`:"";
     h+=`<div class="${cls}" onclick="calClick('${s}')">${d}${dots}</div>`;
   }
   document.getElementById("calGrid").innerHTML=h;
 }
+
 function calClick(s){calSel=calSel===s?null:s;if(calSel)duSel=null;renderCal();renderAll();}
 
 // ══════════════════════════════════════════════
-// 7DU
+// 7DU STRIP
 // ══════════════════════════════════════════════
 function renderDUStrip(){
   const days=next7DU(),bmap={};
-  boletoList().forEach(b=>{if(!bmap[b.vencimento])bmap[b.vencimento]=[];bmap[b.vencimento].push(b);});
+  boletoArr().forEach(b=>{if(!bmap[b.vencimento])bmap[b.vencimento]=[];bmap[b.vencimento].push(b);});
   document.getElementById("duStrip").innerHTML=days.map(s=>{
     const dt=toDate(s),isTod=s===dstr(TODAY),isSel=s===duSel;
     const bs=(bmap[s]||[]).filter(b=>!b.pago),tot=bs.reduce((a,b)=>a+Number(b.valor||0),0);
-    let cls="du-card";if(isTod)cls+=" dut";if(isSel)cls+=" dus";
+    let cls="duc";if(isTod)cls+=" dt";if(isSel)cls+=" ds";
     return`<div class="${cls}" onclick="duClick('${s}')">
       <div class="du-wd">${DIAS[dt.getDay()]}</div>
       <div class="du-n" style="${isTod?"color:var(--accent)":""}">${p2(dt.getDate())}/${p2(dt.getMonth()+1)}</div>
@@ -486,6 +585,7 @@ function renderDUStrip(){
     </div>`;
   }).join("");
 }
+
 function duClick(s){if(duSel===s){duSel=null;qfAtual="7du";}else{duSel=s;calSel=null;qfAtual="7du";renderCal();}renderAll();}
 
 // ══════════════════════════════════════════════
@@ -493,9 +593,10 @@ function duClick(s){if(duSel===s){duSel=null;qfAtual="7du";}else{duSel=s;calSel=
 // ══════════════════════════════════════════════
 function updateStats(){
   const mes=TODAY.getMonth(),ano=TODAY.getFullYear();
-  let ab=0,hj=0,vn=0,pg=0,ca=0,nT=0,n7=0,nH=0,nV=0,nP=0,nPg=0,nC=0;
+  let ab=0,hj=0,vn=0,pg=0,ca=0;
+  let nT=0,n7=0,nH=0,nV=0,nP=0,nPg=0,nC=0;
   const d7=new Set(next7DU());
-  boletoList().forEach(b=>{
+  boletoArr().forEach(b=>{
     const s=status(b);nT++;
     if(d7.has(b.vencimento)&&!b.pago)n7++;
     if(s==="hoje")nH++;if(s==="vencido")nV++;if(s==="pendente")nP++;if(s==="pago")nPg++;
@@ -518,122 +619,219 @@ function updateStats(){
 }
 
 // ══════════════════════════════════════════════
-// QF / PILLS / CHIP / SALDO
+// QF + CNPJ FILTER
 // ══════════════════════════════════════════════
 function setQF(q){qfAtual=q;calSel=null;if(q!=="7du")duSel=null;renderCal();renderAll();}
 function setCNPJFil(id){cnpjFil=id;renderAll();}
-function updateQFBtns(){["todos","7du","hoje","vencido","pendente","pago","casa"].forEach(k=>{const el=document.getElementById("qf-"+k);if(el)el.classList.toggle("active",qfAtual===k&&!calSel);});}
+
+function updateQFBtns(){
+  ["todos","7du","hoje","vencido","pendente","pago","casa"].forEach(k=>{
+    const el=document.getElementById("qf-"+k);
+    if(el)el.classList.toggle("active",qfAtual===k&&!calSel);
+  });
+}
 
 function renderCNPJPills(){
   const groups=getGroups();
   let h=`<div class="cprow ${cnpjFil==="todos"?"active":""}" onclick="setCNPJFil('todos')"><div class="cpdot" style="background:var(--muted)"></div><span>Todos</span></div>`;
-  groups.forEach(g=>{h+=`<div class="cprow ${cnpjFil===g.id?"active":""}" onclick="setCNPJFil('${g.id}')"><div class="cpdot" style="background:${g.color}"></div><span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${g.isCasa?"🏠 ":""}${g.name}</span>${g.num?`<span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)">${g.num.slice(-8)}</span>`:""}</div>`;});
+  groups.forEach(g=>{
+    h+=`<div class="cprow ${cnpjFil===g.id?"active":""}" onclick="setCNPJFil('${g.id}')">
+      <div class="cpdot" style="background:${g.color}"></div>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px">${g.isCasa?"🏠 ":""}${g.name}</span>
+      ${g.num?`<span style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)">${g.num.slice(-8)}</span>`:""}
+    </div>`;
+  });
   document.getElementById("cnpjPills").innerHTML=h;
 }
 
-function renderChip(){
-  const nm={todos:"Todos","7du":"7 Dias Úteis",hoje:"Hoje",vencido:"Vencidos",pendente:"Pendentes",pago:"Pagos",casa:"Casa"};
-  let h="";
-  if(calSel) h=`<span class="chip">📅 ${fmtD(calSel)}<button class="chip-x" onclick="calSel=null;renderCal();renderAll()">×</button></span>`;
-  else if(duSel) h=`<span class="chip">📅 ${fmtD(duSel)}<button class="chip-x" onclick="duSel=null;setQF('7du')">×</button></span>`;
-  else h=`<span class="chip">${nm[qfAtual]||qfAtual}</span>`;
-  if(cnpjFil!=="todos"){const g=getGroups().find(x=>x.id===cnpjFil);if(g)h+=`<span class="chip" style="background:${g.color}">${g.name}<button class="chip-x" style="color:inherit" onclick="setCNPJFil('todos')">×</button></span>`;}
-  document.getElementById("chipArea").innerHTML=h;
-}
-
+// ══════════════════════════════════════════════
+// SALDO PANEL
+// ══════════════════════════════════════════════
 function renderSaldoPanel(){
   const groups=getGroups().filter(g=>!g.isCasa);
+  if(!groups.length){document.getElementById("saldoPanel").innerHTML=`<div style="color:var(--muted);font-size:12px">Cadastre os CNPJs para ver os saldos.</div>`;return;}
   let h="";
   groups.forEach(g=>{
     const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
-    const totalSaldo=bancos.reduce((a,b)=>a+Number(gs[b]||0),0);
-    const aberto=boletoList().filter(b=>b.grupo===g.id&&status(b)!=="pago").reduce((a,b)=>a+Number(b.valor||0),0);
-    const sobra=totalSaldo-aberto;
-    h+=`<div class="sg"><div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}</div></div><div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span></div>`).join("")}</div><div class="sg-foot"><span class="sg-bol">Boletos: ${fmtR(aberto)}</span><span class="sg-sobra" style="color:${sobra>=0?"var(--ok)":"var(--danger)"}">${sobra>=0?"+":""}${fmtR(sobra)}</span></div></div>`;
+    const tot=bancos.reduce((a,b)=>a+Number(gs[b]||0),0);
+    const ab=boletoArr().filter(b=>b.grupo===g.id&&status(b)!=="pago").reduce((a,b)=>a+Number(b.valor||0),0);
+    const s=tot-ab;
+    h+=`<div class="sg">
+      <div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}</div></div>
+      <div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span></div>`).join("")}</div>
+      <div class="sg-foot"><span class="sg-bol">Boletos: ${fmtR(ab)}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
+    </div>`;
   });
-  document.getElementById("saldoPanel").innerHTML=h||`<div style="color:var(--muted);font-size:12px">Cadastre os CNPJs para ver os saldos.</div>`;
+  document.getElementById("saldoPanel").innerHTML=h;
 }
 
 // ══════════════════════════════════════════════
-// GROUPS RENDER
+// CHIP
+// ══════════════════════════════════════════════
+function renderChip(){
+  const nm={todos:"Todos","7du":"7 Dias Úteis",hoje:"Hoje",vencido:"Vencidos",pendente:"Pendentes",pago:"Pagos",casa:"Casa"};
+  let h="";
+  if(calSel)h=`<span class="chip">📅 ${fmtD(calSel)}<button class="chip-x" onclick="calSel=null;renderCal();renderAll()">×</button></span>`;
+  else if(duSel)h=`<span class="chip">📅 ${fmtD(duSel)}<button class="chip-x" onclick="duSel=null;setQF('7du')">×</button></span>`;
+  else h=`<span class="chip">${nm[qfAtual]||qfAtual}</span>`;
+  if(cnpjFil!=="todos"){
+    const g=getGroups().find(x=>x.id===cnpjFil);
+    if(g)h+=`<span class="chip" style="background:${g.color}">${g.name}<button class="chip-x" style="color:inherit" onclick="setCNPJFil('todos')">×</button></span>`;
+  }
+  document.getElementById("chipArea").innerHTML=h;
+}
+
+// ══════════════════════════════════════════════
+// FILTER LIST
 // ══════════════════════════════════════════════
 function filteredList(){
-  const q=document.getElementById("searchInput").value.toLowerCase(),d7=new Set(next7DU());
-  return boletoList().filter(b=>{
-    if(cnpjFil!=="todos"&&b.grupo!==cnpjFil) return false;
+  const q=document.getElementById("searchInput").value.toLowerCase();
+  const d7=new Set(next7DU());
+  return boletoArr().filter(b=>{
+    if(cnpjFil!=="todos"&&b.grupo!==cnpjFil)return false;
     const s=status(b);
-    if(calSel) return b.vencimento===calSel;
-    if(duSel)  return b.vencimento===duSel;
-    if(qfAtual==="hoje"&&s!=="hoje") return false;
-    if(qfAtual==="vencido"&&s!=="vencido") return false;
-    if(qfAtual==="pendente"&&s!=="pendente") return false;
-    if(qfAtual==="pago"&&s!=="pago") return false;
-    if(qfAtual==="7du"&&(!d7.has(b.vencimento)||b.pago)) return false;
-    if(qfAtual==="casa"&&b.grupo!==CASA) return false;
-    if(q&&!(b.desc||"").toLowerCase().includes(q)&&!(b.obs||"").toLowerCase().includes(q)) return false;
+    if(calSel)return b.vencimento===calSel;
+    if(duSel)return b.vencimento===duSel;
+    if(qfAtual==="hoje"&&s!=="hoje")return false;
+    if(qfAtual==="vencido"&&s!=="vencido")return false;
+    if(qfAtual==="pendente"&&s!=="pendente")return false;
+    if(qfAtual==="pago"&&s!=="pago")return false;
+    if(qfAtual==="7du"&&(!d7.has(b.vencimento)||b.pago))return false;
+    if(qfAtual==="casa"&&b.grupo!==CASA)return false;
+    if(q&&!(b.desc||"").toLowerCase().includes(q)&&!(b.obs||"").toLowerCase().includes(q))return false;
     return true;
   }).sort((a,b)=>{
-    const o={vencido:0,hoje:1,pendente:2,pago:3};
-    const sa=status(a),sb=status(b);
+    const o={vencido:0,hoje:1,pendente:2,pago:3},sa=status(a),sb=status(b);
     return o[sa]!==o[sb]?o[sa]-o[sb]:toDate(a.vencimento)-toDate(b.vencimento);
   });
 }
 
-const bmap_status={pago:'<span class="badge" style="background:#4caf7d20;color:var(--ok)">✓ Pago</span>',pendente:'<span class="badge" style="background:#f0c04020;color:var(--warn)">⏳ Pend.</span>',vencido:'<span class="badge" style="background:#e05c3a20;color:var(--danger)">⚠ Venc.</span>',hoje:'<span class="badge" style="background:#ff999920;color:#ff9988;border:1px solid #ff999940">🔥 Hoje</span>'};
+// ══════════════════════════════════════════════
+// GROUP TOGGLE
+// ══════════════════════════════════════════════
+function toggleGrp(gid){
+  const ng={...gcoll,[gid]:!gcoll[gid]};
+  fbSet("gcoll",ng);
+}
+function toggleAll(expand){
+  const ng={};getGroups().forEach(g=>ng[g.id]=!expand);
+  fbSet("gcoll",ng);
+}
 
-function toggleGrp(gid){ const ng={...gcoll,[gid]:!gcoll[gid]}; fbPut("gcoll",ng).then(()=>{gcoll=ng;}); }
-function toggleAll(expand){ const ng={};getGroups().forEach(g=>ng[g.id]=!expand);fbPut("gcoll",ng).then(()=>{gcoll=ng;renderAll();}); }
+// ══════════════════════════════════════════════
+// RENDER GROUPS
+// ══════════════════════════════════════════════
+const BST={
+  pago:'<span class="badge" style="background:#4caf7d20;color:var(--ok)">✓ Pago</span>',
+  pendente:'<span class="badge" style="background:#f0c04020;color:var(--warn)">⏳ Pend.</span>',
+  vencido:'<span class="badge" style="background:#e05c3a20;color:var(--danger)">⚠ Venc.</span>',
+  hoje:'<span class="badge" style="background:#ff999920;color:#ff9988;border:1px solid #ff999940">🔥 Hoje</span>'
+};
 
 function renderGroups(){
-  const list=filteredList(),groups=getGroups(),d7=new Set(next7DU());
+  const list=filteredList();
+  const groups=getGroups();
+  const d7=new Set(next7DU());
   const showEmpty=!calSel&&!duSel&&qfAtual==="todos"&&cnpjFil==="todos";
   let html="";
+
   groups.forEach(g=>{
     const glist=list.filter(b=>g.isCasa?b.grupo===CASA:b.grupo===g.id);
-    if(glist.length===0&&!showEmpty) return;
+    if(glist.length===0&&!showEmpty)return;
     const ab=glist.filter(b=>status(b)!=="pago").reduce((a,b)=>a+Number(b.valor||0),0);
     const pg=glist.filter(b=>status(b)==="pago").reduce((a,b)=>a+Number(b.valor||0),0);
-    const hasV=glist.some(b=>status(b)==="vencido"),coll=!!gcoll[g.id];
+    const hasV=glist.some(b=>status(b)==="vencido");
+    const coll=!!gcoll[g.id];
+
     html+=`<div class="gb">
       <div class="gb-head" onclick="toggleGrp('${g.id}')">
-        <div class="gb-hl"><div class="gb-bar" style="background:${g.color}"></div><div><div class="gb-name">${g.isCasa?"🏠 ":""}${g.name}</div>${g.num?`<div class="gb-cnpj">${g.num}</div>`:""}</div></div>
-        <div class="gb-hr"><div class="gb-tot"><div class="gb-val" style="color:${hasV?"var(--danger)":ab>0?"var(--warn)":"var(--ok)"}">${fmtR(ab)} <span style="font-size:10px;font-weight:400;color:var(--muted)">em aberto</span></div>${pg>0?`<div style="font-size:10px;color:var(--ok);font-family:'DM Mono',monospace;text-align:right">${fmtR(pg)} pago</div>`:""}</div><span class="gb-arr ${coll?"cl":""}">▾</span></div>
-      </div>
-      ${coll?"":renderGroupBody(glist,d7)}
-    </div>`;
+        <div class="gb-hl">
+          <div class="gb-bar" style="background:${g.color}"></div>
+          <div>
+            <div class="gb-name">${g.isCasa?"🏠 ":""}${g.name}</div>
+            ${g.num?`<div class="gb-cnpj">${g.num}</div>`:""}
+          </div>
+        </div>
+        <div class="gb-hr">
+          <div style="text-align:right">
+            <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:${hasV?"var(--danger)":ab>0?"var(--warn)":"var(--ok)"}">${fmtR(ab)} <span style="font-size:10px;font-weight:400;color:var(--muted)">aberto</span></div>
+            ${pg>0?`<div style="font-size:10px;color:var(--ok);font-family:'DM Mono',monospace">${fmtR(pg)} pago</div>`:""}
+          </div>
+          <span class="gb-arr ${coll?"cl":""}">▾</span>
+        </div>
+      </div>`;
+
+    if(!coll){
+      if(glist.length===0){
+        html+=`<div class="gb-empty">Nenhum boleto neste grupo.</div>`;
+      } else {
+        html+=`<div style="overflow-x:auto"><table><thead><tr>
+          <th>Descrição</th><th>Valor</th><th>Vencimento</th><th>D.U.</th><th>Status</th><th>✔ Verif.</th><th>Obs.</th><th>Ações</th>
+        </tr></thead><tbody>`;
+        glist.forEach(b=>{
+          const s=status(b),ck=b.checks||{},du=duAte(b.vencimento);
+          const in7=d7.has(b.vencimento)&&!b.pago;
+          const isFerV=isFer(b.vencimento)&&!b.pago,isWEV=isWE(toDate(b.vencimento))&&!b.pago;
+          const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):(b.cat||"");
+          let duEl;
+          if(b.pago)duEl=`<span style="color:var(--ok);font-size:10px">pago</span>`;
+          else if(du===null)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">atrasado</span>`;
+          else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
+          else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
+
+          html+=`<tr style="${in7?"background:rgba(111,143,255,.04)":""}">
+            <td>
+              <strong style="font-size:12px">${escHTML(b.desc||"")}</strong>
+              ${in7?`<span style="margin-left:4px;font-size:8px;background:#6f8fff15;color:var(--blue);border:1px solid #6f8fff30;border-radius:3px;padding:1px 3px">7DU</span>`:""}
+              ${catLabel?`<br><span style="color:var(--muted);font-size:10px">${escHTML(catLabel)}</span>`:""}
+            </td>
+            <td class="mono" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}">${fmtR(b.valor)}</td>
+            <td class="mono" style="font-size:11px;color:${s==="vencido"?"var(--danger)":s==="hoje"?"#ff9988":"var(--muted)"}">
+              ${fmtD(b.vencimento)}
+              ${isFerV?`<br><span style="font-size:9px;color:var(--danger)">feriado</span>`:""}
+              ${isWEV&&!isFerV?`<br><span style="font-size:9px;color:var(--warn)">fim sem.</span>`:""}
+            </td>
+            <td>${duEl}</td>
+            <td>${BST[s]||""}</td>
+            <td>
+              <div class="vdots">
+                <div class="vd ${ck.pedido?"vok":""}" title="Pedido em mãos" onclick="tck('${b.id}','pedido')">📋</div>
+                <div class="vd ${ck.valor?"vok":""}"  title="Valor conferido" onclick="tck('${b.id}','valor')">💲</div>
+                <div class="vd ${ck.chutado?"vbad":""}" title="Chutado/Suspeito" onclick="tck('${b.id}','chutado')">⚠</div>
+              </div>
+            </td>
+            <td style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:10px" title="${escHTML(b.obs||"")}">${escHTML(b.obs||"—")}</td>
+            <td>
+              <div class="act-btns">
+                ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')" title="Marcar como pago">✓ Pago</button>`:""}
+                <button class="btn btn-g btn-sm" onclick="editB('${b.id}')" title="Editar boleto">✏ Editar</button>
+                <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')">🗑 Del</button>
+              </div>
+            </td>
+          </tr>`;
+        });
+        html+=`</tbody></table></div>`;
+      }
+    }
+    html+=`</div>`;
   });
+
   document.getElementById("groupsWrap").innerHTML=html||`<div style="text-align:center;padding:40px;color:var(--muted)">Nenhum boleto encontrado.</div>`;
 }
 
-function renderGroupBody(glist,d7){
-  if(glist.length===0) return`<div class="gb-empty">Nenhum boleto neste grupo.</div>`;
-  let rows="";
-  glist.forEach(b=>{
-    const s=status(b),ck=b.checks||{},du=duAte(b.vencimento);
-    const in7=d7.has(b.vencimento)&&!b.pago;
-    const isFerV=isFer(b.vencimento)&&!b.pago,isWEV=isWE(toDate(b.vencimento))&&!b.pago;
-    const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):(b.cat||"");
-    let duEl;
-    if(b.pago) duEl=`<span style="color:var(--ok);font-size:10px">pago</span>`;
-    else if(du===null) duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">atrasado</span>`;
-    else if(du===0) duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
-    else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
-    rows+=`<tr style="${in7?"background:rgba(111,143,255,.04)":""}">
-      <td><strong style="font-size:12px">${b.desc||""}</strong>${in7?`<span style="margin-left:4px;font-size:8px;background:#6f8fff15;color:var(--blue);border:1px solid #6f8fff30;border-radius:3px;padding:1px 3px">7DU</span>`:""}${catLabel?`<br><span style="color:var(--muted);font-size:10px">${catLabel}</span>`:""}</td>
-      <td class="mono" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}">${fmtR(b.valor)}</td>
-      <td class="mono" style="font-size:11px;color:${s==="vencido"?"var(--danger)":s==="hoje"?"#ff9988":"var(--muted)"}">${fmtD(b.vencimento)}${isFerV?`<br><span style="font-size:9px;color:var(--danger)">feriado</span>`:""}${isWEV&&!isFerV?`<br><span style="font-size:9px;color:var(--warn)">fim sem.</span>`:""}</td>
-      <td>${duEl}</td>
-      <td>${bmap_status[s]||""}</td>
-      <td><div class="vdots"><div class="vd ${ck.pedido?"vok":""}" title="Pedido" onclick="tck('${b.id}','pedido')">📋</div><div class="vd ${ck.valor?"vok":""}" title="Valor" onclick="tck('${b.id}','valor')">💲</div><div class="vd ${ck.chutado?"vbad":""}" title="Chutado" onclick="tck('${b.id}','chutado')">⚠</div></div></td>
-      <td style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:10px" title="${b.obs||""}">${b.obs||"—"}</td>
-      <td><div style="display:flex;gap:3px">${s!=="pago"?`<button class="btn btn-g btn-sm" onclick="markPago('${b.id}')">✓</button>`:""}<button class="btn btn-g btn-sm" onclick="editB('${b.id}')">✏</button><button class="btn btn-d btn-sm" onclick="delB('${b.id}')">✕</button></div></td>
-    </tr>`;
-  });
-  return`<table><thead><tr><th>Descrição</th><th>Valor</th><th>Vencimento</th><th>D.U.</th><th>Status</th><th>Verif.</th><th>Obs.</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
-}
+function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
+// ══════════════════════════════════════════════
+// RENDER ALL
+// ══════════════════════════════════════════════
 function renderAll(){
-  updateQFBtns();renderCNPJPills();renderDUStrip();updateStats();renderChip();renderSaldoPanel();renderGroups();
+  updateQFBtns();
+  renderCNPJPills();
+  renderDUStrip();
+  updateStats();
+  renderChip();
+  renderSaldoPanel();
+  renderGroups();
 }
 
 // ══════════════════════════════════════════════
@@ -641,11 +839,24 @@ function renderAll(){
 // ══════════════════════════════════════════════
 function tck(id,k){
   const b=boletos[id];if(!b)return;
-  const nb={...b,checks:{...(b.checks||{}),[k]:!(b.checks||{})[k]}};
-  boletos[id]=nb; fbPut("boletos/"+id,nb);
+  const ck={...(b.checks||{}),[k]:!(b.checks||{})[k]};
+  fbSet("boletos/"+id+"/checks",ck);
 }
-function markPago(id){ boletos[id]={...boletos[id],pago:true}; fbPut("boletos/"+id+"/pago",true); renderAll(); }
-function delB(id){ if(!confirm("Remover este boleto?"))return; delete boletos[id]; fbDel("boletos/"+id); renderAll(); }
+
+function markPago(id){fbSet("boletos/"+id+"/pago",true);}
+
+// Confirm delete modal
+let _pendingDelId=null;
+function confirmDel(id,desc){
+  _pendingDelId=id;
+  document.getElementById("confirmMsg").textContent=`Remover o boleto "${desc}"?`;
+  document.getElementById("confirmOkBtn").onclick=()=>{
+    if(_pendingDelId){fbRemove("boletos/"+_pendingDelId);_pendingDelId=null;}
+    closeConfirm();
+  };
+  document.getElementById("moConfirm").classList.add("open");
+}
+function closeConfirm(){document.getElementById("moConfirm").classList.remove("open");_pendingDelId=null;}
 
 // ══════════════════════════════════════════════
 // MODAL BOLETO
@@ -654,31 +865,84 @@ function populateGrupoSel(){
   const sel=document.getElementById("fGrupo"),cur=sel.value;
   sel.innerHTML=`<option value="">Selecione…</option>`;
   getGroups().forEach(g=>sel.innerHTML+=`<option value="${g.id}">${g.isCasa?"🏠 ":""}${g.name}</option>`);
-  if(cur) sel.value=cur;
+  if(cur)sel.value=cur;
 }
-function onGrupoChange(){const v=document.getElementById("fGrupo").value,isCasa=v===CASA;document.getElementById("fCatRow").style.display=isCasa?"none":"";document.getElementById("casaBox").classList.toggle("show",isCasa);}
-function onCasaCatChange(){const v=document.getElementById("fCasaCat").value;document.getElementById("cartaoRow").style.display=v==="Cartão de Crédito"?"":"none";}
+
+function onGrupoChange(){
+  const v=document.getElementById("fGrupo").value,isCasa=v===CASA;
+  document.getElementById("fCatRow").style.display=isCasa?"none":"";
+  document.getElementById("casaBox").classList.toggle("show",isCasa);
+}
+function onCasaCatChange(){
+  document.getElementById("cartaoRow").style.display=document.getElementById("fCasaCat").value==="Cartão de Crédito"?"":"none";
+}
+
 function openModal(id){
-  editId=id||null; populateGrupoSel();
+  editId=id||null;
+  populateGrupoSel();
   document.getElementById("moTit").textContent=id?"✏ Editar Boleto":"📄 Novo Boleto";
-  if(id){const b=boletos[id];document.getElementById("fDesc").value=b.desc||"";document.getElementById("fGrupo").value=b.grupo||"";document.getElementById("fValor").value=b.valor||"";document.getElementById("fVenc").value=b.vencimento||"";document.getElementById("fCat").value=b.cat||"Mercadoria";document.getElementById("fObs").value=b.obs||"";document.getElementById("fCasaCat").value=b.casaCat||"Água";document.getElementById("fCartao").value=b.cartao||"";}
-  else{document.getElementById("fDesc").value="";document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";document.getElementById("fValor").value="";document.getElementById("fVenc").value=calSel||dstr(TODAY);document.getElementById("fCat").value="Mercadoria";document.getElementById("fObs").value="";document.getElementById("fCasaCat").value="Água";document.getElementById("fCartao").value="";}
-  onGrupoChange();onCasaCatChange();document.getElementById("moB").classList.add("open");
+  if(id){
+    const b=boletos[id];
+    if(!b){alert("Boleto não encontrado.");return;}
+    document.getElementById("fDesc").value=b.desc||"";
+    document.getElementById("fGrupo").value=b.grupo||"";
+    document.getElementById("fValor").value=b.valor||"";
+    document.getElementById("fVenc").value=b.vencimento||"";
+    document.getElementById("fCat").value=b.cat||"Mercadoria";
+    document.getElementById("fObs").value=b.obs||"";
+    document.getElementById("fCasaCat").value=b.casaCat||"Água";
+    document.getElementById("fCartao").value=b.cartao||"";
+  } else {
+    document.getElementById("fDesc").value="";
+    document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
+    document.getElementById("fValor").value="";
+    document.getElementById("fVenc").value=calSel||dstr(TODAY);
+    document.getElementById("fCat").value="Mercadoria";
+    document.getElementById("fObs").value="";
+    document.getElementById("fCasaCat").value="Água";
+    document.getElementById("fCartao").value="";
+  }
+  onGrupoChange();onCasaCatChange();
+  document.getElementById("moB").classList.add("open");
 }
+
 function editB(id){openModal(id);}
-function closeModal(){document.getElementById("moB").classList.remove("open");editId=null;}
+
+function closeModal(){
+  document.getElementById("moB").classList.remove("open");
+  editId=null;
+}
+
 function saveB(){
-  const desc=document.getElementById("fDesc").value.trim(),grupo=document.getElementById("fGrupo").value;
-  const valor=parseFloat(document.getElementById("fValor").value)||0,venc=document.getElementById("fVenc").value;
-  const cat=document.getElementById("fCat").value,obs=document.getElementById("fObs").value.trim();
-  const casaCat=document.getElementById("fCasaCat").value,cartao=document.getElementById("fCartao").value.trim();
+  const desc=document.getElementById("fDesc").value.trim();
+  const grupo=document.getElementById("fGrupo").value;
+  const valor=parseFloat(document.getElementById("fValor").value)||0;
+  const venc=document.getElementById("fVenc").value;
+  const cat=document.getElementById("fCat").value;
+  const obs=document.getElementById("fObs").value.trim();
+  const casaCat=document.getElementById("fCasaCat").value;
+  const cartao=document.getElementById("fCartao").value.trim();
+
   if(!desc){alert("Informe a descrição.");return;}
   if(!grupo){alert("Selecione o grupo.");return;}
   if(!venc){alert("Informe o vencimento.");return;}
-  const obj={desc,grupo,valor,vencimento:venc,cat:grupo!==CASA?cat:"",casaCat:grupo===CASA?casaCat:"",cartao:grupo===CASA&&casaCat==="Cartão de Crédito"?cartao:"",obs,pago:false,checks:{}};
-  const key=editId||Date.now().toString();
-  if(editId){const cur=boletos[editId]||{};obj.pago=cur.pago||false;obj.checks=cur.checks||{};}
-  boletos[key]=obj; fbPut("boletos/"+key,obj); closeModal(); renderAll();
+
+  const obj={
+    desc,grupo,valor,vencimento:venc,
+    cat:grupo!==CASA?cat:"",
+    casaCat:grupo===CASA?casaCat:"",
+    cartao:grupo===CASA&&casaCat==="Cartão de Crédito"?cartao:"",
+    obs
+  };
+
+  if(editId){
+    const cur=boletos[editId]||{};
+    fbSet("boletos/"+editId,{...cur,...obj});
+  } else {
+    const newId="b"+Date.now();
+    fbSet("boletos/"+newId,{...obj,pago:false,checks:{}});
+  }
+  closeModal();
 }
 
 // ══════════════════════════════════════════════
@@ -686,22 +950,35 @@ function saveB(){
 // ══════════════════════════════════════════════
 function openCNPJModal(){renderCNPJMList();document.getElementById("moC").classList.add("open");}
 function closeCNPJ(){document.getElementById("moC").classList.remove("open");}
+
 function renderCNPJMList(){
   const arr=Object.entries(cnpjs).sort((a,b)=>(a[1].ordem||0)-(b[1].ordem||0));
   const el=document.getElementById("cnpjMList");
-  if(!arr.length){el.innerHTML=`<p style="color:var(--muted);font-size:12px">Nenhum CNPJ. Adicione abaixo.</p>`;return;}
-  el.innerHTML=arr.map(([id,c],i)=>`<div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px 10px"><div style="width:8px;height:8px;border-radius:50%;background:${GCOLS[i%6]};flex-shrink:0"></div><strong style="font-size:13px">${c.nome}</strong><span style="font-family:'DM Mono';font-size:10px;color:var(--muted)">${c.num}</span><button class="btn btn-d btn-sm" style="margin-left:auto" onclick="removeCNPJ('${id}')">✕</button></div>`).join("");
+  if(!arr.length){el.innerHTML=`<p style="color:var(--muted);font-size:12px">Nenhum CNPJ cadastrado.</p>`;return;}
+  el.innerHTML=arr.map(([id,c],i)=>`
+    <div style="display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px 10px">
+      <div style="width:8px;height:8px;border-radius:50%;background:${GCOLS[i%6]};flex-shrink:0"></div>
+      <strong style="font-size:13px">${escHTML(c.nome)}</strong>
+      <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${escHTML(c.num)}</span>
+      <button class="btn btn-d btn-sm" style="margin-left:auto" onclick="removeCNPJ('${id}')">✕</button>
+    </div>`).join("");
 }
+
 function addCNPJ(){
   const n=document.getElementById("nN").value.trim(),num=document.getElementById("nNum").value.trim();
   if(!n||!num){alert("Preencha nome e CNPJ.");return;}
   if(Object.keys(cnpjs).length>=6){alert("Máximo 6 CNPJs.");return;}
-  const key=Date.now().toString(),obj={nome:n,num,ordem:Object.keys(cnpjs).length};
-  cnpjs[key]=obj; fbPut("cnpjs/"+key,obj);
+  const ordem=Object.keys(cnpjs).length;
+  fbSet("cnpjs/c"+Date.now(),{nome:n,num,ordem});
   document.getElementById("nN").value="";document.getElementById("nNum").value="";
-  renderCNPJMList(); renderAll();
+  setTimeout(renderCNPJMList,500);
 }
-function removeCNPJ(id){if(!confirm("Remover CNPJ?"))return;delete cnpjs[id];fbDel("cnpjs/"+id);renderCNPJMList();renderAll();}
+
+function removeCNPJ(id){
+  if(!confirm("Remover este CNPJ?"))return;
+  fbRemove("cnpjs/"+id);
+  setTimeout(renderCNPJMList,500);
+}
 
 // ══════════════════════════════════════════════
 // MODAL SALDO
@@ -711,114 +988,257 @@ function openSaldoModal(){
   let h="";
   groups.forEach(g=>{
     const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
-    h+=`<div><div style="display:flex;align-items:center;gap:7px;margin-bottom:8px"><div style="width:4px;height:16px;border-radius:2px;background:${g.color};flex-shrink:0"></div><strong style="font-size:13px">${g.name}</strong>${g.num?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${g.num}</span>`:""}</div><div style="display:flex;flex-direction:column;gap:7px;padding-left:11px">${bancos.map(b=>`<div style="display:flex;align-items:center;gap:10px"><div style="width:110px;font-size:12px;color:var(--muted)">${b}</div><input type="number" data-gid="${g.id}" data-banco="${b}" value="${gs[b]||""}" placeholder="0,00" step="0.01" min="0" style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:3px 7px;width:130px;outline:none;text-align:right" onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"></div>`).join("")}</div></div>`;
+    h+=`<div>
+      <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
+        <div style="width:4px;height:16px;border-radius:2px;background:${g.color};flex-shrink:0"></div>
+        <strong style="font-size:13px">${escHTML(g.name)}</strong>
+        ${g.num?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${escHTML(g.num)}</span>`:""}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:7px;padding-left:11px">
+        ${bancos.map(b=>`<div style="display:flex;align-items:center;gap:10px">
+          <div style="width:110px;font-size:12px;color:var(--muted)">${b}</div>
+          <input type="number" data-gid="${g.id}" data-banco="${b}" value="${gs[b]||""}" placeholder="0,00" step="0.01" min="0"
+            style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+        </div>`).join("")}
+      </div>
+    </div>`;
   });
   document.getElementById("saldoForm").innerHTML=h;
   document.getElementById("moS").classList.add("open");
 }
+
 function closeSaldo(){document.getElementById("moS").classList.remove("open");}
+
 function saveSaldos(){
   const ns={...saldos};
   document.querySelectorAll("#saldoForm input").forEach(inp=>{
     const gid=inp.dataset.gid,banco=inp.dataset.banco;
-    if(!ns[gid])ns[gid]={};ns[gid][banco]=parseFloat(inp.value)||0;
+    if(!ns[gid])ns[gid]={};
+    ns[gid][banco]=parseFloat(inp.value)||0;
   });
-  saldos=ns; fbPut("saldos",ns); closeSaldo(); renderAll();
+  fbSet("saldos",ns);closeSaldo();
 }
 
 // ══════════════════════════════════════════════
-// SCANNER
+// SCANNER (Google Vision)
 // ══════════════════════════════════════════════
 function openScanner(){resetScanner();document.getElementById("moScan").classList.add("open");}
 function closeScanner(){document.getElementById("moScan").classList.remove("open");}
-function setScanTab(t){scanTabAtual=t;document.getElementById("stab-upload").classList.toggle("active",t==="upload");document.getElementById("stab-camera").classList.toggle("active",t==="camera");document.getElementById("scanIcon").textContent=t==="camera"?"📸":"📄";document.getElementById("scanDropText").textContent=t==="camera"?"Abrir câmera":"Clique ou arraste o boleto aqui";}
-function triggerScanInput(){if(scanTabAtual==="camera")document.getElementById("scanCamInput").click();else document.getElementById("scanFileInput").click();}
-function onScanDrop(e){e.preventDefault();e.currentTarget.classList.remove("drag");const f=e.dataTransfer.files[0];if(f)processScanFile(f);}
+
+function setScanTab(t){
+  scanTabAtual=t;
+  document.getElementById("stab-upload").classList.toggle("active",t==="upload");
+  document.getElementById("stab-camera").classList.toggle("active",t==="camera");
+  document.getElementById("scanIcon").textContent=t==="camera"?"📸":"📄";
+  document.getElementById("scanTxt").textContent=t==="camera"?"Abrir câmera":"Clique ou arraste o boleto aqui";
+}
+
+function triggerScanInput(){
+  if(scanTabAtual==="camera")document.getElementById("scanCam").click();
+  else document.getElementById("scanFile").click();
+}
+
+function onScanDrop(e){
+  e.preventDefault();e.currentTarget.classList.remove("drag");
+  const f=e.dataTransfer.files[0];if(f)processScanFile(f);
+}
+
 function onScanFile(inp){if(inp.files[0])processScanFile(inp.files[0]);}
+
 function resetScanner(){
   lastScanResult=null;
-  document.getElementById("scanDropArea").style.display="";document.getElementById("scanPreview").style.display="none";
-  document.getElementById("scanLoading").style.display="none";document.getElementById("scanError").style.display="none";
-  document.getElementById("scanResult").style.display="none";document.getElementById("scanRetry").style.display="none";
-  document.getElementById("scanUse").style.display="none";document.getElementById("scanFileInput").value="";document.getElementById("scanCamInput").value="";
+  document.getElementById("scanDrop").style.display="";
+  document.getElementById("scanPreview").style.display="none";
+  document.getElementById("scanLoading").style.display="none";
+  document.getElementById("scanErr").style.display="none";
+  document.getElementById("scanResult").style.display="none";
+  document.getElementById("scanRetry").style.display="none";
+  document.getElementById("scanUse").style.display="none";
+  document.getElementById("scanFile").value="";
+  document.getElementById("scanCam").value="";
 }
+
 function processScanFile(file){
   const reader=new FileReader();
   reader.onload=e=>{
-    const dataUrl=e.target.result,base64=dataUrl.split(",")[1],mediaType=file.type||"image/jpeg";
-    document.getElementById("scanDropArea").style.display="none";
-    document.getElementById("scanPreview").src=dataUrl;document.getElementById("scanPreview").style.display="block";
+    const dataUrl=e.target.result;
+    const base64=dataUrl.split(",")[1];
+    document.getElementById("scanDrop").style.display="none";
+    document.getElementById("scanPreview").src=dataUrl;
+    document.getElementById("scanPreview").style.display="block";
     document.getElementById("scanLoading").style.display="flex";
-    callScanAPI(base64,mediaType);
+    callVisionAPI(base64);
   };
   reader.readAsDataURL(file);
 }
-async function callScanAPI(base64,mediaType){
-  const gruposList=getGroups().map(g=>`${g.name}${g.num?" (CNPJ:"+g.num+")":""}`).join(", ");
+
+async function callVisionAPI(base64){
   try{
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:800,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:mediaType,data:base64}},{type:"text",text:`Você é um leitor de boletos bancários brasileiro. Analise a imagem e extraia as informações. Grupos cadastrados: ${gruposList}. Retorne APENAS JSON válido sem texto extra, sem markdown: {"fornecedor":"nome do cedente","valor":123.45,"vencimento":"YYYY-MM-DD","cnpj_favorecido":"cnpj se visível","grupo_sugerido":"nome exato do grupo mais provável","linha_digitavel":"linha digitável se visível","categoria":"Mercadoria|Aluguel|Energia|Água|Telefone/Internet|Fornecedor|Imposto/DAS|Manutenção|Outro","confianca":"alta|media|baixa"}`}]}]})});
-    const data=await resp.json();
-    const raw=data.content?.map(i=>i.text||"").join("").trim();
-    const parsed=JSON.parse(raw.replace(/```json|```/g,"").trim());
-    lastScanResult=parsed; showScanResult(parsed);
+    // Step 1: OCR via Google Vision
+    const vResp=await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({requests:[{image:{content:base64},features:[{type:"TEXT_DETECTION",maxResults:1}]}]})
+    });
+    const vData=await vResp.json();
+    const textoCompleto=vData.responses?.[0]?.fullTextAnnotation?.text||vData.responses?.[0]?.textAnnotations?.[0]?.description||"";
+
+    if(!textoCompleto){
+      showScanError("Não foi possível ler texto na imagem. Tente foto mais nítida.");
+      return;
+    }
+
+    // Step 2: Parse the extracted text
+    const resultado=parseBoleto(textoCompleto);
+    lastScanResult=resultado;
+    showScanResult(resultado,textoCompleto);
+
   }catch(e){
-    document.getElementById("scanLoading").style.display="none";
-    document.getElementById("scanError").style.display="block";
-    document.getElementById("scanError").textContent="⚠ Não foi possível ler o boleto. Tente uma foto mais nítida e bem iluminada.";
-    document.getElementById("scanRetry").style.display="inline-flex";
+    showScanError("Erro ao conectar com a API. Verifique sua conexão e tente novamente.");
   }
 }
-function showScanResult(r){
+
+function parseBoleto(txt){
+  const r={fornecedor:"",valor:null,vencimento:"",linha_digitavel:"",grupo_sugerido:"",confianca:"media"};
+  const linhas=txt.split("\n").map(l=>l.trim()).filter(Boolean);
+
+  // Linha digitável: 47 or 48 digit groups
+  const ldMatch=txt.replace(/\s/g,"").match(/\d{47,48}/);
+  if(ldMatch)r.linha_digitavel=ldMatch[0];
+
+  // Valor: padrões brasileiros
+  const valMatch=txt.match(/R\$\s*([\d.,]+)|[Vv]alor[\s:R$]*([\d.,]+)|[Tt]otal[\s:R$]*([\d.,]+)/);
+  if(valMatch){
+    const raw=(valMatch[1]||valMatch[2]||valMatch[3]).replace(/\./g,"").replace(",",".");
+    r.valor=parseFloat(raw)||null;
+  }
+
+  // Vencimento
+  const dtMatch=txt.match(/[Vv]enc[a-z.]*[\s:]*(\d{2})[\/\-\.](\d{2})[\/\-\.](\d{2,4})/);
+  if(dtMatch){
+    let y=dtMatch[3];if(y.length===2)y="20"+y;
+    r.vencimento=`${y}-${dtMatch[2]}-${dtMatch[1]}`;
+    r.confianca="alta";
+  }
+
+  // Fornecedor/Cedente
+  const cedMatch=txt.match(/[Cc]edente[\s:]*([^\n]+)|[Bb]enefici[aá]rio[\s:]*([^\n]+)|[Ff]ornecedor[\s:]*([^\n]+)/);
+  if(cedMatch)r.fornecedor=(cedMatch[1]||cedMatch[2]||cedMatch[3]||"").trim().slice(0,60);
+  else{
+    // Tenta pegar a linha mais longa como fornecedor
+    const longLine=linhas.filter(l=>l.length>10&&!/\d{5}/.test(l)).sort((a,b)=>b.length-a.length)[0];
+    if(longLine)r.fornecedor=longLine.slice(0,60);
+  }
+
+  // Tentar identificar grupo pelo CNPJ ou nome no texto
+  const groups=getGroups();
+  for(const g of groups){
+    if(!g.isCasa&&g.num){
+      const digits=g.num.replace(/\D/g,"");
+      if(txt.replace(/\D/g,"").includes(digits)){r.grupo_sugerido=g.name;break;}
+    }
+    if(g.name&&txt.toLowerCase().includes(g.name.toLowerCase().split(" ")[0])){
+      r.grupo_sugerido=g.name;break;
+    }
+  }
+
+  return r;
+}
+
+function showScanError(msg){
+  document.getElementById("scanLoading").style.display="none";
+  document.getElementById("scanErr").style.display="block";
+  document.getElementById("scanErr").textContent="⚠ "+msg;
+  document.getElementById("scanRetry").style.display="inline-flex";
+}
+
+function showScanResult(r,textoRaw){
   document.getElementById("scanLoading").style.display="none";
   const conf=r.confianca==="alta"?"🟢 Alta":r.confianca==="media"?"🟡 Média":"🔴 Baixa";
-  const rows=[["Fornecedor",r.fornecedor],["Valor",r.valor?fmtR(r.valor):"—"],["Vencimento",r.vencimento?fmtD(r.vencimento):"—"],["Grupo sugerido",r.grupo_sugerido||"—"],["Categoria",r.categoria||"—"]];
-  document.getElementById("scanResult").innerHTML=`<div class="scan-result"><div style="font-size:11px;font-weight:700;color:var(--ok);margin-bottom:4px">✓ Lido! Confiança: ${conf}</div>${rows.map(([l,v])=>`<div class="scan-row"><span class="scan-lbl">${l}</span><span class="scan-val">${v||"—"}</span></div>`).join("")}${r.linha_digitavel?`<div class="scan-row"><span class="scan-lbl">Linha digitável</span><span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);word-break:break-all">${r.linha_digitavel}</span></div>`:""}</div>`;
+  const rows=[
+    ["Fornecedor",r.fornecedor||"—"],
+    ["Valor",r.valor?fmtR(r.valor):"—"],
+    ["Vencimento",r.vencimento?fmtD(r.vencimento):"—"],
+    ["Grupo sugerido",r.grupo_sugerido||"—"],
+  ];
+  if(r.linha_digitavel)rows.push(["Linha digitável",r.linha_digitavel.slice(0,40)+"…"]);
+
+  let h=`<div class="scan-result">
+    <div style="font-size:11px;font-weight:700;color:var(--ok);margin-bottom:6px">✓ Dados extraídos — Confiança: ${conf}</div>
+    ${rows.map(([l,v])=>`<div class="scan-row"><span class="scan-lbl">${l}</span><span class="scan-val">${escHTML(v)}</span></div>`).join("")}
+    <div style="margin-top:8px;font-size:10px;color:var(--muted)">Confira os dados antes de salvar. Edite no formulário se necessário.</div>
+  </div>`;
+  document.getElementById("scanResult").innerHTML=h;
   document.getElementById("scanResult").style.display="block";
-  document.getElementById("scanRetry").style.display="inline-flex";document.getElementById("scanUse").style.display="inline-flex";
+  document.getElementById("scanRetry").style.display="inline-flex";
+  document.getElementById("scanUse").style.display="inline-flex";
 }
-function applyScanResult(){
+
+function applyScan(){
   if(!lastScanResult)return;
-  const r=lastScanResult,groups=getGroups();
+  const r=lastScanResult;
+  const groups=getGroups();
   let grupo="";
-  if(r.grupo_sugerido){const m=groups.find(g=>g.name.toLowerCase().includes(r.grupo_sugerido.toLowerCase())||r.grupo_sugerido.toLowerCase().includes(g.name.toLowerCase()));if(m)grupo=m.id;}
-  if(!grupo&&r.cnpj_favorecido){const digits=r.cnpj_favorecido.replace(/\D/g,"");const m=Object.entries(cnpjs).find(([,c])=>c.num.replace(/\D/g,"")===digits);if(m)grupo=m[0];}
-  closeScanner();populateGrupoSel();
+  if(r.grupo_sugerido){
+    const m=groups.find(g=>g.name.toLowerCase().includes(r.grupo_sugerido.toLowerCase().split(" ")[0]));
+    if(m)grupo=m.id;
+  }
+  closeScanner();
+  populateGrupoSel();
   document.getElementById("moTit").textContent="📄 Novo Boleto (lido por IA)";
-  document.getElementById("fDesc").value=r.fornecedor||"";document.getElementById("fGrupo").value=grupo||"";
-  document.getElementById("fValor").value=r.valor||"";document.getElementById("fVenc").value=r.vencimento||dstr(TODAY);
-  document.getElementById("fCat").value=r.categoria||"Mercadoria";document.getElementById("fObs").value=r.linha_digitavel?`Linha: ${r.linha_digitavel}`:"";
-  document.getElementById("fCasaCat").value="Água";document.getElementById("fCartao").value="";
-  onGrupoChange();onCasaCatChange();editId=null;document.getElementById("moB").classList.add("open");
+  document.getElementById("fDesc").value=r.fornecedor||"";
+  document.getElementById("fGrupo").value=grupo||"";
+  document.getElementById("fValor").value=r.valor||"";
+  document.getElementById("fVenc").value=r.vencimento||dstr(TODAY);
+  document.getElementById("fCat").value="Mercadoria";
+  document.getElementById("fObs").value=r.linha_digitavel?`Linha: ${r.linha_digitavel}`:"";
+  document.getElementById("fCasaCat").value="Água";
+  document.getElementById("fCartao").value="";
+  onGrupoChange();onCasaCatChange();
+  editId=null;
+  document.getElementById("moB").classList.add("open");
 }
 
 // ══════════════════════════════════════════════
-// EXPORT
+// EXPORT CSV
 // ══════════════════════════════════════════════
 function exportCSV(){
   const h=["Grupo","Descrição","Valor","Vencimento","DiasUteisAte","Status","Categoria","Pedido","ValorConf","Chutado","Obs"];
-  const rows=boletoList().map(b=>{
+  const rows=boletoArr().map(b=>{
     const s=status(b),ck=b.checks||{},du=duAte(b.vencimento);
     const gname=b.grupo===CASA?"Casa":(cnpjs[b.grupo]||{}).nome||"—";
     const cat=b.grupo===CASA?(b.casaCat||"")+(b.cartao?" · "+b.cartao:""):(b.cat||"");
-    return[gname,b.desc,b.valor,fmtD(b.vencimento),du??'atrasado',s,cat,ck.pedido?"Sim":"Não",ck.valor?"Sim":"Não",ck.chutado?"Sim":"Não",b.obs||""].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
+    return [gname,b.desc,b.valor,fmtD(b.vencimento),du??'atrasado',s,cat,ck.pedido?"Sim":"Não",ck.valor?"Sim":"Não",ck.chutado?"Sim":"Não",b.obs||""].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
   });
   const csv=[h.join(","),...rows].join("\n");
-  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download=`GereBoleto_${dstr(TODAY)}.csv`;a.click();
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));
+  a.download=`GereBoleto_${dstr(TODAY)}.csv`;
+  a.click();
 }
 
-// CLOSE ON BG CLICK
-["moB","moC","moS","moScan"].forEach(id=>{
+// ══════════════════════════════════════════════
+// CLOSE MODALS ON BACKDROP
+// ══════════════════════════════════════════════
+["moB","moC","moS","moScan","moConfirm"].forEach(id=>{
   document.getElementById(id).addEventListener("click",e=>{
-    if(e.target!==e.currentTarget)return;
-    if(id==="moB")closeModal();if(id==="moC")closeCNPJ();if(id==="moS")closeSaldo();if(id==="moScan")closeScanner();
+    if(e.target===e.currentTarget){
+      if(id==="moB")closeModal();
+      if(id==="moC")closeCNPJ();
+      if(id==="moS")closeSaldo();
+      if(id==="moScan")closeScanner();
+      if(id==="moConfirm")closeConfirm();
+    }
   });
 });
 
 // ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
-initCal(); renderCal();
-startPolling();
+initCal();
+renderCal();
+initFirebase();
 </script>
 </body>
 </html>

@@ -856,10 +856,121 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* ════════════════════════════════════════════
-   MÁSCARA DE MOEDA — feedback visual
+   SALDO TOGGLE (todos/mês)
 ════════════════════════════════════════════ */
+.saldo-toggle {
+  display: inline-flex;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.saldo-tbtn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 8px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  padding: 2px 7px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  white-space: nowrap;
+}
+.saldo-tbtn.active {
+  background: var(--accent);
+  color: #111;
+}
+.saldo-tbtn:hover:not(.active) {
+  background: var(--border);
+  color: var(--text);
+}
+
+/* FILTRO MENSAL SIDEBAR */
+.mes-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 8px;
+  border-radius: 5px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-size: 11px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: background .12s;
+  gap: 6px;
+}
+.mes-btn:hover { background: var(--card); }
+.mes-btn.active {
+  background: var(--accent);
+  color: #111;
+  font-weight: 700;
+}
+.mes-btn .mes-label { flex: 1; font-family: 'DM Mono', monospace; }
+.mes-btn .mes-count {
+  font-size: 9px;
+  font-family: 'DM Mono', monospace;
+  background: var(--card2);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--muted);
+  min-width: 22px;
+  text-align: center;
+}
+.mes-btn.active .mes-count {
+  background: rgba(0,0,0,.2);
+  color: #111;
+}
+
+.aberto-toggle {
+  display: inline-flex;
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.aberto-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 8px;
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  padding: 2px 6px;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.aberto-btn.active {
+  background: var(--accent);
+  color: #111;
+}
+.aberto-btn:hover:not(.active) {
+  background: var(--border);
+  color: var(--text);
+}
+#stAbertoMensal .aberto-mes-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+}
+#stAbertoMensal .aberto-mes-row span:first-child { color: var(--muted); }
+#stAbertoMensal .aberto-mes-row span:last-child  { color: var(--warn); font-weight: 700; }
+
+/* ════════════════════════════════════════════
+   MÁSCARA MONETÁRIA — novo comportamento
+════════════════════════════════════════════ */
+#fValor { font-family: 'DM Mono', monospace; text-align: right; }
 #fValor.has-value { color: var(--ok); }
-#fValor.has-value:focus { color: var(--text); }
+#fValor:focus { text-align: right; }
+
 
 /* ════════════════════════════════════════════
    MOBILE DASHBOARD (v5)
@@ -975,6 +1086,20 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <button class="qf" id="qf-casa"     onclick="setQF('casa')" aria-pressed="false">🏠 Só Casa           <span class="qct" id="qn-casa">0</span></button>
     </div>
     <div class="div"></div>
+    <!-- FILTRO MENSAL -->
+    <div>
+      <div class="slbl" style="display:flex;align-items:center;justify-content:space-between">
+        <span>📅 Filtro por Mês</span>
+        <button id="qf-mes-limpar" onclick="setMesFil(null)" style="font-size:9px;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;display:none">✕ Limpar</button>
+      </div>
+      <div id="mesFiltros" style="display:flex;flex-direction:column;gap:2px;margin-top:4px"></div>
+    </div>
+    <div class="div"></div>
+    <div>
+      <div class="slbl">Filtrar por Grupo</div>
+      <div id="cnpjPills"></div>
+    </div>
+    <div class="div"></div>
     <!-- TAGS LIVRES (v5) -->
     <div>
       <div class="slbl">Tags</div>
@@ -982,11 +1107,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <button class="qf" id="qf-tag-contestado" onclick="setTagFilter('contestado')" aria-pressed="false">🟡 Contestado   <span class="qct" id="qnt-contestado">0</span></button>
       <button class="qf" id="qf-tag-aguardando" onclick="setTagFilter('aguardando')" aria-pressed="false">🔵 Aguard. NF   <span class="qct" id="qnt-aguardando">0</span></button>
       <button class="qf" id="qf-tag-todos"      onclick="setTagFilter(null)"         aria-pressed="false">✕ Limpar tag    </button>
-    </div>
-    <div class="div"></div>
-    <div>
-      <div class="slbl">Filtrar por Grupo</div>
-      <div id="cnpjPills"></div>
     </div>
     <div class="div"></div>
     <div>
@@ -1040,14 +1160,33 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       </div>
     </div>
     <div class="stats-row">
-      <div class="sc"><div class="sl">Em Aberto</div><div class="sv" style="color:var(--warn)" id="stAberto">R$ 0,00</div></div>
+      <div class="sc" id="scAberto">
+        <div class="sl" style="display:flex;align-items:center;gap:6px">
+          Em Aberto
+          <div class="aberto-toggle" role="group" aria-label="Visão de boletos abertos">
+            <button class="aberto-btn active" id="abtTotal"  onclick="setAbertoView('total')"  title="Total geral">Total</button>
+            <button class="aberto-btn"        id="abtMensal" onclick="setAbertoView('mensal')" title="Agrupado por mês">Mensal</button>
+          </div>
+        </div>
+        <div class="sv" style="color:var(--warn)" id="stAberto">R$ 0,00</div>
+        <div id="stAbertoMensal" style="display:none;margin-top:6px;font-size:10px;line-height:1.6"></div>
+      </div>
       <div class="sc"><div class="sl">Vencem Hoje</div><div class="sv" style="color:var(--danger)" id="stHoje">0</div></div>
       <div class="sc"><div class="sl">Vencidos</div><div class="sv" style="color:var(--danger)" id="stVenc">0</div></div>
       <div class="sc"><div class="sl">Pagos no Mês</div><div class="sv" style="color:var(--ok)" id="stPago">R$ 0,00</div></div>
       <div class="sc"><div class="sl">🏠 Casa Aberto</div><div class="sv" style="color:var(--pink)" id="stCasa">R$ 0,00</div></div>
     </div>
     <div>
-      <div class="slbl" style="margin-bottom:7px">💰 Saldo de Caixa por Empresa</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:7px">
+        <div class="slbl" style="margin:0">💰 Saldo de Caixa por Empresa</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span id="saldoMesLabel" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)"></span>
+          <div class="saldo-toggle" role="group" aria-label="Período do saldo">
+            <button class="saldo-tbtn active" id="stbTodos"  onclick="setSaldoModo('todos')"  title="Todos os boletos em aberto">Todos</button>
+            <button class="saldo-tbtn"        id="stbMes"    onclick="setSaldoModo('mes')"    title="Somente boletos do mês atual">Este mês</button>
+          </div>
+        </div>
+      </div>
       <div class="saldo-panel" id="saldoPanel"></div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
@@ -1102,7 +1241,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       </div>
       <div class="fi full" id="cartaoRow" style="display:none"><label>Cartão (bandeira/banco)</label><input type="text" id="fCartao" placeholder="Ex: Nubank, Itaú Visa"></div>
     </div>
-    <div class="fi"><label>Valor (R$)</label><input type="number" id="fValor" placeholder="0,00" step="0.01" min="0"></div>
+    <div class="fi"><label>Valor (R$)</label><input type="text" id="fValor" placeholder="R$ 0,00" inputmode="numeric" autocomplete="off"></div>
     <div class="fi"><label>Vencimento</label><input type="date" id="fVenc"></div>
     <div class="fi full"><label>Observação (NF, linha digitável, fone...)</label><textarea id="fObs" placeholder="NF 1234 · linha digitável · (11) 9999-9999"></textarea></div>
 
@@ -1132,6 +1271,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
           <option value="email">E-mail</option>
           <option value="aleatoria">Chave aleatória</option>
           <option value="copia_cola">Copia e Cola</option>
+          <option value="ted_doc">Transferência Bancária</option>
         </select>
         <div class="fi" style="gap:0">
           <input type="text" id="fPixChave" placeholder="Cole a chave Pix aqui" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
@@ -1147,6 +1287,27 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
           <textarea id="fPixPayload" rows="3" placeholder="Cole aqui o código Pix copia e cola completo…" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:7px 9px;outline:none;width:100%;resize:vertical;min-height:54px;letter-spacing:.5px;" oninput="onPixPayloadInput()" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'"></textarea>
         </div>
         <div id="pixDecoded" style="display:none;font-size:11px;color:var(--ok);background:#4caf7d10;border:1px solid #4caf7d30;border-radius:5px;padding:8px 10px;margin-top:4px"></div>
+      </div>
+      <!-- ── CAMPOS TRANSFERÊNCIA BANCÁRIA ── -->
+      <div id="pixTransferencia" style="display:none">
+        <div class="fg" style="grid-template-columns:1fr 1fr;gap:8px">
+          <div class="fi">
+            <label style="color:#00c893">Banco</label>
+            <input type="text" id="fTedBanco" placeholder="Ex: 341 - Itaú" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div class="fi">
+            <label style="color:#00c893">Agência</label>
+            <input type="text" id="fTedAgencia" placeholder="0000" maxlength="6" oninput="maskAgencia(this)" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div class="fi">
+            <label style="color:#00c893">Conta Corrente</label>
+            <input type="text" id="fTedConta" placeholder="00000-0" maxlength="12" oninput="maskConta(this)" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+          <div class="fi">
+            <label style="color:#00c893">CPF do Favorecido</label>
+            <input type="text" id="fTedCpf" placeholder="000.000.000-00" maxlength="14" oninput="maskCpf(this)" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
+          </div>
+        </div>
       </div>
       <p style="font-size:10px;color:var(--muted)">A chave fica salva no campo Obs. para facilitar o pagamento.</p>
     </div>
@@ -1598,6 +1759,12 @@ function updateStats(){
     if(b.grupo===CASA&&s!=="pago")ca+=Number(b.valor||0);
   });
   document.getElementById("stAberto").textContent=fmtR(ab);
+  // Aberto toggle: show total or monthly breakdown
+  const mensal = _abertoView === "mensal";
+  document.getElementById("stAberto").style.display = mensal ? "none" : "";
+  const mensalDiv = document.getElementById("stAbertoMensal");
+  if(mensalDiv) mensalDiv.style.display = mensal ? "" : "none";
+  if(mensal) updateAbertoMensal();
   document.getElementById("stHoje").textContent=hj;
   document.getElementById("stVenc").textContent=vn;
   document.getElementById("stPago").textContent=fmtR(pg);
@@ -1614,6 +1781,43 @@ function updateStats(){
 // ══════════════════════════════════════════════
 function setQF(q){qfAtual=q;calSel=null;if(q!=="7du")duSel=null;renderCal();renderAll();}
 function setCNPJFil(id){cnpjFil=id;renderAll();}
+
+// ── FILTRO POR MÊS ──
+let _mesFil = null; // null | "YYYY-MM"
+
+function setMesFil(mes){
+  _mesFil = mes;
+  renderAll();
+}
+
+function renderMesFiltros(){
+  // Collect all distinct YYYY-MM from boletos, sorted desc
+  const meses = {};
+  boletoArr().forEach(b=>{
+    if(!b.vencimento) return;
+    const key = b.vencimento.slice(0,7);
+    meses[key] = (meses[key]||0) + 1;
+  });
+  const sorted = Object.keys(meses).sort().reverse();
+  const limpar = document.getElementById('qf-mes-limpar');
+  if(limpar) limpar.style.display = _mesFil ? '' : 'none';
+  const wrap = document.getElementById('mesFiltros');
+  if(!wrap) return;
+  if(!sorted.length){
+    wrap.innerHTML = `<span style="font-size:11px;color:var(--muted);padding:4px 8px">Nenhum boleto</span>`;
+    return;
+  }
+  wrap.innerHTML = sorted.map(key=>{
+    const [y,m] = key.split('-');
+    const label = MESES[parseInt(m)-1] + '/' + y;
+    const count = meses[key];
+    const isActive = _mesFil === key;
+    return `<button class="mes-btn${isActive?' active':''}" onclick="setMesFil('${key}')">
+      <span class="mes-label">${label}</span>
+      <span class="mes-count">${count}</span>
+    </button>`;
+  }).join('');
+}
 
 function updateQFBtns(){
   ["todos","7du","hoje","vencido","pendente","pago","casa"].forEach(k=>{
@@ -1638,22 +1842,52 @@ function renderCNPJPills(){
 // ══════════════════════════════════════════════
 // SALDO PANEL
 // ══════════════════════════════════════════════
+// ── SALDO: modo todos/mes ──
+let _saldoModo = localStorage.getItem('gbSaldoModo') || 'todos';
+
+function setSaldoModo(modo){
+  _saldoModo = modo;
+  localStorage.setItem('gbSaldoModo', modo);
+  document.getElementById('stbTodos').classList.toggle('active', modo==='todos');
+  document.getElementById('stbMes').classList.toggle('active', modo==='mes');
+  renderSaldoPanel();
+}
+
 function renderSaldoPanel(){
   const groups=getGroups().filter(g=>!g.isCasa);
-  if(!groups.length){document.getElementById("saldoPanel").innerHTML=`<div style="color:var(--muted);font-size:12px">Cadastre os CNPJs para ver os saldos.</div>`;return;}
+  const el = document.getElementById("saldoPanel");
+  if(!groups.length){el.innerHTML=`<div style="color:var(--muted);font-size:12px">Cadastre os CNPJs para ver os saldos.</div>`;return;}
+
+  // Determine which month to use for "mes" mode
+  const now = new Date();
+  const mesAtual = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
+  const mesLabel = MESES[now.getMonth()] + '/' + now.getFullYear();
+
+  // Update label
+  const lblEl = document.getElementById('saldoMesLabel');
+  if(lblEl) lblEl.textContent = _saldoModo==='mes' ? mesLabel : '';
+
   let h="";
   groups.forEach(g=>{
     const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
     const tot=bancos.reduce((a,b)=>a+Number(gs[b]||0),0);
-    const ab=boletoArr().filter(b=>b.grupo===g.id&&status(b)!=="pago").reduce((a,b)=>a+Number(b.valor||0),0);
+    // Filter boletos based on mode
+    let abertos = boletoArr().filter(b=>b.grupo===g.id&&status(b)!=="pago");
+    if(_saldoModo==='mes'){
+      abertos = abertos.filter(b=> b.vencimento && b.vencimento.startsWith(mesAtual));
+    }
+    const ab=abertos.reduce((a,b)=>a+Number(b.valor||0),0);
     const s=tot-ab;
+    const modeTag = _saldoModo==='mes'
+      ? `<span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--accent);background:var(--accent)18;border:1px solid var(--accent)33;border-radius:3px;padding:1px 4px;margin-left:4px">mês</span>`
+      : '';
     h+=`<div class="sg">
-      <div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}</div></div>
+      <div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}${modeTag}</div></div>
       <div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span></div>`).join("")}</div>
-      <div class="sg-foot"><span class="sg-bol">Boletos: ${fmtR(ab)}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
+      <div class="sg-foot"><span class="sg-bol">Boletos${_saldoModo==='mes'?' (mês)':''}: ${fmtR(ab)}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
     </div>`;
   });
-  document.getElementById("saldoPanel").innerHTML=h;
+  el.innerHTML=h;
 }
 
 // ══════════════════════════════════════════════
@@ -1669,6 +1903,11 @@ function renderChip(){
     const g=getGroups().find(x=>x.id===cnpjFil);
     if(g)h+=`<span class="chip" style="background:${g.color}">${g.name}<button class="chip-x" style="color:inherit" onclick="setCNPJFil('todos')">×</button></span>`;
   }
+  if(_mesFil){
+    const [y,m] = _mesFil.split('-');
+    const label = MESES[parseInt(m)-1].slice(0,3)+'/'+y.slice(2);
+    h+=`<span class="chip" style="background:var(--blue)18;border-color:var(--blue)44;color:var(--blue)">📅 ${label}<button class="chip-x" style="color:var(--blue)" onclick="setMesFil(null)">×</button></span>`;
+  }
   document.getElementById("chipArea").innerHTML=h;
 }
 
@@ -1681,6 +1920,7 @@ function filteredList(){
   return boletoArr().filter(b=>{
     if(cnpjFil!=="todos"&&b.grupo!==cnpjFil)return false;
     const s=status(b);
+    if(_mesFil && b.vencimento && !b.vencimento.startsWith(_mesFil)) return false;
     if(calSel)return b.vencimento===calSel;
     if(duSel)return b.vencimento===duSel;
     if(qfAtual==="hoje"&&s!=="hoje")return false;
@@ -1853,6 +2093,7 @@ function renderAll(){
   renderSaldoPanel();
   renderGroups();
   renderCSVMenu();
+  renderMesFiltros();
 }
 
 // ══════════════════════════════════════════════
@@ -1929,7 +2170,7 @@ function openModal(id){
     if(!b){alert("Boleto não encontrado.");return;}
     document.getElementById("fDesc").value=b.desc||"";
     document.getElementById("fGrupo").value=b.grupo||"";
-    document.getElementById("fValor").value=b.valor||"";
+    setMaskedValor(b.valor||0);
     document.getElementById("fVenc").value=b.vencimento||"";
     document.getElementById("fCat").value=b.cat||"Mercadoria";
     // Strip pix info from obs for display
@@ -1942,15 +2183,21 @@ function openModal(id){
     setModalidade(b.modalidade||"boleto", false);
     if(b.modalidade==="pix"){
       document.getElementById("fPixTipo").value=b.pixTipo||"cpf";
-      document.getElementById("fPixChave").value=b.pixChave||"";
+      document.getElementById("fPixChave").value=b.pixTipo==="ted_doc"?"":b.pixChave||"";
       document.getElementById("fPixNome").value=b.pixNome||"";
       document.getElementById("fPixPayload").value=b.pixPayload||"";
+      if(b.pixTipo==="ted_doc"){
+        document.getElementById("fTedBanco").value=b.tedBanco||"";
+        document.getElementById("fTedAgencia").value=b.tedAgencia||"";
+        document.getElementById("fTedConta").value=b.tedConta||"";
+        document.getElementById("fTedCpf").value=b.tedCpf||"";
+      }
       onPixTipoChange();
     }
   } else {
     document.getElementById("fDesc").value="";
     document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
-    document.getElementById("fValor").value="";
+    setMaskedValor(0);
     document.getElementById("fVenc").value=calSel||dstr(TODAY);
     document.getElementById("fCat").value="Mercadoria";
     document.getElementById("fObs").value="";
@@ -1975,7 +2222,7 @@ function closeModal(){
 function saveB(){
   const desc=document.getElementById("fDesc").value.trim();
   const grupo=document.getElementById("fGrupo").value;
-  const valor=parseFloat(document.getElementById("fValor").value)||0;
+  const valor=parseMaskedValor(document.getElementById("fValor").value);
   const venc=document.getElementById("fVenc").value;
   const cat=document.getElementById("fCat").value;
   const casaCat=document.getElementById("fCasaCat").value;
@@ -1986,12 +2233,22 @@ function saveB(){
 
   // Pix fields
   let pixTipo="", pixChave="", pixNome="", pixPayload="";
+  let tedBanco="", tedAgencia="", tedConta="", tedCpf="";
   if(modalidade==="pix"){
     pixTipo=document.getElementById("fPixTipo").value;
     pixChave=document.getElementById("fPixChave").value.trim();
     pixNome=document.getElementById("fPixNome").value.trim();
     pixPayload=document.getElementById("fPixPayload").value.trim();
-    if(!pixChave && !pixPayload){alert("Informe a chave Pix ou o código Copia e Cola.");return;}
+    if(pixTipo==="ted_doc"){
+      tedBanco=document.getElementById("fTedBanco").value.trim();
+      tedAgencia=document.getElementById("fTedAgencia").value.trim();
+      tedConta=document.getElementById("fTedConta").value.trim();
+      tedCpf=document.getElementById("fTedCpf").value.trim();
+      pixChave=`TED/DOC — Banco: ${tedBanco} · Ag: ${tedAgencia} · CC: ${tedConta} · CPF: ${tedCpf}`;
+      if(!tedAgencia||!tedConta){alert("Informe agência e conta para a transferência.");return;}
+    } else if(!pixChave && !pixPayload){
+      alert("Informe a chave Pix ou o código Copia e Cola.");return;
+    }
   }
 
   // Build obs: merge user obs + pix info
@@ -2009,11 +2266,13 @@ function saveB(){
 
   const baseObj={
     desc,grupo,valor,modalidade,
+    vencimento: venc || dstr(TODAY),
     cat:grupo!==CASA?cat:"",
     casaCat:grupo===CASA?casaCat:"",
     cartao:grupo===CASA&&casaCat==="Cartão de Crédito"?cartao:"",
     obs:obsBase,
-    ...(modalidade==="pix"?{pixTipo,pixChave,pixNome,pixPayload}:{})
+    ...(modalidade==="pix"?{pixTipo,pixChave,pixNome,pixPayload,
+      ...(pixTipo==="ted_doc"?{tedBanco,tedAgencia,tedConta,tedCpf}:{})}:{})
   };
 
   if(editId){
@@ -2260,20 +2519,32 @@ function setModalidade(mode, updateTitle=true){
 function onPixTipoChange(){
   const tipo = document.getElementById("fPixTipo").value;
   const isCopiaECola = tipo==="copia_cola";
+  const isTransferencia = tipo==="ted_doc";
   document.getElementById("pixCopiaCola").style.display = isCopiaECola?"":"none";
+  document.getElementById("pixTransferencia").style.display = isTransferencia?"":"none";
 
   const chaveEl = document.getElementById("fPixChave");
+  const keyRow = chaveEl.closest(".pix-key-row");
   const chavePH = {
     cpf:"000.000.000-00",
     cnpj:"00.000.000/0001-00",
     telefone:"+55 11 99999-9999",
     email:"exemplo@email.com",
     aleatoria:"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
-    copia_cola:""
+    copia_cola:"",
+    ted_doc:""
   };
   chaveEl.placeholder = chavePH[tipo]||"";
-  chaveEl.style.display = isCopiaECola?"none":"";
-  chaveEl.closest(".fi") && (chaveEl.closest(".pix-key-row").style.display = isCopiaECola?"none":"");
+  const hideKey = isCopiaECola || isTransferencia;
+  chaveEl.style.display = hideKey?"none":"";
+  if(keyRow) keyRow.style.display = hideKey?"none":"";
+
+  // Auto apply mask to chave based on type
+  chaveEl.oninput = function(){
+    if(tipo==="cpf") maskCpf(this);
+    else if(tipo==="cnpj") maskCnpj(this);
+    else if(tipo==="telefone") maskTelefone(this);
+  };
 }
 
 // Parse EMV Pix Copia e Cola - extrai valor e nome do beneficiário
@@ -2319,7 +2590,7 @@ function onPixPayloadInput(){
 
       // Auto-fill fields
       if(nome && !document.getElementById("fPixNome").value) document.getElementById("fPixNome").value=nome;
-      if(valor && !document.getElementById("fValor").value) document.getElementById("fValor").value=valor.toFixed(2);
+      if(valor && parseMaskedValor(document.getElementById("fValor").value)===0) setMaskedValor(valor);
       if(nome && !document.getElementById("fDesc").value) document.getElementById("fDesc").value=nome;
     } else {
       dec.innerHTML="⚠ Payload não reconhecido (formato EMV). Os dados foram salvos mesmo assim.";
@@ -2356,7 +2627,7 @@ function duplicateB(id){
   document.getElementById("moTit").textContent = "📋 Duplicar Boleto";
   document.getElementById("fDesc").value = b.desc || "";
   document.getElementById("fGrupo").value = b.grupo || "";
-  document.getElementById("fValor").value = b.valor || "";
+  setMaskedValor(b.valor||0);
   document.getElementById("fVenc").value = dstr(TODAY);
   document.getElementById("fCat").value = b.cat || "Mercadoria";
   document.getElementById("fObs").value = b.obs || "";
@@ -2980,27 +3251,143 @@ function updateDashboard(){
 }
 
 // ════════════════════════════════════════════
-// v5 — MÁSCARA CURRENCY NO INPUT VALOR
+// v6 — MÁSCARA MONETÁRIA REAL-TIME (RTL)
 // ════════════════════════════════════════════
+function parseMaskedValor(str){
+  // Remove tudo exceto dígitos
+  const digits = (str||"").replace(/\D/g,"");
+  if(!digits||digits==="0"||digits==="00") return 0;
+  return parseInt(digits,10)/100;
+}
+
+function setMaskedValor(numericVal){
+  const inp = document.getElementById("fValor");
+  if(!inp) return;
+  if(!numericVal || numericVal===0){ inp.value=""; inp.classList.remove("has-value"); return; }
+  const cents = Math.round(numericVal*100);
+  inp.value = formatCentsToMask(cents);
+  inp.classList.add("has-value");
+}
+
+function formatCentsToMask(cents){
+  if(!cents) return "";
+  const str = String(cents).padStart(3,"0");
+  const intPart = str.slice(0,-2).replace(/\B(?=(\d{3})+(?!\d))/g,".");
+  const decPart = str.slice(-2);
+  return "R$ " + intPart + "," + decPart;
+}
+
 (function initValueMask(){
-  document.addEventListener('DOMContentLoaded', ()=>{ _attachValueMask(); });
-  // Also attach after modal opens (input may be re-created)
-  const obs = new MutationObserver(()=>{ _attachValueMask(); });
+  function attach(){
+    const inp = document.getElementById("fValor");
+    if(!inp || inp._maskAttached) return;
+    inp._maskAttached = true;
+    inp.addEventListener("input", function(e){
+      const digits = this.value.replace(/\D/g,"");
+      const cents = parseInt(digits||"0",10);
+      if(cents===0){ this.value=""; this.classList.remove("has-value"); return; }
+      this.value = formatCentsToMask(cents);
+      this.classList.add("has-value");
+      // Move cursor to end
+      const len = this.value.length;
+      this.setSelectionRange(len,len);
+    });
+    inp.addEventListener("focus", function(){
+      if(!this.value) this.value="";
+    });
+    inp.addEventListener("keydown", function(e){
+      // Allow Backspace to delete last digit
+      if(e.key==="Backspace"){
+        e.preventDefault();
+        const digits = this.value.replace(/\D/g,"");
+        const newDigits = digits.slice(0,-1);
+        const cents = parseInt(newDigits||"0",10);
+        if(cents===0){ this.value=""; this.classList.remove("has-value"); return; }
+        this.value = formatCentsToMask(cents);
+        this.classList.add("has-value");
+      }
+    });
+  }
+  document.addEventListener("DOMContentLoaded", attach);
+  const obs = new MutationObserver(attach);
   obs.observe(document.body, {childList:true, subtree:true});
 })();
 
-let _maskAttached = false;
-function _attachValueMask(){
-  const inp = document.getElementById('fValor');
-  if(!inp || inp._maskAttached) return;
-  inp._maskAttached = true;
-  inp.addEventListener('input', function(){
-    this.classList.toggle('has-value', parseFloat(this.value) > 0);
-  });
-  inp.addEventListener('focus', function(){
-    if(this.value === '0' || this.value === '0.00') this.value = '';
-  });
+// ════════════════════════════════════════════
+// v6 — MÁSCARAS DE INPUT (CPF, CNPJ, Agência, Conta, Telefone)
+// ════════════════════════════════════════════
+function maskCpf(el){
+  let v = el.value.replace(/\D/g,"").slice(0,11);
+  v = v.replace(/(\d{3})(\d)/,"$1.$2")
+       .replace(/(\d{3})\.(\d{3})(\d)/,"$1.$2.$3")
+       .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/,"$1.$2.$3-$4");
+  el.value = v;
 }
+
+function maskCnpj(el){
+  let v = el.value.replace(/\D/g,"").slice(0,14);
+  v = v.replace(/(\d{2})(\d)/,"$1.$2")
+       .replace(/(\d{2})\.(\d{3})(\d)/,"$1.$2.$3")
+       .replace(/(\d{2})\.(\d{3})\.(\d{3})(\d)/,"$1.$2.$3/$4")
+       .replace(/(\d{4})\/(\d{4})(\d)/,"$1/$2-$3");
+  el.value = v;
+}
+
+function maskTelefone(el){
+  let v = el.value.replace(/\D/g,"").slice(0,11);
+  if(v.length <= 10){
+    v = v.replace(/(\d{2})(\d)/,"($1) $2")
+         .replace(/(\(\d{2}\) \d{4})(\d)/,"$1-$2");
+  } else {
+    v = v.replace(/(\d{2})(\d)/,"($1) $2")
+         .replace(/(\(\d{2}\) \d{5})(\d)/,"$1-$2");
+  }
+  el.value = v;
+}
+
+function maskAgencia(el){
+  let v = el.value.replace(/\D/g,"").slice(0,5);
+  el.value = v;
+}
+
+function maskConta(el){
+  let v = el.value.replace(/\D/g,"").slice(0,10);
+  if(v.length > 1) v = v.slice(0,-1) + "-" + v.slice(-1);
+  el.value = v;
+}
+
+// ════════════════════════════════════════════
+// v6 — VISÃO MENSAL DE BOLETOS ABERTOS
+// ════════════════════════════════════════════
+let _abertoView = localStorage.getItem("gbAbertoView") || "total";
+
+function setAbertoView(mode){
+  _abertoView = mode;
+  localStorage.setItem("gbAbertoView", mode);
+  document.getElementById("abtTotal").classList.toggle("active", mode==="total");
+  document.getElementById("abtMensal").classList.toggle("active", mode==="mensal");
+  updateStats();
+}
+
+function updateAbertoMensal(){
+  const abertos = boletoArr().filter(b=>status(b)!=="pago");
+  const byMonth = {};
+  abertos.forEach(b=>{
+    if(!b.vencimento) return;
+    const key = b.vencimento.slice(0,7);
+    byMonth[key] = (byMonth[key]||0) + Number(b.valor||0);
+  });
+  const sorted = Object.keys(byMonth).sort();
+  const div = document.getElementById("stAbertoMensal");
+  if(!div) return;
+  if(!sorted.length){ div.innerHTML='<span style="color:var(--muted)">Nenhum em aberto</span>'; return; }
+  div.innerHTML = sorted.map(k=>{
+    const [y,m] = k.split("-");
+    const label = MESES[parseInt(m)-1].slice(0,3)+"/"+y.slice(2);
+    return `<div class="aberto-mes-row"><span>${label}</span><span>${fmtR(byMonth[k])}</span></div>`;
+  }).join("");
+}
+
 
 // ════════════════════════════════════════════
 // v5 — PATCH renderAll to call updateDashboard
@@ -3141,6 +3528,22 @@ if(_focoAtivo) _applyFocoDOM();
 if(_dashCollapsed) _applyDashCollapse();
 // Apply logo name on load
 (function(){ const n = localStorage.getItem('gbAppName'); if(n) renderLogoName(n); })();
+// Apply aberto view toggle state
+(function(){
+  const mode = localStorage.getItem("gbAbertoView")||"total";
+  const tBtn = document.getElementById("abtTotal");
+  const mBtn = document.getElementById("abtMensal");
+  if(tBtn) tBtn.classList.toggle("active", mode==="total");
+  if(mBtn) mBtn.classList.toggle("active", mode==="mensal");
+})();
+// Apply saldo modo toggle state
+(function(){
+  const modo = localStorage.getItem('gbSaldoModo')||'todos';
+  const t = document.getElementById('stbTodos');
+  const m = document.getElementById('stbMes');
+  if(t) t.classList.toggle('active', modo==='todos');
+  if(m) m.classList.toggle('active', modo==='mes');
+})();
 
 </script>
 </body>

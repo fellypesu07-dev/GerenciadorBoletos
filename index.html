@@ -3268,6 +3268,20 @@ function startApp(){
   document.getElementById("authScreen").style.display = "flex";
   auth.onAuthStateChanged(user => {
     if(user){
+      // ── EMAILS AUTORIZADOS ──
+      const EMAILS_OK = [
+        "real14173@gmail.com",
+        "fellypesu07@gmail.com",
+        "restaurantereal101@gmail.com",
+        "victorsu00@gmail.com"
+      ];
+      if(!EMAILS_OK.includes(user.email.toLowerCase())){
+        auth.signOut();
+        document.getElementById("authScreen").style.display = "flex";
+        document.getElementById("authScreen").innerHTML += `<div style="background:#e05c3a18;border:1px solid #e05c3a44;border-radius:10px;padding:14px 20px;color:#e05c3a;font-size:13px;text-align:center;max-width:280px;">❌ Acesso negado para<br><strong>${user.email}</strong><br><span style="color:var(--muted);font-size:11px;margin-top:4px;display:block">Entre em contato com o administrador.</span></div>`;
+        return;
+      }
+      // ────────────────────────
       document.getElementById("authScreen").style.display = "none";
       const pin = localStorage.getItem(_PIN_KEY);
       // Show user info

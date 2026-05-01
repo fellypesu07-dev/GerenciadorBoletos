@@ -26,6 +26,7 @@
 <title>GereBoleto</title>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
 :root{
@@ -36,6 +37,26 @@
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;min-height:100vh;}
+
+/* ── AUTH / PIN ── */
+#authScreen,#pinScreen{position:fixed;inset:0;background:var(--bg);z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:24px;}
+.auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:var(--accent);}
+.auth-logo span{color:var(--text);}
+.auth-sub{color:var(--muted);font-size:13px;text-align:center;}
+.google-btn{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:13px 22px;cursor:pointer;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;transition:.18s;}
+.google-btn:hover{border-color:var(--accent);color:var(--accent);}
+.pin-dots{display:flex;gap:14px;margin:4px 0;}
+.pin-dot{width:14px;height:14px;border-radius:50%;background:var(--card);border:2px solid var(--border);transition:.15s;}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent);}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,64px);gap:10px;}
+.pin-key{width:64px;height:64px;border-radius:50%;background:var(--card);border:1px solid var(--border);color:var(--text);font-size:20px;font-family:'DM Mono',monospace;cursor:pointer;transition:.14s;display:flex;align-items:center;justify-content:center;}
+.pin-key:hover{border-color:var(--accent);background:var(--card2);}
+.pin-key:active{transform:scale(.93);}
+.pin-key.del{font-size:16px;color:var(--muted);}
+.pin-lock-msg{background:#e05c3a18;border:1px solid #e05c3a33;border-radius:8px;padding:12px 16px;color:var(--danger);font-size:13px;text-align:center;max-width:240px;}
+.pin-user{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.auth-link{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif;padding:0;}
+.auth-link:hover{color:var(--accent);}
 
 /* HEADER */
 header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:200;}
@@ -1019,6 +1040,62 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 </head>
 <body>
 
+<!-- ══ AUTH SCREEN (Google Login) ══ -->
+<div id="authScreen">
+  <div class="auth-logo">Gere<span>Boleto</span></div>
+  <div class="auth-sub">Acesso restrito — faça login para continuar</div>
+  <button class="google-btn" onclick="signInGoogle()">
+    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+    Entrar com Google
+  </button>
+</div>
+
+<!-- ══ PIN SCREEN ══ -->
+<div id="pinScreen">
+  <div class="auth-logo">Gere<span>Boleto</span></div>
+
+  <!-- Setup -->
+  <div id="pinSetupBox" style="display:none;flex-direction:column;align-items:center;gap:20px;">
+    <div id="pinSetupLabel" style="color:var(--text);font-size:15px;font-weight:500;">Digite um PIN de 4 dígitos</div>
+    <div class="pin-dots">
+      <div id="pin-setup-0" class="pin-dot"></div>
+      <div id="pin-setup-1" class="pin-dot"></div>
+      <div id="pin-setup-2" class="pin-dot"></div>
+      <div id="pin-setup-3" class="pin-dot"></div>
+    </div>
+    <div class="pin-keypad" id="pinSetupKeypad">
+      <button class="pin-key" onclick="pinPress('1')">1</button><button class="pin-key" onclick="pinPress('2')">2</button><button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button><button class="pin-key" onclick="pinPress('5')">5</button><button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button><button class="pin-key" onclick="pinPress('8')">8</button><button class="pin-key" onclick="pinPress('9')">9</button>
+      <div></div><button class="pin-key" onclick="pinPress('0')">0</button><button class="pin-key del" onclick="pinPress('del')">⌫</button>
+    </div>
+    <div id="pinUserSetup" class="pin-user"></div>
+  </div>
+
+  <!-- Enter -->
+  <div id="pinEnterBox" style="display:none;flex-direction:column;align-items:center;gap:20px;">
+    <div style="color:var(--muted);font-size:13px;">Digite seu PIN para acessar</div>
+    <div class="pin-dots">
+      <div id="pin-enter-0" class="pin-dot"></div>
+      <div id="pin-enter-1" class="pin-dot"></div>
+      <div id="pin-enter-2" class="pin-dot"></div>
+      <div id="pin-enter-3" class="pin-dot"></div>
+    </div>
+    <div id="pinKeypad" class="pin-keypad">
+      <button class="pin-key" onclick="pinPress('1')">1</button><button class="pin-key" onclick="pinPress('2')">2</button><button class="pin-key" onclick="pinPress('3')">3</button>
+      <button class="pin-key" onclick="pinPress('4')">4</button><button class="pin-key" onclick="pinPress('5')">5</button><button class="pin-key" onclick="pinPress('6')">6</button>
+      <button class="pin-key" onclick="pinPress('7')">7</button><button class="pin-key" onclick="pinPress('8')">8</button><button class="pin-key" onclick="pinPress('9')">9</button>
+      <div></div><button class="pin-key" onclick="pinPress('0')">0</button><button class="pin-key del" onclick="pinPress('del')">⌫</button>
+    </div>
+    <div id="pinLockMsg" class="pin-lock-msg" style="display:none;">
+      🔒 Muitas tentativas erradas.<br>
+      <button class="auth-link" style="margin-top:8px;" onclick="pinForcedLogout()">Entrar com Google novamente</button>
+    </div>
+    <div id="pinUserEnter" class="pin-user"></div>
+    <button class="auth-link" onclick="pinForcedLogout()">Trocar conta / Sair</button>
+  </div>
+</div>
+
 <!-- TOAST CONTAINER -->
 <div class="toast" id="toastContainer"></div>
 
@@ -1206,6 +1283,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
           <div id="csvGrupoItems"></div>
         </div>
       </div>
+      <div class="div"></div>
+      <button class="btn btn-g btn-sm" style="width:100%" onclick="changePin()">🔢 Trocar PIN</button>
+      <button class="btn btn-d btn-sm" style="width:100%" onclick="gbSignOut()">🚪 Sair</button>
     </div>
   </div>
 
@@ -1533,6 +1613,7 @@ const FB_CFG = {
 
 firebase.initializeApp(FB_CFG);
 const db = firebase.database();
+const auth = firebase.auth();
 
 // ══════════════════════════════════════════════
 // STATE
@@ -3174,11 +3255,168 @@ function updateMobFilterCounts(){
 }
 
 // ══════════════════════════════════════════════
+// AUTH + PIN SYSTEM
+// ══════════════════════════════════════════════
+const _PIN_KEY  = "gbPin";
+const _FAIL_KEY = "gbPinFails";
+let _pinBuffer = "";
+let _pinSetupFirst = "";
+let _pinMode = "enter"; // "enter" | "setup"
+
+function startApp(){
+  // Show auth screen while Firebase checks session
+  document.getElementById("authScreen").style.display = "flex";
+  auth.onAuthStateChanged(user => {
+    if(user){
+      document.getElementById("authScreen").style.display = "none";
+      const pin = localStorage.getItem(_PIN_KEY);
+      // Show user info
+      const info = (user.displayName||user.email||"Usuário");
+      document.getElementById("pinUserSetup").textContent = "👤 " + info;
+      document.getElementById("pinUserEnter").textContent = "👤 " + info;
+      if(!pin){
+        showPinSetup();
+      } else {
+        showPinEnter();
+      }
+    } else {
+      document.getElementById("pinScreen").style.display = "none";
+      document.getElementById("authScreen").style.display = "flex";
+    }
+  });
+}
+
+function showPinSetup(){
+  _pinMode = "setup";
+  _pinBuffer = "";
+  _pinSetupFirst = "";
+  document.getElementById("pinSetupLabel").textContent = "Crie um PIN de 4 dígitos";
+  document.getElementById("pinSetupBox").style.display = "flex";
+  document.getElementById("pinEnterBox").style.display = "none";
+  document.getElementById("pinScreen").style.display = "flex";
+  updatePinDots("setup");
+}
+
+function showPinEnter(){
+  _pinMode = "enter";
+  _pinBuffer = "";
+  const fails = parseInt(localStorage.getItem(_FAIL_KEY)||"0");
+  document.getElementById("pinSetupBox").style.display = "none";
+  document.getElementById("pinEnterBox").style.display = "flex";
+  document.getElementById("pinScreen").style.display = "flex";
+  document.getElementById("pinLockMsg").style.display = fails >= 3 ? "block" : "none";
+  document.getElementById("pinKeypad").style.display = fails >= 3 ? "none" : "grid";
+  updatePinDots("enter");
+}
+
+function pinPress(d){
+  if(d === "del"){
+    _pinBuffer = _pinBuffer.slice(0,-1);
+  } else {
+    if(_pinBuffer.length >= 4) return;
+    _pinBuffer += d;
+  }
+  updatePinDots(_pinMode);
+  if(_pinBuffer.length === 4){
+    setTimeout(() => {
+      if(_pinMode === "setup") handlePinSetup();
+      else handlePinEnter();
+    }, 140);
+  }
+}
+
+function updatePinDots(mode){
+  const pfx = mode === "setup" ? "setup" : "enter";
+  for(let i=0;i<4;i++){
+    const d = document.getElementById(`pin-${pfx}-${i}`);
+    if(d) d.classList.toggle("filled", i < _pinBuffer.length);
+  }
+}
+
+function simpleHash(s){
+  let h = 0;
+  for(let i=0;i<s.length;i++) h = (Math.imul(31,h) + s.charCodeAt(i))|0;
+  return h.toString(36);
+}
+
+function handlePinSetup(){
+  if(!_pinSetupFirst){
+    _pinSetupFirst = _pinBuffer;
+    _pinBuffer = "";
+    updatePinDots("setup");
+    document.getElementById("pinSetupLabel").textContent = "Confirme seu PIN";
+  } else {
+    if(_pinBuffer === _pinSetupFirst){
+      localStorage.setItem(_PIN_KEY, simpleHash(_pinBuffer));
+      localStorage.removeItem(_FAIL_KEY);
+      launchApp();
+    } else {
+      toast("PINs não coincidem. Tente novamente.", "err");
+      _pinSetupFirst = "";
+      _pinBuffer = "";
+      updatePinDots("setup");
+      document.getElementById("pinSetupLabel").textContent = "Crie um PIN de 4 dígitos";
+    }
+  }
+}
+
+function handlePinEnter(){
+  const stored = localStorage.getItem(_PIN_KEY);
+  if(simpleHash(_pinBuffer) === stored){
+    localStorage.removeItem(_FAIL_KEY);
+    launchApp();
+  } else {
+    let fails = parseInt(localStorage.getItem(_FAIL_KEY)||"0") + 1;
+    localStorage.setItem(_FAIL_KEY, fails.toString());
+    if(fails >= 3){
+      document.getElementById("pinLockMsg").style.display = "block";
+      document.getElementById("pinKeypad").style.display = "none";
+    } else {
+      toast(`PIN incorreto — ${3-fails} tentativa(s) restante(s).`,"err");
+      _pinBuffer = "";
+      updatePinDots("enter");
+    }
+  }
+}
+
+function pinForcedLogout(){
+  localStorage.removeItem(_PIN_KEY);
+  localStorage.removeItem(_FAIL_KEY);
+  auth.signOut();
+}
+
+function changePin(){
+  localStorage.removeItem(_PIN_KEY);
+  localStorage.removeItem(_FAIL_KEY);
+  showPinSetup();
+}
+
+function signInGoogle(){
+  const provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(provider).catch(err => {
+    toast("Erro ao entrar: " + err.message, "err");
+  });
+}
+
+function gbSignOut(){
+  if(!confirm("Sair e voltar para a tela de login?")) return;
+  localStorage.removeItem(_PIN_KEY);
+  localStorage.removeItem(_FAIL_KEY);
+  auth.signOut().then(()=>{ window.location.reload(); });
+}
+
+function launchApp(){
+  document.getElementById("pinScreen").style.display = "none";
+  document.getElementById("loadingScreen").style.display = "flex";
+  initFirebase();
+}
+
+// ══════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════
 initCal();
 renderCal();
-initFirebase();
+startApp();
 setView(viewMode);
 
 // Mobile class on body for CSS targeting

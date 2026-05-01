@@ -1089,10 +1089,31 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <!-- FILTRO MENSAL -->
     <div>
       <div class="slbl" style="display:flex;align-items:center;justify-content:space-between">
-        <span>📅 Filtro por Mês</span>
+        <span>📅 Filtro por Data</span>
         <button id="qf-mes-limpar" onclick="setMesFil(null)" style="font-size:9px;background:none;border:none;color:var(--muted);cursor:pointer;padding:2px 4px;display:none">✕ Limpar</button>
       </div>
-      <div id="mesFiltros" style="display:flex;flex-direction:column;gap:2px;margin-top:4px"></div>
+      <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+        <!-- Botão Este Mês -->
+        <button class="mes-btn" id="qf-este-mes" onclick="setMesFilEsteMes()">
+          <span>📅 Este mês</span>
+          <span class="mes-count" id="qn-este-mes">0</span>
+        </button>
+        <!-- Seletor de mês interativo -->
+        <div style="position:relative">
+          <button class="mes-btn" id="qf-mes-picker-btn" onclick="toggleMesPicker()" style="justify-content:space-between">
+            <span id="mesPickerLabel">🗓 Selecionar mês…</span>
+            <span style="color:var(--muted);font-size:9px" id="mesPickerArrow">▾</span>
+          </button>
+          <div id="mesPickerDrop" style="display:none;position:absolute;left:0;right:0;z-index:120;background:var(--surf);border:1px solid var(--border);border-radius:7px;padding:8px;box-shadow:0 8px 24px rgba(0,0,0,.4);margin-top:2px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <button onclick="mesPickerNavY(-1)" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px">‹</button>
+              <span id="mesPickerYear" style="font-family:'DM Mono',monospace;font-size:12px;font-weight:700;color:var(--text)"></span>
+              <button onclick="mesPickerNavY(1)"  style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 6px">›</button>
+            </div>
+            <div id="mesPickerGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px"></div>
+          </div>
+        </div>
+      </div>
     </div>
     <div class="div"></div>
     <div>
@@ -1257,6 +1278,27 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
           <input type="number" id="fRecMeses" value="6" min="2" max="24" style="width:70px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 8px;outline:none;">
         </div>
         <span style="font-size:10px;color:var(--muted)">Cria um boleto por mês, ajustando o vencimento automaticamente.</span>
+      </div>
+    </div>
+
+    <!-- ── PARCELAMENTO BOX ── -->
+    <div class="rec-box full" id="parcelaBox">
+      <label class="rec-toggle">
+        <input type="checkbox" id="fParcelado" onchange="onParceladoChange()">
+        <span>📋 Parcelado (mesmo valor a cada X dias)</span>
+      </label>
+      <div class="rec-opts hidden" id="parcelaOpts">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div class="fi" style="flex-direction:row;align-items:center;gap:8px;flex:1;min-width:120px">
+            <label style="font-size:11px;color:var(--muted);white-space:nowrap">Nº de parcelas</label>
+            <input type="number" id="fParcelas" value="3" min="2" max="48" style="width:60px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 8px;outline:none;" oninput="updateParcelaPreview()">
+          </div>
+          <div class="fi" style="flex-direction:row;align-items:center;gap:8px;flex:1;min-width:120px">
+            <label style="font-size:11px;color:var(--muted);white-space:nowrap">A cada (dias)</label>
+            <input type="number" id="fParcelaDias" value="30" min="1" max="365" style="width:60px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 8px;outline:none;" oninput="updateParcelaPreview()">
+          </div>
+        </div>
+        <div id="parcelaPreview" style="margin-top:6px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.6"></div>
       </div>
     </div>
 
@@ -1690,8 +1732,10 @@ function applyLD(){
   document.getElementById("fCartao").value="";
   document.getElementById("fRecorrente").checked=false;
   onRecorrenteChange();
-  onGrupoChange();onCasaCatChange();
+  document.getElementById("fParcelado").checked=false;
+  onParceladoChange();
   editId=null;
+  onGrupoChange();onCasaCatChange();
   document.getElementById("moB").classList.add("open");
 }
 
@@ -1784,40 +1828,100 @@ function setCNPJFil(id){cnpjFil=id;renderAll();}
 
 // ── FILTRO POR MÊS ──
 let _mesFil = null; // null | "YYYY-MM"
+let _mesPickerYear = TODAY.getFullYear();
 
 function setMesFil(mes){
   _mesFil = mes;
+  const limpar = document.getElementById('qf-mes-limpar');
+  if(limpar) limpar.style.display = mes ? '' : 'none';
+  // Update Este Mês button active state
+  const esteMesKey = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  const esteMesBtn = document.getElementById('qf-este-mes');
+  if(esteMesBtn) esteMesBtn.classList.toggle('active', mes === esteMesKey);
+  // Update picker label
+  updateMesPickerLabel();
   renderAll();
 }
 
-function renderMesFiltros(){
-  // Collect all distinct YYYY-MM from boletos, sorted desc
-  const meses = {};
+function setMesFilEsteMes(){
+  const key = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  setMesFil(_mesFil === key ? null : key);
+}
+
+function toggleMesPicker(){
+  const drop = document.getElementById('mesPickerDrop');
+  const isOpen = drop.style.display !== 'none';
+  drop.style.display = isOpen ? 'none' : '';
+  if(!isOpen) renderMesPickerGrid();
+}
+
+function mesPickerNavY(d){
+  _mesPickerYear += d;
+  document.getElementById('mesPickerYear').textContent = _mesPickerYear;
+  renderMesPickerGrid();
+}
+
+function renderMesPickerGrid(){
+  document.getElementById('mesPickerYear').textContent = _mesPickerYear;
+  const grid = document.getElementById('mesPickerGrid');
+  // Count boletos per month for this year
+  const counts = {};
   boletoArr().forEach(b=>{
     if(!b.vencimento) return;
-    const key = b.vencimento.slice(0,7);
-    meses[key] = (meses[key]||0) + 1;
+    const k = b.vencimento.slice(0,7);
+    counts[k] = (counts[k]||0)+1;
   });
-  const sorted = Object.keys(meses).sort().reverse();
-  const limpar = document.getElementById('qf-mes-limpar');
-  if(limpar) limpar.style.display = _mesFil ? '' : 'none';
-  const wrap = document.getElementById('mesFiltros');
-  if(!wrap) return;
-  if(!sorted.length){
-    wrap.innerHTML = `<span style="font-size:11px;color:var(--muted);padding:4px 8px">Nenhum boleto</span>`;
-    return;
-  }
-  wrap.innerHTML = sorted.map(key=>{
-    const [y,m] = key.split('-');
-    const label = MESES[parseInt(m)-1] + '/' + y;
-    const count = meses[key];
+  grid.innerHTML = MESES.map((m,i)=>{
+    const key = `${_mesPickerYear}-${p2(i+1)}`;
+    const cnt = counts[key]||0;
     const isActive = _mesFil === key;
-    return `<button class="mes-btn${isActive?' active':''}" onclick="setMesFil('${key}')">
-      <span class="mes-label">${label}</span>
-      <span class="mes-count">${count}</span>
+    return `<button onclick="setMesFil('${key}');toggleMesPicker()"
+      style="padding:5px 2px;border-radius:5px;border:1px solid ${isActive?'var(--accent)':'var(--border)'};
+      background:${isActive?'var(--accent)':'var(--card)'};color:${isActive?'#111':'var(--text)'};
+      font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;
+      transition:.12s;display:flex;flex-direction:column;align-items:center;gap:1px">
+      <span style="font-weight:700">${m.slice(0,3)}</span>
+      <span style="font-size:8px;color:${isActive?'#111':'var(--muted)'}">${cnt||''}</span>
     </button>`;
   }).join('');
 }
+
+function updateMesPickerLabel(){
+  const lbl = document.getElementById('mesPickerLabel');
+  if(!lbl) return;
+  if(!_mesFil){ lbl.textContent='🗓 Selecionar mês…'; return; }
+  const [y,m] = _mesFil.split('-');
+  const esteMes = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  if(_mesFil !== esteMes){
+    lbl.textContent = `🗓 ${MESES[parseInt(m)-1]}/${y}`;
+  } else {
+    lbl.textContent = '🗓 Selecionar mês…';
+  }
+}
+
+function renderMesFiltros(){
+  // Update "Este mês" count
+  const esteMesKey = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  const cnt = boletoArr().filter(b=>b.vencimento&&b.vencimento.startsWith(esteMesKey)).length;
+  const cntEl = document.getElementById('qn-este-mes');
+  if(cntEl) cntEl.textContent = cnt;
+  // Update Este Mês active state
+  const esteMesBtn = document.getElementById('qf-este-mes');
+  if(esteMesBtn) esteMesBtn.classList.toggle('active', _mesFil === esteMesKey);
+  // Update limpar
+  const limpar = document.getElementById('qf-mes-limpar');
+  if(limpar) limpar.style.display = _mesFil ? '' : 'none';
+  updateMesPickerLabel();
+}
+
+// Close picker on outside click
+document.addEventListener('click', e=>{
+  const drop = document.getElementById('mesPickerDrop');
+  const btn = document.getElementById('qf-mes-picker-btn');
+  if(drop && btn && !drop.contains(e.target) && !btn.contains(e.target)){
+    drop.style.display='none';
+  }
+});
 
 function updateQFBtns(){
   ["todos","7du","hoje","vencido","pendente","pago","casa"].forEach(k=>{
@@ -2157,6 +2261,36 @@ function onCasaCatChange(){
 function onRecorrenteChange(){
   const checked = document.getElementById("fRecorrente").checked;
   document.getElementById("recOpts").classList.toggle("hidden", !checked);
+  // Mutually exclusive
+  if(checked){ document.getElementById("fParcelado").checked=false; onParceladoChange(); }
+}
+
+function onParceladoChange(){
+  const checked = document.getElementById("fParcelado").checked;
+  document.getElementById("parcelaOpts").classList.toggle("hidden", !checked);
+  if(checked){
+    document.getElementById("fRecorrente").checked=false;
+    document.getElementById("recOpts").classList.add("hidden");
+    updateParcelaPreview();
+  }
+}
+
+function updateParcelaPreview(){
+  const n = parseInt(document.getElementById("fParcelas").value)||3;
+  const dias = parseInt(document.getElementById("fParcelaDias").value)||30;
+  const venc = document.getElementById("fVenc").value;
+  const valorStr = document.getElementById("fValor").value;
+  const valor = parseMaskedValor(valorStr);
+  const el = document.getElementById("parcelaPreview");
+  if(!venc||!valor){el.textContent="Preencha valor e 1ª data de vencimento para ver o preview.";return;}
+  const base = toDate(venc);
+  let lines = [];
+  for(let i=0;i<Math.min(n,5);i++){
+    const d = new Date(base); d.setDate(d.getDate()+dias*i);
+    lines.push(`${p2(i+1)}/${n} — ${fmtD(dstr(d))} — ${fmtR(valor)}`);
+  }
+  if(n>5) lines.push(`… +${n-5} parcelas`);
+  el.innerHTML = lines.join("<br>");
 }
 
 function openModal(id){
@@ -2165,6 +2299,8 @@ function openModal(id){
   document.getElementById("moTit").textContent=id?"✏ Editar Lançamento":"📄 Novo Lançamento";
   document.getElementById("fRecorrente").checked=false;
   onRecorrenteChange();
+  document.getElementById("fParcelado").checked=false;
+  onParceladoChange();
   if(id){
     const b=boletos[id];
     if(!b){alert("Boleto não encontrado.");return;}
@@ -2229,6 +2365,9 @@ function saveB(){
   const cartao=document.getElementById("fCartao").value.trim();
   const recorrente=document.getElementById("fRecorrente").checked;
   const recMeses=parseInt(document.getElementById("fRecMeses").value)||6;
+  const parcelado=document.getElementById("fParcelado").checked;
+  const parcelas=parseInt(document.getElementById("fParcelas").value)||3;
+  const parcelaDias=parseInt(document.getElementById("fParcelaDias").value)||30;
   const modalidade=document.getElementById("modPix").classList.contains("active")?"pix":"boleto";
 
   // Pix fields
@@ -2312,6 +2451,31 @@ function saveB(){
 
     Promise.all(promises).then(()=>{
       toast(`${recMeses} boletos recorrentes criados!`, "ok");
+    });
+  } else if(parcelado && parcelas >= 2){
+    // Gera parcelas (mesmo valor a cada parcelaDias dias)
+    const serieId = "p"+Date.now();
+    const baseDate = toDate(venc);
+    const promises = [];
+    for(let i=0; i<parcelas; i++){
+      const d = new Date(baseDate); d.setDate(d.getDate() + parcelaDias * i);
+      const dataVenc = dstr(d);
+      const newId = "b"+Date.now()+"_p"+i;
+      const descParcela = `${desc} (${i+1}/${parcelas})`;
+      promises.push(fbSet("boletos/"+newId, {
+        ...baseObj,
+        desc: descParcela,
+        vencimento: dataVenc,
+        pago: false,
+        checks: {},
+        parcelado: true,
+        parcelaNum: i+1,
+        parcelaTotal: parcelas,
+        serieId
+      }));
+    }
+    Promise.all(promises).then(()=>{
+      toast(`${parcelas} parcelas criadas!`, "ok");
     });
   } else {
     // Avulso normal
@@ -2513,6 +2677,9 @@ function setModalidade(mode, updateTitle=true){
     document.getElementById("fPixPayload").value="";
     document.getElementById("pixDecoded").style.display="none";
   }
+  // Hide parcelamento in pix mode
+  const parcelaBox = document.getElementById("parcelaBox");
+  if(parcelaBox) parcelaBox.style.display = isPix ? "none" : "";
   onPixTipoChange();
 }
 

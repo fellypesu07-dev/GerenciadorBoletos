@@ -557,6 +557,318 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   #sideOverlay{ display: none !important; }
 }
 
+
+/* ════════════════════════════════════════════
+   TEMAS DE COR (v5)
+════════════════════════════════════════════ */
+
+/* Dark Gold (default — já aplicado em :root) */
+body[data-theme="dark-gold"] {
+  --bg:#0f0f0d;--surf:#181816;--card:#1e1e1c;--card2:#242422;
+  --border:#2a2a27;--text:#e4e4dc;--muted:#6a6a62;
+  --accent:#f0c040;--danger:#e05c3a;--ok:#4caf7d;--warn:#f0c040;
+  --blue:#6f8fff;--pink:#ff9fdf;
+}
+
+/* Dark Green */
+body[data-theme="dark-green"] {
+  --bg:#0c110e;--surf:#131a15;--card:#192019;--card2:#1f281f;
+  --border:#243027;--text:#dde8de;--muted:#5f7262;
+  --accent:#4cdf88;--danger:#e05c5c;--ok:#4caf7d;--warn:#f0c040;
+  --blue:#6fb5ff;--pink:#ff9fdf;
+}
+
+/* Dark Blue */
+body[data-theme="dark-blue"] {
+  --bg:#0c0f16;--surf:#121620;--card:#181d2a;--card2:#1e2432;
+  --border:#232b3a;--text:#dde2f0;--muted:#5c6480;
+  --accent:#6f8fff;--danger:#e05c7a;--ok:#4caf7d;--warn:#f0c040;
+  --blue:#6f8fff;--pink:#ff9fdf;
+}
+
+/* Light Clean */
+body[data-theme="light"] {
+  --bg:#f5f5f2;--surf:#ffffff;--card:#f0f0ec;--card2:#e8e8e4;
+  --border:#d8d8d0;--text:#1a1a18;--muted:#7a7a72;
+  --accent:#e08020;--danger:#d03030;--ok:#2e9450;--warn:#c07010;
+  --blue:#3060c0;--pink:#c04080;
+}
+body[data-theme="light"] header { box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+body[data-theme="light"] .gb-head:hover { background: #e8e8e4; }
+body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+
+/* ── Theme toggle pill ── */
+.theme-picker {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.theme-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform .15s, border-color .15s;
+  flex-shrink: 0;
+}
+.theme-dot:hover { transform: scale(1.2); }
+.theme-dot.active { border-color: var(--text); }
+
+/* ── Company name customization ── */
+.logo-text-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--accent);
+  color: var(--accent);
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  outline: none;
+  width: 130px;
+  cursor: text;
+  padding: 0 2px;
+}
+.logo-text-input::placeholder { color: var(--accent); opacity: .6; }
+
+/* ════════════════════════════════════════════
+   MICRO-ANIMAÇÕES (v5)
+════════════════════════════════════════════ */
+
+/* Tick animado ao marcar pago */
+@keyframes tickPop {
+  0%   { transform: scale(0) rotate(-45deg); opacity: 0; }
+  60%  { transform: scale(1.4) rotate(5deg);  opacity: 1; }
+  100% { transform: scale(1)   rotate(0);     opacity: 1; }
+}
+.tick-anim { animation: tickPop .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+/* Card entrada suave */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.bol-card, tbody tr {
+  animation: cardIn .22s ease both;
+}
+/* Stagger via CSS custom prop para cards */
+.bol-card:nth-child(1)  { animation-delay: .02s; }
+.bol-card:nth-child(2)  { animation-delay: .04s; }
+.bol-card:nth-child(3)  { animation-delay: .06s; }
+.bol-card:nth-child(4)  { animation-delay: .08s; }
+.bol-card:nth-child(5)  { animation-delay: .10s; }
+.bol-card:nth-child(6)  { animation-delay: .12s; }
+.bol-card:nth-child(7)  { animation-delay: .14s; }
+.bol-card:nth-child(8)  { animation-delay: .16s; }
+
+/* Stats contam para cima */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px) scale(.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sv { animation: countUp .35s cubic-bezier(.34,1.2,.64,1) both; }
+
+/* Botão pago — pulse */
+@keyframes paidPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(76,175,125,.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(76,175,125,0); }
+  100% { box-shadow: 0 0 0 0 rgba(76,175,125,0); }
+}
+.btn-ok:active { animation: paidPulse .5s ease; }
+
+/* Group collapse smooth */
+.gb-body {
+  overflow: hidden;
+  transition: max-height .25s cubic-bezier(.4,0,.2,1);
+  max-height: 9999px;
+}
+.gb-body.collapsed { max-height: 0 !important; }
+
+/* ════════════════════════════════════════════
+   MODO FOCO (v5)
+════════════════════════════════════════════ */
+body.modo-foco .pago-card,
+body.modo-foco tbody tr.row-pago {
+  display: none !important;
+}
+.foco-badge {
+  display: none;
+  background: var(--ok);
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  animation: cardIn .2s ease;
+}
+body.modo-foco .foco-badge { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ════════════════════════════════════════════
+   TAGS LIVRES (v5)
+════════════════════════════════════════════ */
+.free-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+  border: 1px solid;
+  margin-left: 2px;
+}
+.free-tag:hover { opacity: .75; }
+.free-tag-urgente  { background: #e05c3a18; color: var(--danger); border-color: #e05c3a44; }
+.free-tag-contestado { background: #f0c04018; color: var(--warn); border-color: #f0c04044; }
+.free-tag-aguardando { background: #6f8fff18; color: var(--blue); border-color: #6f8fff44; }
+
+/* Tag dropdown in table */
+.tag-menu {
+  position: absolute;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  overflow: hidden;
+  min-width: 160px;
+}
+.tag-menu-item {
+  padding: 7px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background .1s;
+  border-bottom: 1px solid var(--border);
+}
+.tag-menu-item:last-child { border-bottom: none; }
+.tag-menu-item:hover { background: var(--card); }
+
+/* ════════════════════════════════════════════
+   DESFAZER AÇÃO (v5)
+════════════════════════════════════════════ */
+.toast-undo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toast-undo-btn {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 4px;
+  color: inherit;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: background .12s;
+  white-space: nowrap;
+}
+.toast-undo-btn:hover { background: rgba(255,255,255,.25); }
+
+/* ════════════════════════════════════════════
+   DASHBOARD RESUMO (v5)
+════════════════════════════════════════════ */
+.dash-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: max-height .3s cubic-bezier(.4,0,.2,1);
+  max-height: 300px;
+}
+.dash-panel.collapsed { max-height: 44px; }
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border);
+  background: var(--surf);
+}
+.dash-header:hover { background: #1a1a18; }
+body[data-theme="light"] .dash-header:hover { background: #ededea; }
+.dash-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-chevron {
+  color: var(--muted);
+  font-size: 11px;
+  transition: transform .25s;
+}
+.dash-panel.collapsed .dash-chevron { transform: rotate(-90deg); }
+.dash-body {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.dash-stat {
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+.dash-stat:last-child { border-right: none; }
+.dash-stat-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 4px;
+}
+.dash-stat-val {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-stat-sub {
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════════════
+   ACESSIBILIDADE — FOCO (v5)
+════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+  border-radius: 3px;
+}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* ════════════════════════════════════════════
+   MÁSCARA DE MOEDA — feedback visual
+════════════════════════════════════════════ */
+#fValor.has-value { color: var(--ok); }
+#fValor.has-value:focus { color: var(--text); }
+
+/* ════════════════════════════════════════════
+   MOBILE DASHBOARD (v5)
+════════════════════════════════════════════ */
+@media(max-width:480px) {
+  .dash-body { grid-template-columns: 1fr; }
+  .dash-stat { border-right: none; border-bottom: 1px solid var(--border); }
+  .dash-stat:last-child { border-bottom: none; }
+}
 </style>
 </head>
 <body>
@@ -599,19 +911,28 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 <div id="app" style="display:none;">
 
 <header>
-  <div class="logo">Gere<span>Boleto</span></div>
+  <div class="logo" id="logoArea" title="Clique duplo para personalizar o nome" ondblclick="editLogoName()">Gere<span>Boleto</span></div>
   <div class="hright">
-    <span class="sync ok" id="syncBadge">✓ Online</span>
-    <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="renderAll()">
-    <div class="view-toggle">
-      <button class="vt-btn active" id="vtDense" onclick="setView('dense')" title="Modo tabela (denso)">☰</button>
-      <button class="vt-btn" id="vtCard" onclick="setView('card')" title="Modo cartão">⊞</button>
+    <span class="sync ok" id="syncBadge" aria-live="polite">✓ Online</span>
+    <!-- Temas de cor -->
+    <div class="theme-picker" title="Tema de cor" aria-label="Selecionar tema de cor">
+      <div class="theme-dot active" id="td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#f0c040)" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"  onkeydown="if(event.key==='Enter')setTheme('dark-gold')"></div>
+      <div class="theme-dot"        id="td-dark-green" style="background:linear-gradient(135deg,#0c110e,#4cdf88)" title="Dark Green" onclick="setTheme('dark-green')" tabindex="0" role="button" aria-label="Tema Dark Green" onkeydown="if(event.key==='Enter')setTheme('dark-green')"></div>
+      <div class="theme-dot"        id="td-dark-blue"  style="background:linear-gradient(135deg,#0c0f16,#6f8fff)" title="Dark Blue"  onclick="setTheme('dark-blue')"  tabindex="0" role="button" aria-label="Tema Dark Blue"  onkeydown="if(event.key==='Enter')setTheme('dark-blue')"></div>
+      <div class="theme-dot"        id="td-light"      style="background:linear-gradient(135deg,#f5f5f2,#e08020)" title="Light"      onclick="setTheme('light')"      tabindex="0" role="button" aria-label="Tema Light"      onkeydown="if(event.key==='Enter')setTheme('light')"></div>
     </div>
-    <button class="btn btn-g btn-sm" onclick="openChartModal()" title="Resumo mensal">📊</button>
-    <button class="btn btn-g btn-sm notif-btn" id="notifBtn" onclick="toggleNotifications()" title="Notificações de vencimento"><span>🔔</span><span class="notif-dot" id="notifDot"></span></button>
-    <button class="btn btn-g btn-sm" onclick="openLD()">🔢 Linha Digitável</button>
-    <button class="btn btn-g btn-sm" onclick="openCNPJModal()">⚙ CNPJs</button>
-    <button class="btn btn-p" onclick="openModal()">＋ Boleto</button>
+    <!-- Modo foco -->
+    <button class="btn btn-g btn-sm foco-badge" id="focoBtn" onclick="toggleFoco()" aria-pressed="false" title="Modo Foco: oculta pagos">👁 Foco</button>
+    <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="renderAll()" aria-label="Buscar boletos">
+    <div class="view-toggle" role="group" aria-label="Modo de visualização">
+      <button class="vt-btn active" id="vtDense" onclick="setView('dense')" title="Modo tabela (denso)" aria-pressed="true">☰</button>
+      <button class="vt-btn" id="vtCard" onclick="setView('card')" title="Modo cartão" aria-pressed="false">⊞</button>
+    </div>
+    <button class="btn btn-g btn-sm" onclick="openChartModal()" title="Resumo mensal" aria-label="Resumo mensal">📊</button>
+    <button class="btn btn-g btn-sm notif-btn" id="notifBtn" onclick="toggleNotifications()" title="Notificações de vencimento" aria-label="Notificações de vencimento"><span>🔔</span><span class="notif-dot" id="notifDot" aria-hidden="true"></span></button>
+    <button class="btn btn-g btn-sm" onclick="openLD()" aria-label="Decodificar linha digitável">🔢 Linha Digitável</button>
+    <button class="btn btn-g btn-sm" onclick="openCNPJModal()" aria-label="Gerenciar CNPJs">⚙ CNPJs</button>
+    <button class="btn btn-p" onclick="openModal()" aria-label="Adicionar novo boleto">＋ Boleto</button>
   </div>
 </header>
 
@@ -651,7 +972,16 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
       <button class="qf" id="qf-vencido"  onclick="setQF('vencido')">⚠ Vencidos        <span class="qct" id="qn-vencido">0</span></button>
       <button class="qf" id="qf-pendente" onclick="setQF('pendente')">⏳ Pendentes     <span class="qct" id="qn-pendente">0</span></button>
       <button class="qf" id="qf-pago"     onclick="setQF('pago')">✓ Pagos mês          <span class="qct" id="qn-pago">0</span></button>
-      <button class="qf" id="qf-casa"     onclick="setQF('casa')">🏠 Só Casa           <span class="qct" id="qn-casa">0</span></button>
+      <button class="qf" id="qf-casa"     onclick="setQF('casa')" aria-pressed="false">🏠 Só Casa           <span class="qct" id="qn-casa">0</span></button>
+    </div>
+    <div class="div"></div>
+    <!-- TAGS LIVRES (v5) -->
+    <div>
+      <div class="slbl">Tags</div>
+      <button class="qf" id="qf-tag-urgente"    onclick="setTagFilter('urgente')"    aria-pressed="false">🔴 Urgente      <span class="qct" id="qnt-urgente">0</span></button>
+      <button class="qf" id="qf-tag-contestado" onclick="setTagFilter('contestado')" aria-pressed="false">🟡 Contestado   <span class="qct" id="qnt-contestado">0</span></button>
+      <button class="qf" id="qf-tag-aguardando" onclick="setTagFilter('aguardando')" aria-pressed="false">🔵 Aguard. NF   <span class="qct" id="qnt-aguardando">0</span></button>
+      <button class="qf" id="qf-tag-todos"      onclick="setTagFilter(null)"         aria-pressed="false">✕ Limpar tag    </button>
     </div>
     <div class="div"></div>
     <div>
@@ -664,7 +994,9 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
       <div class="du-strip" id="duStrip"></div>
     </div>
     <div style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;">
-      <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()">💰 Atualizar Saldos</button>
+      <!-- Modo Foco -->
+      <button class="btn btn-g btn-sm" style="width:100%" id="focoBtnSidebar" onclick="toggleFoco()" aria-pressed="false" title="Ocultar boletos pagos">👁 Modo Foco</button>
+      <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()" aria-label="Atualizar saldos">💰 Atualizar Saldos</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="loadData()">🔄 Atualizar</button>
       <!-- CSV DROPDOWN -->
       <div class="csv-wrap" style="width:100%">
@@ -682,7 +1014,31 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 
   <!-- MAIN -->
   <div class="main">
-    <div class="alertbar" id="alertBar" style="display:none">⚠️ <span id="alertMsg"></span></div>
+    <div class="alertbar" id="alertBar" style="display:none" role="alert">⚠️ <span id="alertMsg"></span></div>
+    <!-- DASHBOARD RESUMO (v5) -->
+    <div class="dash-panel" id="dashPanel">
+      <div class="dash-header" onclick="toggleDash()" aria-expanded="true" aria-controls="dashBody" role="button" tabindex="0" onkeydown="if(event.key==='Enter')toggleDash()">
+        <div class="dash-title">📊 Dashboard Resumo <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
+        <span class="dash-chevron" aria-hidden="true">▼</span>
+      </div>
+      <div class="dash-body" id="dashBody">
+        <div class="dash-stat">
+          <div class="dash-stat-lbl">💸 Maior Gasto do Mês</div>
+          <div class="dash-stat-val" id="dashMaiorGasto">—</div>
+          <div class="dash-stat-sub" id="dashMaiorGastoDesc">—</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-lbl">🏆 Fornecedor Frequente</div>
+          <div class="dash-stat-val" id="dashFornFreq">—</div>
+          <div class="dash-stat-sub" id="dashFornFreqQtd">—</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-lbl">⏱ Média de Atraso</div>
+          <div class="dash-stat-val" id="dashMedAtraso">—</div>
+          <div class="dash-stat-sub" id="dashMedAtrasoSub">em dias</div>
+        </div>
+      </div>
+    </div>
     <div class="stats-row">
       <div class="sc"><div class="sl">Em Aberto</div><div class="sv" style="color:var(--warn)" id="stAberto">R$ 0,00</div></div>
       <div class="sc"><div class="sl">Vencem Hoje</div><div class="sv" style="color:var(--danger)" id="stHoje">0</div></div>
@@ -1578,8 +1934,7 @@ function openModal(id){
     document.getElementById("fCat").value=b.cat||"Mercadoria";
     // Strip pix info from obs for display
     const obsRaw=b.obs||"";
-    const obsClean=b.modalidade==="pix"?obsRaw.split("
-PIX")[0].split("PIX ")[0].trim():obsRaw;
+    const obsClean=b.modalidade==="pix"?obsRaw.split("\nPIX")[0].split("PIX ")[0].trim():obsRaw;
     document.getElementById("fObs").value=obsClean;
     document.getElementById("fCasaCat").value=b.casaCat||"Água";
     document.getElementById("fCartao").value=b.cartao||"";
@@ -1645,8 +2000,7 @@ function saveB(){
     const pixInfo=pixPayload
       ? "PIX Copia e Cola: "+pixPayload
       : `PIX ${pixTipo.toUpperCase()}: ${pixChave}${pixNome?" · "+pixNome:""}`;
-    obsBase=(obsBase?obsBase+"
-":"")+pixInfo;
+    obsBase=(obsBase?obsBase+"\n":"")+pixInfo;
   }
 
   if(!desc){alert("Informe a descrição.");return;}
@@ -2320,6 +2674,473 @@ document.querySelector(".main") && document.querySelector(".main").addEventListe
   if(window.innerWidth <= 480) closeMobSidebar();
 }, {passive:true});
 
+
+// ════════════════════════════════════════════
+// v5 — TEMAS DE COR
+// ════════════════════════════════════════════
+(function initTheme(){
+  const saved = localStorage.getItem('gbTheme') || 'dark-gold';
+  applyTheme(saved, false);
+})();
+
+function setTheme(name){
+  applyTheme(name, true);
+}
+
+function applyTheme(name, save){
+  document.body.setAttribute('data-theme', name);
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+  const dot = document.getElementById('td-' + name);
+  if(dot) dot.classList.add('active');
+  if(save) localStorage.setItem('gbTheme', name);
+}
+
+// ════════════════════════════════════════════
+// v5 — NOME DA EMPRESA PERSONALIZÁVEL
+// ════════════════════════════════════════════
+(function initLogoName(){
+  const saved = localStorage.getItem('gbAppName');
+  if(saved) renderLogoName(saved);
+})();
+
+function renderLogoName(name){
+  const area = document.getElementById('logoArea');
+  if(!area) return;
+  const parts = name.split('-');
+  if(parts.length === 2){
+    area.innerHTML = `<span style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:800;font-size:17px">${escHTML(parts[0])}<span style="color:var(--text)">${escHTML(parts[1])}</span></span>`;
+  } else {
+    area.innerHTML = `<span style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:800;font-size:17px">${escHTML(name)}</span>`;
+  }
+  area.ondblclick = editLogoName;
+}
+
+function editLogoName(){
+  const area = document.getElementById('logoArea');
+  if(!area) return;
+  const current = localStorage.getItem('gbAppName') || 'Gere-Boleto';
+  area.innerHTML = `<input class="logo-text-input" id="logoInput" value="${escHTML(current)}" placeholder="Nome-Empresa" maxlength="24" autofocus>`;
+  const inp = document.getElementById('logoInput');
+  inp.focus(); inp.select();
+  inp.addEventListener('blur', commitLogoName);
+  inp.addEventListener('keydown', e => { if(e.key==='Enter') commitLogoName(); if(e.key==='Escape'){ area.ondblclick=editLogoName; renderLogoName(localStorage.getItem('gbAppName')||'Gere-Boleto'); } });
+}
+
+function commitLogoName(){
+  const inp = document.getElementById('logoInput');
+  if(!inp) return;
+  const val = inp.value.trim() || 'Gere-Boleto';
+  localStorage.setItem('gbAppName', val);
+  renderLogoName(val);
+  // Also update page title & PWA meta
+  document.title = val.replace('-','');
+}
+
+// ════════════════════════════════════════════
+// v5 — MODO FOCO / SILENCIOSO
+// ════════════════════════════════════════════
+let _focoAtivo = localStorage.getItem('gbFoco') === '1';
+
+(function initFoco(){ if(_focoAtivo) _applyFocoDOM(); })();
+
+function toggleFoco(){
+  _focoAtivo = !_focoAtivo;
+  localStorage.setItem('gbFoco', _focoAtivo ? '1' : '0');
+  _applyFocoDOM();
+  toast(_focoAtivo ? '👁 Modo Foco ativo — boletos pagos ocultos' : '👁 Modo Foco desativado', 'info', 2500);
+}
+
+function _applyFocoDOM(){
+  document.body.classList.toggle('modo-foco', _focoAtivo);
+  // Update all foco buttons
+  ['focoBtn','focoBtnSidebar'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.setAttribute('aria-pressed', _focoAtivo ? 'true' : 'false');
+    btn.style.background = _focoAtivo ? 'var(--ok)' : '';
+    btn.style.color = _focoAtivo ? '#fff' : '';
+    btn.style.borderColor = _focoAtivo ? 'var(--ok)' : '';
+    btn.textContent = _focoAtivo ? '👁 Foco ON' : '👁 Modo Foco';
+  });
+  const badge = document.getElementById('focoBadgeDash');
+  if(badge) badge.style.display = _focoAtivo ? 'inline-flex' : 'none';
+}
+
+// Mark pago rows with class for foco mode
+const _origRenderGroups_foco = typeof renderGroups === 'function' ? renderGroups : null;
+// We'll patch after renderGroups runs via MutationObserver
+const _focoObserver = new MutationObserver(()=>{
+  document.querySelectorAll('tbody tr').forEach(tr=>{
+    const cell = tr.querySelector('td:nth-child(5)');
+    if(cell && cell.innerHTML.includes('Pago')) tr.classList.add('row-pago');
+  });
+});
+_focoObserver.observe(document.body, { childList: true, subtree: true });
+
+// ════════════════════════════════════════════
+// v5 — TAGS LIVRES
+// ════════════════════════════════════════════
+let _tagFilter = null; // null | 'urgente' | 'contestado' | 'aguardando'
+
+const TAG_META = {
+  urgente:    { label: '🔴 Urgente',     cls: 'free-tag-urgente' },
+  contestado: { label: '🟡 Contestado',  cls: 'free-tag-contestado' },
+  aguardando: { label: '🔵 Aguard. NF',  cls: 'free-tag-aguardando' },
+};
+
+function setTagFilter(tag){
+  _tagFilter = tag;
+  renderAll();
+}
+
+function getBoletosForTag(tag){
+  return boletoArr().filter(b => (b.tags||[]).includes(tag));
+}
+
+function updateTagCounts(){
+  ['urgente','contestado','aguardando'].forEach(tag=>{
+    const el = document.getElementById('qnt-'+tag);
+    if(el) el.textContent = getBoletosForTag(tag).length;
+  });
+  ['qf-tag-urgente','qf-tag-contestado','qf-tag-aguardando','qf-tag-todos'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){
+      const isActive = id === 'qf-tag-' + _tagFilter;
+      el.classList.toggle('active', isActive);
+      el.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+  });
+}
+
+function toggleTag(id, tag){
+  const b = boletos[id];
+  if(!b) return;
+  const tags = [...(b.tags||[])];
+  const idx = tags.indexOf(tag);
+  if(idx >= 0) tags.splice(idx, 1);
+  else tags.push(tag);
+  fbSet('boletos/'+id+'/tags', tags.length ? tags : null);
+  toast(idx >= 0 ? `Tag "${TAG_META[tag].label}" removida` : `Tag "${TAG_META[tag].label}" adicionada`, 'info', 2000);
+}
+
+// Tag menu popup
+let _tagMenuOpen = null;
+function openTagMenu(event, id){
+  closeTagMenu();
+  const b = boletos[id];
+  if(!b) return;
+  const tags = b.tags || [];
+  const menu = document.createElement('div');
+  menu.className = 'tag-menu';
+  menu.id = 'tagMenu_' + id;
+  menu.style.position = 'fixed';
+  const rect = event.target.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.left = rect.left + 'px';
+  Object.entries(TAG_META).forEach(([tag, meta])=>{
+    const item = document.createElement('div');
+    item.className = 'tag-menu-item';
+    item.innerHTML = `${tags.includes(tag)?'✓ ':''}${meta.label}`;
+    item.onclick = (e)=>{ e.stopPropagation(); toggleTag(id, tag); closeTagMenu(); };
+    menu.appendChild(item);
+  });
+  document.body.appendChild(menu);
+  _tagMenuOpen = menu;
+  setTimeout(()=>{ document.addEventListener('click', closeTagMenu, {once:true}); }, 10);
+}
+
+function closeTagMenu(){
+  if(_tagMenuOpen){ _tagMenuOpen.remove(); _tagMenuOpen = null; }
+}
+
+function renderTagBadges(tags){
+  if(!tags || !tags.length) return '';
+  return tags.map(t=>{
+    const m = TAG_META[t];
+    if(!m) return '';
+    return `<span class="free-tag ${m.cls}" title="${m.label}">${m.label}</span>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// v5 — DESFAZER AÇÃO (Toast com Undo)
+// ════════════════════════════════════════════
+let _undoStack = {}; // id -> { data, type, timer }
+
+function toastUndo(msg, undoFn, dur=5000){
+  const c = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast-item ok';
+  el.innerHTML = `<div class="toast-undo"><span>${msg}</span><button class="toast-undo-btn" tabindex="0">↩ Desfazer</button></div>`;
+  c.appendChild(el);
+  const btn = el.querySelector('.toast-undo-btn');
+  const timer = setTimeout(()=>{ el.style.opacity='0'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, dur);
+  btn.addEventListener('click', ()=>{
+    clearTimeout(timer);
+    el.remove();
+    undoFn();
+    toast('↩ Ação desfeita!', 'info', 2000);
+  });
+}
+
+// Patch markPago to support undo
+const _origMarkPago = markPago;
+window.markPago = function(id){
+  const b = boletos[id];
+  if(!b) return;
+  const snapshot = JSON.parse(JSON.stringify(b));
+  const desc = b.desc || 'boleto';
+  const pagoEm = new Date().toISOString().slice(0,10);
+  fbSet('boletos/'+id, {...b, pago:true, pagoEm});
+  if(b.modalidade==='pix' && (b.pixChave||b.pixPayload)){
+    const text = b.pixPayload || b.pixChave;
+    navigator.clipboard.writeText(text).catch(()=>{});
+  }
+  toastUndo(`✓ "${desc}" marcado como pago`, ()=>{
+    fbSet('boletos/'+id, snapshot);
+  });
+};
+
+// Patch confirmDel to support undo
+const _origConfirmDel = window.confirmDel;
+window.confirmDel = function(id, desc){
+  _pendingDelId = id;
+  document.getElementById('confirmMsg').textContent = `Remover o boleto "${desc}"?`;
+  document.getElementById('confirmOkBtn').onclick = ()=>{
+    if(!_pendingDelId){ closeConfirm(); return; }
+    const snapshot = JSON.parse(JSON.stringify(boletos[_pendingDelId]||{}));
+    const delId = _pendingDelId;
+    fbRemove('boletos/'+delId);
+    _pendingDelId = null;
+    closeConfirm();
+    toastUndo(`🗑 "${desc}" removido`, ()=>{
+      fbSet('boletos/'+delId, snapshot);
+    });
+  };
+  document.getElementById('moConfirm').classList.add('open');
+};
+
+// ════════════════════════════════════════════
+// v5 — DASHBOARD RESUMO
+// ════════════════════════════════════════════
+let _dashCollapsed = localStorage.getItem('gbDashCollapsed') === '1';
+
+(function initDash(){ if(_dashCollapsed) _applyDashCollapse(); })();
+
+function toggleDash(){
+  _dashCollapsed = !_dashCollapsed;
+  localStorage.setItem('gbDashCollapsed', _dashCollapsed ? '1' : '0');
+  _applyDashCollapse();
+}
+function _applyDashCollapse(){
+  const panel = document.getElementById('dashPanel');
+  if(!panel) return;
+  panel.classList.toggle('collapsed', _dashCollapsed);
+  const hdr = panel.querySelector('.dash-header');
+  if(hdr) hdr.setAttribute('aria-expanded', _dashCollapsed ? 'false' : 'true');
+}
+
+function updateDashboard(){
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
+  const allB = boletoArr();
+  
+  // Maior gasto do mês (pagos no mês corrente)
+  const pagosMes = allB.filter(b => b.pago && b.vencimento && b.vencimento.startsWith(currentMonthStr));
+  let maiorGasto = 0, maiorDesc = '—';
+  pagosMes.forEach(b=>{ if((b.valor||0) > maiorGasto){ maiorGasto=(b.valor||0); maiorDesc=b.desc||'—'; } });
+  const elMG = document.getElementById('dashMaiorGasto');
+  const elMGD = document.getElementById('dashMaiorGastoDesc');
+  if(elMG) elMG.textContent = maiorGasto > 0 ? fmtR(maiorGasto) : '—';
+  if(elMGD) elMGD.textContent = maiorDesc.length > 22 ? maiorDesc.slice(0,22)+'…' : maiorDesc;
+
+  // Fornecedor mais frequente (todos os boletos pendentes/vencidos)
+  const freq = {};
+  allB.filter(b => !b.pago).forEach(b=>{ const k = (b.desc||'').trim(); if(k) freq[k] = (freq[k]||0) + 1; });
+  let topForn = '—', topQtd = 0;
+  Object.entries(freq).forEach(([k,v])=>{ if(v>topQtd){ topForn=k; topQtd=v; } });
+  const elFF = document.getElementById('dashFornFreq');
+  const elFFQ = document.getElementById('dashFornFreqQtd');
+  if(elFF) elFF.textContent = topForn.length > 20 ? topForn.slice(0,20)+'…' : topForn;
+  if(elFFQ) elFFQ.textContent = topQtd > 1 ? `${topQtd}× no histórico` : topForn !== '—' ? '1× no histórico' : '—';
+
+  // Média de atraso (vencidos, diferença em dias)
+  const vencidos = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
+  let somaAtraso = 0;
+  vencidos.forEach(b=>{ somaAtraso += Math.round((TODAY - toDate(b.vencimento)) / 86400000); });
+  const medAtraso = vencidos.length ? Math.round(somaAtraso / vencidos.length) : 0;
+  const elMA = document.getElementById('dashMedAtraso');
+  const elMAS = document.getElementById('dashMedAtrasoSub');
+  if(elMA) elMA.textContent = vencidos.length ? medAtraso + ' dias' : '0 dias';
+  if(elMAS) elMAS.textContent = vencidos.length ? `${vencidos.length} vencido${vencidos.length > 1 ? 's' : ''}` : 'sem atrasos';
+  if(elMA) elMA.style.color = medAtraso > 7 ? 'var(--danger)' : medAtraso > 0 ? 'var(--warn)' : 'var(--ok)';
+
+  // Update tag counts
+  updateTagCounts();
+}
+
+// ════════════════════════════════════════════
+// v5 — MÁSCARA CURRENCY NO INPUT VALOR
+// ════════════════════════════════════════════
+(function initValueMask(){
+  document.addEventListener('DOMContentLoaded', ()=>{ _attachValueMask(); });
+  // Also attach after modal opens (input may be re-created)
+  const obs = new MutationObserver(()=>{ _attachValueMask(); });
+  obs.observe(document.body, {childList:true, subtree:true});
+})();
+
+let _maskAttached = false;
+function _attachValueMask(){
+  const inp = document.getElementById('fValor');
+  if(!inp || inp._maskAttached) return;
+  inp._maskAttached = true;
+  inp.addEventListener('input', function(){
+    this.classList.toggle('has-value', parseFloat(this.value) > 0);
+  });
+  inp.addEventListener('focus', function(){
+    if(this.value === '0' || this.value === '0.00') this.value = '';
+  });
+}
+
+// ════════════════════════════════════════════
+// v5 — PATCH renderAll to call updateDashboard
+// ════════════════════════════════════════════
+const _origRenderAll = renderAll;
+window.renderAll = function(){
+  _origRenderAll();
+  updateDashboard();
+  // Apply foco classes to rows after render
+  setTimeout(()=>{
+    document.querySelectorAll('tbody tr').forEach(tr=>{
+      const stCell = tr.querySelector('td:nth-child(5)');
+      if(stCell && stCell.textContent.includes('Pago')) tr.classList.add('row-pago');
+    });
+  }, 50);
+};
+
+// ════════════════════════════════════════════
+// v5 — PATCH renderGroups to include tags in table rows + filter by tag
+// ════════════════════════════════════════════
+const _origRenderGroups = renderGroups;
+window.renderGroups = function(){
+  _origRenderGroups();
+  // After render, we need to inject tags. Do it via post-process.
+  _injectTagsAndFilter();
+};
+
+function _injectTagsAndFilter(){
+  // For dense table view: add tag badges next to desc
+  document.querySelectorAll('tbody tr').forEach(tr=>{
+    const firstTd = tr.querySelector('td:first-child strong');
+    if(!firstTd) return;
+    // Find boleto by desc match (imperfect but works)
+    // Better: use data-id attribute added via patch — inject it in td
+    const bId = tr.getAttribute('data-bid');
+    if(!bId) return;
+    const b = boletos[bId];
+    if(!b || !b.tags || !b.tags.length) return;
+    const tagsHtml = renderTagBadges(b.tags);
+    if(tagsHtml && !tr.querySelector('.free-tag')){
+      firstTd.insertAdjacentHTML('afterend', tagsHtml);
+    }
+  });
+
+  // Apply tag filter
+  if(_tagFilter){
+    document.querySelectorAll('tbody tr').forEach(tr=>{
+      const bId = tr.getAttribute('data-bid');
+      if(!bId){ tr.style.display='none'; return; }
+      const b = boletos[bId];
+      const has = b && (b.tags||[]).includes(_tagFilter);
+      tr.style.display = has ? '' : 'none';
+    });
+    document.querySelectorAll('.bol-card').forEach(card=>{
+      const bId = card.getAttribute('data-bid');
+      if(!bId){ card.style.display='none'; return; }
+      const b = boletos[bId];
+      const has = b && (b.tags||[]).includes(_tagFilter);
+      card.style.display = has ? '' : '';
+    });
+  }
+}
+
+// We also need data-bid on rows. Patch the HTML output via post-processing:
+const _obs2 = new MutationObserver((muts)=>{
+  muts.forEach(mut=>{
+    mut.addedNodes.forEach(node=>{
+      if(node.nodeType !== 1) return;
+      // Add data-bid attributes to table rows that have action buttons with IDs
+      node.querySelectorAll && node.querySelectorAll('button[onclick*="markPago(\'"]').forEach(btn=>{
+        const m = btn.getAttribute('onclick').match(/markPago\('([^']+)'\)/);
+        if(m){
+          const tr = btn.closest('tr') || btn.closest('.bol-card');
+          if(tr && !tr.getAttribute('data-bid')) tr.setAttribute('data-bid', m[1]);
+        }
+      });
+      node.querySelectorAll && node.querySelectorAll('button[onclick*="editB(\'"]').forEach(btn=>{
+        const m = btn.getAttribute('onclick').match(/editB\('([^']+)'\)/);
+        if(m){
+          const tr = btn.closest('tr') || btn.closest('.bol-card');
+          if(tr && !tr.getAttribute('data-bid')) tr.setAttribute('data-bid', m[1]);
+        }
+      });
+    });
+  });
+});
+_obs2.observe(document.body, {childList:true, subtree:true});
+
+// Add tag button to action columns via MutationObserver
+const _obs3 = new MutationObserver((muts)=>{
+  muts.forEach(mut=>{
+    mut.addedNodes.forEach(node=>{
+      if(node.nodeType !== 1) return;
+      node.querySelectorAll && node.querySelectorAll('.act-btns, .bc-acts').forEach(actDiv=>{
+        if(actDiv.querySelector('.tag-btn')) return; // already added
+        const row = actDiv.closest('tr') || actDiv.closest('.bol-card');
+        const bId = row && row.getAttribute('data-bid');
+        if(!bId) return;
+        const tagBtn = document.createElement('button');
+        tagBtn.className = 'btn btn-g btn-sm tag-btn';
+        tagBtn.title = 'Tags';
+        tagBtn.setAttribute('aria-label', 'Gerenciar tags deste boleto');
+        tagBtn.textContent = '🏷';
+        tagBtn.onclick = (e)=>{ e.stopPropagation(); openTagMenu(e, bId); };
+        actDiv.appendChild(tagBtn);
+        // Render existing tags
+        const b = boletos[bId];
+        if(b && b.tags && b.tags.length){
+          const firstTd = row.querySelector('td:first-child') || row.querySelector('.bc-desc');
+          if(firstTd && !firstTd.querySelector('.free-tag')){
+            firstTd.insertAdjacentHTML('beforeend', renderTagBadges(b.tags));
+          }
+        }
+      });
+    });
+  });
+});
+_obs3.observe(document.body, {childList:true, subtree:true});
+
+// ════════════════════════════════════════════
+// v5 — ARIA-PRESSED on view toggle buttons
+// ════════════════════════════════════════════
+const _origSetView = setView;
+window.setView = function(mode){
+  _origSetView(mode);
+  document.getElementById('vtDense').setAttribute('aria-pressed', mode==='dense' ? 'true' : 'false');
+  document.getElementById('vtCard').setAttribute('aria-pressed', mode==='card' ? 'true' : 'false');
+};
+
+// ════════════════════════════════════════════
+// v5 — INIT
+// ════════════════════════════════════════════
+// Apply saved theme immediately
+(function(){ applyTheme(localStorage.getItem('gbTheme')||'dark-gold', false); })();
+// Apply foco on load
+if(_focoAtivo) _applyFocoDOM();
+// Apply dash collapse on load
+if(_dashCollapsed) _applyDashCollapse();
+// Apply logo name on load
+(function(){ const n = localStorage.getItem('gbAppName'); if(n) renderLogoName(n); })();
 
 </script>
 </body>

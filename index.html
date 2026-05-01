@@ -248,6 +248,27 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .chart-legend span{display:flex;align-items:center;gap:4px;}
 .chart-legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
 
+
+/* ── MODALIDADE TOGGLE (Boleto / Pix) ── */
+.mod-toggle{display:flex;gap:0;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-bottom:2px;}
+.mod-btn{flex:1;background:transparent;border:none;color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:7px 10px;cursor:pointer;transition:.12s;display:flex;align-items:center;justify-content:center;gap:5px;}
+.mod-btn.active{background:var(--accent);color:#0f0f0d;}
+.mod-btn:not(.active):hover{background:var(--card);color:var(--text);}
+
+/* ── PIX BOX ── */
+.pix-box{grid-column:1/-1;border:1px solid #00c89330;border-radius:7px;padding:12px;background:#00c89306;display:flex;flex-direction:column;gap:10px;}
+.pix-lbl{font-size:9px;font-weight:700;color:#00c893;text-transform:uppercase;letter-spacing:.8px;}
+.pix-key-row{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:center;}
+.pix-key-type{background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;}
+.pix-key-type:focus{border-color:#00c893;}
+.pix-tag{display:inline-flex;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:#00c89318;color:#00c893;border:1px solid #00c89330;white-space:nowrap;}
+.pix-qr-wrap{text-align:center;padding:8px;background:var(--card);border:1px solid var(--border);border-radius:6px;}
+.pix-copy-btn{background:#00c89318;border:1px solid #00c89330;color:#00c893;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;border-radius:5px;padding:4px 10px;cursor:pointer;transition:.12s;}
+.pix-copy-btn:hover{background:#00c89330;}
+
+/* ── table/card pix badge ── */
+.pix-badge{display:inline-flex;font-size:9px;font-weight:700;padding:2px 5px;border-radius:3px;background:#00c89318;color:#00c893;border:1px solid #00c89330;margin-left:3px;}
+
 /* ── COMPACT / CARD TOGGLE ── */
 .view-toggle{display:flex;gap:3px;}
 .vt-btn{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer;color:var(--muted);transition:.12s;}
@@ -268,6 +289,9 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .notif-dot{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--ok);display:none;}
 .notif-dot.on{display:block;}
 
+/* ════════════════════════════════════════════
+   TABLET (≤ 800px)
+════════════════════════════════════════════ */
 @media(max-width:800px){
   .layout{grid-template-columns:1fr;}
   .sidebar{position:relative;top:0;height:auto;border-right:none;border-bottom:1px solid var(--border);}
@@ -277,12 +301,606 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   .sinp{width:120px;}
   .hright{gap:5px;}
 }
+
+/* ════════════════════════════════════════════
+   MOBILE IPHONE (≤ 480px) — bottom nav layout
+════════════════════════════════════════════ */
+@media(max-width:480px){
+
+  /* ── Safe area support (iPhone notch/home bar) ── */
+  body{ padding-bottom: env(safe-area-inset-bottom, 0); }
+
+  /* ── Header ── */
+  header{
+    height: 52px;
+    padding: 0 12px;
+  }
+  .logo{ font-size: 15px; }
+
+  /* Completely hide desktop header buttons except + Boleto */
+  .hright .sync,
+  .hright .sinp,
+  .hright .view-toggle,
+  .hright .notif-btn,
+  .hright [onclick*="openChartModal"],
+  .hright [onclick*="openLD"],
+  .hright [onclick*="openCNPJModal"] {
+    display: none !important;
+  }
+  /* + Boleto gets full-width feel but stays compact */
+  .hright .btn-p{
+    font-size: 13px;
+    padding: 7px 14px;
+  }
+
+  /* ── Layout: no sidebar — single column scroll ── */
+  .layout{
+    grid-template-columns: 1fr;
+    padding-bottom: 70px; /* room for bottom nav */
+  }
+
+  /* ── Sidebar becomes a hidden drawer ── */
+  .sidebar{
+    display: none;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: min(300px, 88vw);
+    height: 100%;
+    z-index: 500;
+    border-right: 1px solid var(--border);
+    border-bottom: none;
+    overflow-y: auto;
+    padding: 60px 12px 80px;
+    transform: translateX(-100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+  }
+  .sidebar.mob-open{
+    display: flex;
+    transform: translateX(0);
+  }
+  /* Overlay behind drawer */
+  #sideOverlay{
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.55);
+    z-index: 490;
+    backdrop-filter: blur(2px);
+  }
+  #sideOverlay.on{ display: block; }
+
+  /* ── Main area ── */
+  .main{ padding: 10px 12px; gap: 10px; }
+
+  /* ── Stats cards: 2 per row ── */
+  .stats-row{
+    grid-template-columns: repeat(2,1fr);
+    gap: 6px;
+  }
+  .sc{ padding: 9px 11px; }
+  .sv{ font-size: 14px; }
+
+  /* ── Saldo panel: 1 per row ── */
+  .saldo-panel{ grid-template-columns: 1fr; gap: 6px; }
+
+  /* ── Groups: no horizontal scroll table → stacked cards ── */
+  /* Force card view on mobile regardless of toggle */
+  .mobile-force-cards [style*="overflow-x:auto"],
+  .mobile-force-cards table { display: none !important; }
+
+  /* ── Card grid 1 col on small screens ── */
+  .card-grid{ grid-template-columns: 1fr; gap: 6px; }
+  .bol-card{ padding: 10px 12px; }
+  .bc-val{ font-size: 14px; }
+
+  /* ── Group header ── */
+  .gb-head{
+    padding: 9px 11px;
+    font-size: 12px;
+  }
+
+  /* ── Modal: full-screen bottom sheet ── */
+  .mo{ align-items: flex-end; }
+  .mbox{
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0;
+    max-height: 90dvh;
+    overflow-y: auto;
+    padding: 20px 16px 24px;
+    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+  }
+  /* Drag handle visual hint */
+  .mbox::before{
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 14px;
+  }
+  .fg{ grid-template-columns: 1fr; }
+  .fg .full{ grid-column: 1; }
+  .mact{ flex-direction: row; }
+
+  /* ── Bottom Nav Bar ── */
+  #bottomNav{
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    background: var(--surf);
+    border-top: 1px solid var(--border);
+    z-index: 400;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .bnav-btn{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: color .15s;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bnav-btn:active{ opacity: .7; }
+  .bnav-btn.bnav-active{ color: var(--accent); }
+  .bnav-icon{ font-size: 20px; line-height: 1; }
+  .bnav-add{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bnav-add-circle{
+    width: 46px; height: 46px;
+    background: var(--accent);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px;
+    color: #0f0f0d;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(240,192,64,.4);
+    margin-bottom: -6px;
+  }
+
+  /* ── Mobile quick-filter chips strip (under header) ── */
+  #mobFilterStrip{
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 8px 12px 4px;
+    background: var(--surf);
+    border-bottom: 1px solid var(--border);
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #mobFilterStrip::-webkit-scrollbar{ display: none; }
+  .mfc{
+    flex-shrink: 0;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 11px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    -webkit-tap-highlight-color: transparent;
+    transition: .12s;
+  }
+  .mfc.active{
+    background: var(--accent);
+    color: #0f0f0d;
+    border-color: var(--accent);
+  }
+
+  /* ── Mobile search bar ── */
+  #mobSearchBar{
+    display: flex;
+    padding: 8px 12px;
+    background: var(--surf);
+    border-bottom: 1px solid var(--border);
+  }
+  #mobSearchBar input{
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    outline: none;
+  }
+  #mobSearchBar input:focus{ border-color: var(--accent); }
+
+  /* Hide desktop search/filter when mobile */
+  .main > div:has(#chipArea){ display: none; }
+  #alertBar{ margin: 0 0 6px; }
+
+  /* ── DU strip: horizontal scroll ── */
+  .du-strip{ gap: 4px; }
+  .duc{ min-width: 58px; padding: 5px 6px; }
+  .du-n{ font-size: 12px; }
+
+  /* ── Expand/collapse controls hidden on mobile ── */
+  .main > div:has(.btn-g[onclick*="toggleAll"]){ display: none; }
+
+  /* ── Group boxes ── */
+  .gb { border-radius: 8px; }
+  .gb-head { border-radius: 8px 8px 0 0; }
+  .gb-empty { font-size: 12px; }
+}
+
+/* Hide bottom nav on desktop */
+@media(min-width:481px){
+  #bottomNav{ display: none; }
+  #mobFilterStrip{ display: none; }
+  #mobSearchBar{ display: none; }
+  #sideOverlay{ display: none !important; }
+}
+
+
+/* ════════════════════════════════════════════
+   TEMAS DE COR (v5)
+════════════════════════════════════════════ */
+
+/* Dark Gold (default — já aplicado em :root) */
+body[data-theme="dark-gold"] {
+  --bg:#0f0f0d;--surf:#181816;--card:#1e1e1c;--card2:#242422;
+  --border:#2a2a27;--text:#e4e4dc;--muted:#6a6a62;
+  --accent:#f0c040;--danger:#e05c3a;--ok:#4caf7d;--warn:#f0c040;
+  --blue:#6f8fff;--pink:#ff9fdf;
+}
+
+/* Dark Green */
+body[data-theme="dark-green"] {
+  --bg:#0c110e;--surf:#131a15;--card:#192019;--card2:#1f281f;
+  --border:#243027;--text:#dde8de;--muted:#5f7262;
+  --accent:#4cdf88;--danger:#e05c5c;--ok:#4caf7d;--warn:#f0c040;
+  --blue:#6fb5ff;--pink:#ff9fdf;
+}
+
+/* Dark Blue */
+body[data-theme="dark-blue"] {
+  --bg:#0c0f16;--surf:#121620;--card:#181d2a;--card2:#1e2432;
+  --border:#232b3a;--text:#dde2f0;--muted:#5c6480;
+  --accent:#6f8fff;--danger:#e05c7a;--ok:#4caf7d;--warn:#f0c040;
+  --blue:#6f8fff;--pink:#ff9fdf;
+}
+
+/* Light Clean */
+body[data-theme="light"] {
+  --bg:#f5f5f2;--surf:#ffffff;--card:#f0f0ec;--card2:#e8e8e4;
+  --border:#d8d8d0;--text:#1a1a18;--muted:#7a7a72;
+  --accent:#e08020;--danger:#d03030;--ok:#2e9450;--warn:#c07010;
+  --blue:#3060c0;--pink:#c04080;
+}
+body[data-theme="light"] header { box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+body[data-theme="light"] .gb-head:hover { background: #e8e8e4; }
+body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+
+/* ── Theme toggle pill ── */
+.theme-picker {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.theme-dot {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform .15s, border-color .15s;
+  flex-shrink: 0;
+}
+.theme-dot:hover { transform: scale(1.2); }
+.theme-dot.active { border-color: var(--text); }
+
+/* ── Company name customization ── */
+.logo-text-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--accent);
+  color: var(--accent);
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 17px;
+  outline: none;
+  width: 130px;
+  cursor: text;
+  padding: 0 2px;
+}
+.logo-text-input::placeholder { color: var(--accent); opacity: .6; }
+
+/* ════════════════════════════════════════════
+   MICRO-ANIMAÇÕES (v5)
+════════════════════════════════════════════ */
+
+/* Tick animado ao marcar pago */
+@keyframes tickPop {
+  0%   { transform: scale(0) rotate(-45deg); opacity: 0; }
+  60%  { transform: scale(1.4) rotate(5deg);  opacity: 1; }
+  100% { transform: scale(1)   rotate(0);     opacity: 1; }
+}
+.tick-anim { animation: tickPop .4s cubic-bezier(.34,1.56,.64,1) forwards; }
+
+/* Card entrada suave */
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.bol-card, tbody tr {
+  animation: cardIn .22s ease both;
+}
+/* Stagger via CSS custom prop para cards */
+.bol-card:nth-child(1)  { animation-delay: .02s; }
+.bol-card:nth-child(2)  { animation-delay: .04s; }
+.bol-card:nth-child(3)  { animation-delay: .06s; }
+.bol-card:nth-child(4)  { animation-delay: .08s; }
+.bol-card:nth-child(5)  { animation-delay: .10s; }
+.bol-card:nth-child(6)  { animation-delay: .12s; }
+.bol-card:nth-child(7)  { animation-delay: .14s; }
+.bol-card:nth-child(8)  { animation-delay: .16s; }
+
+/* Stats contam para cima */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px) scale(.9); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.sv { animation: countUp .35s cubic-bezier(.34,1.2,.64,1) both; }
+
+/* Botão pago — pulse */
+@keyframes paidPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(76,175,125,.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(76,175,125,0); }
+  100% { box-shadow: 0 0 0 0 rgba(76,175,125,0); }
+}
+.btn-ok:active { animation: paidPulse .5s ease; }
+
+/* Group collapse smooth */
+.gb-body {
+  overflow: hidden;
+  transition: max-height .25s cubic-bezier(.4,0,.2,1);
+  max-height: 9999px;
+}
+.gb-body.collapsed { max-height: 0 !important; }
+
+/* ════════════════════════════════════════════
+   MODO FOCO (v5)
+════════════════════════════════════════════ */
+body.modo-foco .pago-card,
+body.modo-foco tbody tr.row-pago {
+  display: none !important;
+}
+.foco-badge {
+  display: none;
+  background: var(--ok);
+  color: #fff;
+  border-radius: 12px;
+  padding: 2px 10px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+  animation: cardIn .2s ease;
+}
+body.modo-foco .foco-badge { display: inline-flex; align-items: center; gap: 4px; }
+
+/* ════════════════════════════════════════════
+   TAGS LIVRES (v5)
+════════════════════════════════════════════ */
+.free-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border-radius: 10px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity .15s;
+  border: 1px solid;
+  margin-left: 2px;
+}
+.free-tag:hover { opacity: .75; }
+.free-tag-urgente  { background: #e05c3a18; color: var(--danger); border-color: #e05c3a44; }
+.free-tag-contestado { background: #f0c04018; color: var(--warn); border-color: #f0c04044; }
+.free-tag-aguardando { background: #6f8fff18; color: var(--blue); border-color: #6f8fff44; }
+
+/* Tag dropdown in table */
+.tag-menu {
+  position: absolute;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  z-index: 200;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
+  overflow: hidden;
+  min-width: 160px;
+}
+.tag-menu-item {
+  padding: 7px 12px;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: background .1s;
+  border-bottom: 1px solid var(--border);
+}
+.tag-menu-item:last-child { border-bottom: none; }
+.tag-menu-item:hover { background: var(--card); }
+
+/* ════════════════════════════════════════════
+   DESFAZER AÇÃO (v5)
+════════════════════════════════════════════ */
+.toast-undo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.toast-undo-btn {
+  background: rgba(255,255,255,.15);
+  border: 1px solid rgba(255,255,255,.3);
+  border-radius: 4px;
+  color: inherit;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  cursor: pointer;
+  transition: background .12s;
+  white-space: nowrap;
+}
+.toast-undo-btn:hover { background: rgba(255,255,255,.25); }
+
+/* ════════════════════════════════════════════
+   DASHBOARD RESUMO (v5)
+════════════════════════════════════════════ */
+.dash-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: max-height .3s cubic-bezier(.4,0,.2,1);
+  max-height: 300px;
+}
+.dash-panel.collapsed { max-height: 44px; }
+.dash-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border);
+  background: var(--surf);
+}
+.dash-header:hover { background: #1a1a18; }
+body[data-theme="light"] .dash-header:hover { background: #ededea; }
+.dash-title {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dash-chevron {
+  color: var(--muted);
+  font-size: 11px;
+  transition: transform .25s;
+}
+.dash-panel.collapsed .dash-chevron { transform: rotate(-90deg); }
+.dash-body {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+}
+.dash-stat {
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+}
+.dash-stat:last-child { border-right: none; }
+.dash-stat-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 4px;
+}
+.dash-stat-val {
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dash-stat-sub {
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* ════════════════════════════════════════════
+   ACESSIBILIDADE — FOCO (v5)
+════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+  border-radius: 3px;
+}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* ════════════════════════════════════════════
+   MÁSCARA DE MOEDA — feedback visual
+════════════════════════════════════════════ */
+#fValor.has-value { color: var(--ok); }
+#fValor.has-value:focus { color: var(--text); }
+
+/* ════════════════════════════════════════════
+   MOBILE DASHBOARD (v5)
+════════════════════════════════════════════ */
+@media(max-width:480px) {
+  .dash-body { grid-template-columns: 1fr; }
+  .dash-stat { border-right: none; border-bottom: 1px solid var(--border); }
+  .dash-stat:last-child { border-bottom: none; }
+}
 </style>
 </head>
 <body>
 
 <!-- TOAST CONTAINER -->
 <div class="toast" id="toastContainer"></div>
+
+<!-- SIDEBAR OVERLAY (mobile) -->
+<div id="sideOverlay" onclick="closeMobSidebar()"></div>
+
+<!-- BOTTOM NAV (mobile only) -->
+<div id="bottomNav">
+  <button class="bnav-btn" id="bnavMenu" onclick="toggleMobSidebar()">
+    <span class="bnav-icon">☰</span>
+    <span>Menu</span>
+  </button>
+  <button class="bnav-btn" id="bnavSearch" onclick="toggleMobSearch()">
+    <span class="bnav-icon">🔍</span>
+    <span>Buscar</span>
+  </button>
+  <button class="bnav-add" onclick="openModal()">
+    <div class="bnav-add-circle">＋</div>
+  </button>
+  <button class="bnav-btn" id="bnavChart" onclick="openChartModal()">
+    <span class="bnav-icon">📊</span>
+    <span>Resumo</span>
+  </button>
+  <button class="bnav-btn" id="bnavPix" onclick="openModal();setTimeout(()=>setModalidade('pix'),50)">
+    <span class="bnav-icon">⚡</span>
+    <span>Pix</span>
+  </button>
+</div>
 
 <!-- LOADING -->
 <div class="loading-screen" id="loadingScreen">
@@ -293,25 +911,50 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 <div id="app" style="display:none;">
 
 <header>
-  <div class="logo">Gere<span>Boleto</span></div>
+  <div class="logo" id="logoArea" title="Clique duplo para personalizar o nome" ondblclick="editLogoName()">Gere<span>Boleto</span></div>
   <div class="hright">
-    <span class="sync ok" id="syncBadge">✓ Online</span>
-    <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="renderAll()">
-    <div class="view-toggle">
-      <button class="vt-btn active" id="vtDense" onclick="setView('dense')" title="Modo tabela (denso)">☰</button>
-      <button class="vt-btn" id="vtCard" onclick="setView('card')" title="Modo cartão">⊞</button>
+    <span class="sync ok" id="syncBadge" aria-live="polite">✓ Online</span>
+    <!-- Temas de cor -->
+    <div class="theme-picker" title="Tema de cor" aria-label="Selecionar tema de cor">
+      <div class="theme-dot active" id="td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#f0c040)" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"  onkeydown="if(event.key==='Enter')setTheme('dark-gold')"></div>
+      <div class="theme-dot"        id="td-dark-green" style="background:linear-gradient(135deg,#0c110e,#4cdf88)" title="Dark Green" onclick="setTheme('dark-green')" tabindex="0" role="button" aria-label="Tema Dark Green" onkeydown="if(event.key==='Enter')setTheme('dark-green')"></div>
+      <div class="theme-dot"        id="td-dark-blue"  style="background:linear-gradient(135deg,#0c0f16,#6f8fff)" title="Dark Blue"  onclick="setTheme('dark-blue')"  tabindex="0" role="button" aria-label="Tema Dark Blue"  onkeydown="if(event.key==='Enter')setTheme('dark-blue')"></div>
+      <div class="theme-dot"        id="td-light"      style="background:linear-gradient(135deg,#f5f5f2,#e08020)" title="Light"      onclick="setTheme('light')"      tabindex="0" role="button" aria-label="Tema Light"      onkeydown="if(event.key==='Enter')setTheme('light')"></div>
     </div>
-    <button class="btn btn-g btn-sm" onclick="openChartModal()" title="Resumo mensal">📊</button>
-    <button class="btn btn-g btn-sm notif-btn" id="notifBtn" onclick="toggleNotifications()" title="Notificações de vencimento"><span>🔔</span><span class="notif-dot" id="notifDot"></span></button>
-    <button class="btn btn-g btn-sm" onclick="openLD()">🔢 Linha Digitável</button>
-    <button class="btn btn-g btn-sm" onclick="openCNPJModal()">⚙ CNPJs</button>
-    <button class="btn btn-p" onclick="openModal()">＋ Boleto</button>
+    <!-- Modo foco -->
+    <button class="btn btn-g btn-sm foco-badge" id="focoBtn" onclick="toggleFoco()" aria-pressed="false" title="Modo Foco: oculta pagos">👁 Foco</button>
+    <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="renderAll()" aria-label="Buscar boletos">
+    <div class="view-toggle" role="group" aria-label="Modo de visualização">
+      <button class="vt-btn active" id="vtDense" onclick="setView('dense')" title="Modo tabela (denso)" aria-pressed="true">☰</button>
+      <button class="vt-btn" id="vtCard" onclick="setView('card')" title="Modo cartão" aria-pressed="false">⊞</button>
+    </div>
+    <button class="btn btn-g btn-sm" onclick="openChartModal()" title="Resumo mensal" aria-label="Resumo mensal">📊</button>
+    <button class="btn btn-g btn-sm notif-btn" id="notifBtn" onclick="toggleNotifications()" title="Notificações de vencimento" aria-label="Notificações de vencimento"><span>🔔</span><span class="notif-dot" id="notifDot" aria-hidden="true"></span></button>
+    <button class="btn btn-g btn-sm" onclick="openLD()" aria-label="Decodificar linha digitável">🔢 Linha Digitável</button>
+    <button class="btn btn-g btn-sm" onclick="openCNPJModal()" aria-label="Gerenciar CNPJs">⚙ CNPJs</button>
+    <button class="btn btn-p" onclick="openModal()" aria-label="Adicionar novo boleto">＋ Boleto</button>
   </div>
 </header>
 
+<!-- MOBILE FILTER STRIP -->
+<div id="mobFilterStrip">
+  <button class="mfc active" id="mfc-todos"    onclick="setQF('todos');setMobFC(this)">📋 Todos</button>
+  <button class="mfc" id="mfc-7du"      onclick="setQF('7du');setMobFC(this)">📅 7DU</button>
+  <button class="mfc" id="mfc-hoje"     onclick="setQF('hoje');setMobFC(this)">🔥 Hoje</button>
+  <button class="mfc" id="mfc-vencido"  onclick="setQF('vencido');setMobFC(this)">⚠️ Vencidos</button>
+  <button class="mfc" id="mfc-pendente" onclick="setQF('pendente');setMobFC(this)">⏳ Pendentes</button>
+  <button class="mfc" id="mfc-pago"     onclick="setQF('pago');setMobFC(this)">✓ Pagos</button>
+  <button class="mfc" id="mfc-casa"     onclick="setQF('casa');setMobFC(this)">🏠 Casa</button>
+</div>
+
+<!-- MOBILE SEARCH BAR (hidden by default) -->
+<div id="mobSearchBar" style="display:none">
+  <input type="text" id="mobSearchInput" placeholder="🔍 Buscar por descrição, valor, fornecedor…" oninput="syncMobSearch(this.value)">
+</div>
+
 <div class="layout">
   <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="sidebar">
     <div>
       <div class="cal-head">
         <button class="cal-nav" onclick="calNav(-1)">‹</button>
@@ -329,7 +972,16 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
       <button class="qf" id="qf-vencido"  onclick="setQF('vencido')">⚠ Vencidos        <span class="qct" id="qn-vencido">0</span></button>
       <button class="qf" id="qf-pendente" onclick="setQF('pendente')">⏳ Pendentes     <span class="qct" id="qn-pendente">0</span></button>
       <button class="qf" id="qf-pago"     onclick="setQF('pago')">✓ Pagos mês          <span class="qct" id="qn-pago">0</span></button>
-      <button class="qf" id="qf-casa"     onclick="setQF('casa')">🏠 Só Casa           <span class="qct" id="qn-casa">0</span></button>
+      <button class="qf" id="qf-casa"     onclick="setQF('casa')" aria-pressed="false">🏠 Só Casa           <span class="qct" id="qn-casa">0</span></button>
+    </div>
+    <div class="div"></div>
+    <!-- TAGS LIVRES (v5) -->
+    <div>
+      <div class="slbl">Tags</div>
+      <button class="qf" id="qf-tag-urgente"    onclick="setTagFilter('urgente')"    aria-pressed="false">🔴 Urgente      <span class="qct" id="qnt-urgente">0</span></button>
+      <button class="qf" id="qf-tag-contestado" onclick="setTagFilter('contestado')" aria-pressed="false">🟡 Contestado   <span class="qct" id="qnt-contestado">0</span></button>
+      <button class="qf" id="qf-tag-aguardando" onclick="setTagFilter('aguardando')" aria-pressed="false">🔵 Aguard. NF   <span class="qct" id="qnt-aguardando">0</span></button>
+      <button class="qf" id="qf-tag-todos"      onclick="setTagFilter(null)"         aria-pressed="false">✕ Limpar tag    </button>
     </div>
     <div class="div"></div>
     <div>
@@ -342,7 +994,9 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
       <div class="du-strip" id="duStrip"></div>
     </div>
     <div style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;">
-      <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()">💰 Atualizar Saldos</button>
+      <!-- Modo Foco -->
+      <button class="btn btn-g btn-sm" style="width:100%" id="focoBtnSidebar" onclick="toggleFoco()" aria-pressed="false" title="Ocultar boletos pagos">👁 Modo Foco</button>
+      <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()" aria-label="Atualizar saldos">💰 Atualizar Saldos</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="loadData()">🔄 Atualizar</button>
       <!-- CSV DROPDOWN -->
       <div class="csv-wrap" style="width:100%">
@@ -360,7 +1014,31 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 
   <!-- MAIN -->
   <div class="main">
-    <div class="alertbar" id="alertBar" style="display:none">⚠️ <span id="alertMsg"></span></div>
+    <div class="alertbar" id="alertBar" style="display:none" role="alert">⚠️ <span id="alertMsg"></span></div>
+    <!-- DASHBOARD RESUMO (v5) -->
+    <div class="dash-panel" id="dashPanel">
+      <div class="dash-header" onclick="toggleDash()" aria-expanded="true" aria-controls="dashBody" role="button" tabindex="0" onkeydown="if(event.key==='Enter')toggleDash()">
+        <div class="dash-title">📊 Dashboard Resumo <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
+        <span class="dash-chevron" aria-hidden="true">▼</span>
+      </div>
+      <div class="dash-body" id="dashBody">
+        <div class="dash-stat">
+          <div class="dash-stat-lbl">💸 Maior Gasto do Mês</div>
+          <div class="dash-stat-val" id="dashMaiorGasto">—</div>
+          <div class="dash-stat-sub" id="dashMaiorGastoDesc">—</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-lbl">🏆 Fornecedor Frequente</div>
+          <div class="dash-stat-val" id="dashFornFreq">—</div>
+          <div class="dash-stat-sub" id="dashFornFreqQtd">—</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-lbl">⏱ Média de Atraso</div>
+          <div class="dash-stat-val" id="dashMedAtraso">—</div>
+          <div class="dash-stat-sub" id="dashMedAtrasoSub">em dias</div>
+        </div>
+      </div>
+    </div>
     <div class="stats-row">
       <div class="sc"><div class="sl">Em Aberto</div><div class="sv" style="color:var(--warn)" id="stAberto">R$ 0,00</div></div>
       <div class="sc"><div class="sl">Vencem Hoje</div><div class="sv" style="color:var(--danger)" id="stHoje">0</div></div>
@@ -379,7 +1057,7 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
         <button class="btn btn-g btn-sm" onclick="toggleAll(false)">▶ Recolher</button>
       </div>
     </div>
-    <div id="groupsWrap"></div>
+    <div id="groupsWrap" class="mobile-force-cards"></div>
   </div>
 </div>
 </div>
@@ -389,7 +1067,14 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 <!-- ═══════════════════════════════════════════ -->
 <div class="mo" id="moB">
 <div class="mbox">
-  <div class="mtit" id="moTit">📄 Novo Boleto</div>
+  <div class="mtit" id="moTit">📄 Novo Lançamento</div>
+
+  <!-- ── MODALIDADE ── -->
+  <div class="mod-toggle" style="margin-bottom:14px">
+    <button class="mod-btn active" id="modBoleto" onclick="setModalidade('boleto')">📄 Boleto</button>
+    <button class="mod-btn" id="modPix" onclick="setModalidade('pix')">⚡ Pix</button>
+  </div>
+
   <div class="fg">
     <div class="fi full"><label>Descrição / Fornecedor</label><input type="text" id="fDesc" placeholder="Ex: Distribuidora JK"></div>
     <div class="fi full">
@@ -435,6 +1120,37 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
         <span style="font-size:10px;color:var(--muted)">Cria um boleto por mês, ajustando o vencimento automaticamente.</span>
       </div>
     </div>
+
+    <!-- ── PIX BOX ── -->
+    <div class="pix-box full" id="pixBox" style="display:none">
+      <div class="pix-lbl">⚡ Dados do Pix</div>
+      <div class="pix-key-row">
+        <select class="pix-key-type" id="fPixTipo" onchange="onPixTipoChange()">
+          <option value="cpf">CPF</option>
+          <option value="cnpj">CNPJ</option>
+          <option value="telefone">Telefone</option>
+          <option value="email">E-mail</option>
+          <option value="aleatoria">Chave aleatória</option>
+          <option value="copia_cola">Copia e Cola</option>
+        </select>
+        <div class="fi" style="gap:0">
+          <input type="text" id="fPixChave" placeholder="Cole a chave Pix aqui" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
+        </div>
+      </div>
+      <div class="fi full">
+        <label style="color:#00c893">Nome do beneficiário</label>
+        <input type="text" id="fPixNome" placeholder="Ex: João da Silva" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
+      </div>
+      <div id="pixCopiaCola" style="display:none">
+        <div class="fi full">
+          <label style="color:#00c893">Payload Copia e Cola (BR Code)</label>
+          <textarea id="fPixPayload" rows="3" placeholder="Cole aqui o código Pix copia e cola completo…" style="background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Mono',monospace;font-size:11px;padding:7px 9px;outline:none;width:100%;resize:vertical;min-height:54px;letter-spacing:.5px;" oninput="onPixPayloadInput()" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'"></textarea>
+        </div>
+        <div id="pixDecoded" style="display:none;font-size:11px;color:var(--ok);background:#4caf7d10;border:1px solid #4caf7d30;border-radius:5px;padding:8px 10px;margin-top:4px"></div>
+      </div>
+      <p style="font-size:10px;color:var(--muted)">A chave fica salva no campo Obs. para facilitar o pagamento.</p>
+    </div>
+
   </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
@@ -801,6 +1517,7 @@ function applyLD(){
   closeLD();
   populateGrupoSel();
   document.getElementById("moTit").textContent="📄 Novo Boleto (linha digitável)";
+  setModalidade("boleto", false);
   document.getElementById("fDesc").value="";
   document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
   document.getElementById("fValor").value=lastLD.valor||"";
@@ -1038,7 +1755,7 @@ function renderGroups(){
     if(!coll){
       if(glist.length===0){
         html+=`<div class="gb-empty">Nenhum boleto neste grupo.</div>`;
-      } else if(viewMode==="card"){
+      } else if(viewMode==="card" || isMobile()){
         html+=`<div class="card-grid">`;
         glist.forEach(b=>{
           const s=status(b),du=duAte(b.vencimento);
@@ -1049,7 +1766,8 @@ function renderGroups(){
           else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
           else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
           html+=`<div class="bol-card ${b.pago?"pago-card":""}">
-            <div class="bc-desc" title="${escHTML(b.desc||"")}">${escHTML(b.desc||"")}${b.recorrente?` <span class="rec-tag">🔁</span>`:""}</div>
+            <div class="bc-desc" title="${escHTML(b.desc||"")}">${escHTML(b.desc||"")}${b.recorrente?` <span class="rec-tag">🔁</span>`:""}${b.modalidade==="pix"?` <span class="pix-badge">⚡</span>`:""}</div>
+          ${b.modalidade==="pix"&&(b.pixChave||b.pixPayload)?`<button class="pix-copy-btn" onclick="copyPixKey('${b.id}')">⚡ Copiar chave Pix</button>`:""}
             <div class="bc-val" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}" title="Duplo clique para editar" ondblclick="startInlineEdit('${b.id}', ${b.valor||0}, this)">${fmtR(b.valor)}</div>
             <div class="bc-meta">${fmtD(b.vencimento)} · ${duEl}</div>
             ${catLabel?`<div class="bc-meta">${escHTML(catLabel)}</div>`:""}
@@ -1081,8 +1799,10 @@ function renderGroups(){
             <td>
               <strong style="font-size:12px">${escHTML(b.desc||"")}</strong>
               ${b.recorrente?`<span class="rec-tag">🔁 rec</span>`:""}
+              ${b.modalidade==="pix"?`<span class="pix-badge">⚡ Pix</span>`:""}
               ${in7?`<span style="margin-left:4px;font-size:8px;background:#6f8fff15;color:var(--blue);border:1px solid #6f8fff30;border-radius:3px;padding:1px 3px">7DU</span>`:""}
               ${catLabel?`<br><span style="color:var(--muted);font-size:10px">${escHTML(catLabel)}</span>`:""}
+              ${b.modalidade==="pix"&&(b.pixChave||b.pixPayload)?`<br><button class="pix-copy-btn" onclick="copyPixKey('${b.id}')" style="margin-top:3px">⚡ Copiar chave</button>`:""}
             </td>
             <td class="mono" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}" title="Clique duplo para editar" ondblclick="startInlineEdit('${b.id}', ${b.valor||0}, this)">${fmtR(b.valor)}</td>
             <td class="mono" style="font-size:11px;color:${s==="vencido"?"var(--danger)":s==="hoje"?"#ff9988":"var(--muted)"}">
@@ -1149,7 +1869,17 @@ function markPago(id){
   if(!b) return;
   const pagoEm = new Date().toISOString().slice(0,10);
   fbSet("boletos/"+id, {...b, pago:true, pagoEm});
-  toast("✓ Marcado como pago!", "ok");
+  if(b.modalidade==="pix" && (b.pixChave||b.pixPayload)){
+    // Auto-copy pix key when marking paid
+    const text=b.pixPayload||b.pixChave;
+    navigator.clipboard.writeText(text).then(()=>{
+      toast("✓ Pago! Chave Pix copiada ⚡", "ok");
+    }).catch(()=>{
+      toast("✓ Marcado como pago!", "ok");
+    });
+  } else {
+    toast("✓ Marcado como pago!", "ok");
+  }
 }
 
 // Confirm delete modal
@@ -1191,7 +1921,7 @@ function onRecorrenteChange(){
 function openModal(id){
   editId=id||null;
   populateGrupoSel();
-  document.getElementById("moTit").textContent=id?"✏ Editar Boleto":"📄 Novo Boleto";
+  document.getElementById("moTit").textContent=id?"✏ Editar Lançamento":"📄 Novo Lançamento";
   document.getElementById("fRecorrente").checked=false;
   onRecorrenteChange();
   if(id){
@@ -1202,9 +1932,22 @@ function openModal(id){
     document.getElementById("fValor").value=b.valor||"";
     document.getElementById("fVenc").value=b.vencimento||"";
     document.getElementById("fCat").value=b.cat||"Mercadoria";
-    document.getElementById("fObs").value=b.obs||"";
+    // Strip pix info from obs for display
+    const obsRaw=b.obs||"";
+    const obsClean=b.modalidade==="pix"?obsRaw.split("
+PIX")[0].split("PIX ")[0].trim():obsRaw;
+    document.getElementById("fObs").value=obsClean;
     document.getElementById("fCasaCat").value=b.casaCat||"Água";
     document.getElementById("fCartao").value=b.cartao||"";
+    // Restore modalidade
+    setModalidade(b.modalidade||"boleto", false);
+    if(b.modalidade==="pix"){
+      document.getElementById("fPixTipo").value=b.pixTipo||"cpf";
+      document.getElementById("fPixChave").value=b.pixChave||"";
+      document.getElementById("fPixNome").value=b.pixNome||"";
+      document.getElementById("fPixPayload").value=b.pixPayload||"";
+      onPixTipoChange();
+    }
   } else {
     document.getElementById("fDesc").value="";
     document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
@@ -1214,6 +1957,7 @@ function openModal(id){
     document.getElementById("fObs").value="";
     document.getElementById("fCasaCat").value="Água";
     document.getElementById("fCartao").value="";
+    setModalidade("boleto", false);
   }
   onGrupoChange();onCasaCatChange();
   document.getElementById("moB").classList.add("open");
@@ -1235,22 +1979,43 @@ function saveB(){
   const valor=parseFloat(document.getElementById("fValor").value)||0;
   const venc=document.getElementById("fVenc").value;
   const cat=document.getElementById("fCat").value;
-  const obs=document.getElementById("fObs").value.trim();
   const casaCat=document.getElementById("fCasaCat").value;
   const cartao=document.getElementById("fCartao").value.trim();
   const recorrente=document.getElementById("fRecorrente").checked;
   const recMeses=parseInt(document.getElementById("fRecMeses").value)||6;
+  const modalidade=document.getElementById("modPix").classList.contains("active")?"pix":"boleto";
+
+  // Pix fields
+  let pixTipo="", pixChave="", pixNome="", pixPayload="";
+  if(modalidade==="pix"){
+    pixTipo=document.getElementById("fPixTipo").value;
+    pixChave=document.getElementById("fPixChave").value.trim();
+    pixNome=document.getElementById("fPixNome").value.trim();
+    pixPayload=document.getElementById("fPixPayload").value.trim();
+    if(!pixChave && !pixPayload){alert("Informe a chave Pix ou o código Copia e Cola.");return;}
+  }
+
+  // Build obs: merge user obs + pix info
+  let obsBase=document.getElementById("fObs").value.trim();
+  if(modalidade==="pix"){
+    const pixInfo=pixPayload
+      ? "PIX Copia e Cola: "+pixPayload
+      : `PIX ${pixTipo.toUpperCase()}: ${pixChave}${pixNome?" · "+pixNome:""}`;
+    obsBase=(obsBase?obsBase+"
+":"")+pixInfo;
+  }
 
   if(!desc){alert("Informe a descrição.");return;}
   if(!grupo){alert("Selecione o grupo.");return;}
-  if(!venc){alert("Informe o vencimento.");return;}
+  if(modalidade==="boleto"&&!venc){alert("Informe o vencimento.");return;}
 
   const baseObj={
-    desc,grupo,valor,
+    desc,grupo,valor,modalidade,
     cat:grupo!==CASA?cat:"",
     casaCat:grupo===CASA?casaCat:"",
     cartao:grupo===CASA&&casaCat==="Cartão de Crédito"?cartao:"",
-    obs
+    obs:obsBase,
+    ...(modalidade==="pix"?{pixTipo,pixChave,pixNome,pixPayload}:{})
   };
 
   if(editId){
@@ -1292,10 +2057,11 @@ function saveB(){
       toast(`${recMeses} boletos recorrentes criados!`, "ok");
     });
   } else {
-    // Boleto avulso normal
+    // Avulso normal
     const newId = "b"+Date.now();
-    fbSet("boletos/"+newId, {...baseObj, vencimento:venc, pago:false, checks:{}, recorrente:false});
-    toast("Boleto salvo!", "ok");
+    const vencFinal = venc || dstr(TODAY);
+    fbSet("boletos/"+newId, {...baseObj, vencimento:vencFinal, pago:false, checks:{}, recorrente:false});
+    toast(modalidade==="pix"?"Pix salvo! ⚡":"Boleto salvo!","ok");
   }
 
   closeModal();
@@ -1400,7 +2166,7 @@ function renderCSVMenu(){
 function exportCSV(filtroGrupo){
   document.getElementById("csvMenu").classList.remove("open");
 
-  const header = ["Data de Vencimento","Mês/Ano","CNPJ/Grupo","Categoria","Descrição","Valor","Status","Data de Pagamento"];
+  const header = ["Modalidade","Data de Vencimento","Mês/Ano","CNPJ/Grupo","Categoria","Descrição","Valor","Status","Data de Pagamento","Chave Pix"];
 
   const rows = boletoArr()
     .filter(b => filtroGrupo === "todos" || b.grupo === filtroGrupo)
@@ -1415,6 +2181,7 @@ function exportCSV(filtroGrupo){
         : (b.cat||"");
       const statusPtBR = {pago:"Pago",pendente:"Pendente",vencido:"Vencido",hoje:"Vence Hoje"}[s] || s;
       return [
+        b.modalidade==="pix"?"Pix":"Boleto",
         fmtD(b.vencimento),
         fmtMesAno(b.vencimento),
         `${grupoNome}${grupoNum?" ("+grupoNum+")":""}`,
@@ -1422,7 +2189,8 @@ function exportCSV(filtroGrupo){
         b.desc||"",
         Number(b.valor||0).toFixed(2).replace(".",","),
         statusPtBR,
-        b.pagoEm ? fmtD(b.pagoEm) : ""
+        b.pagoEm ? fmtD(b.pagoEm) : "",
+        b.pixChave||b.pixPayload||""
       ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
     });
 
@@ -1457,6 +2225,128 @@ document.addEventListener("click",()=>{
 });
 
 
+
+// ══════════════════════════════════════════════
+// MODALIDADE (boleto / pix)
+// ══════════════════════════════════════════════
+function setModalidade(mode, updateTitle=true){
+  const isPix = mode==="pix";
+  document.getElementById("modBoleto").classList.toggle("active", !isPix);
+  document.getElementById("modPix").classList.toggle("active", isPix);
+  document.getElementById("pixBox").style.display = isPix ? "" : "none";
+
+  // Vencimento: required for boleto, optional for pix
+  const vencEl = document.getElementById("fVenc");
+  const vencRow = vencEl.closest(".fi");
+  if(isPix){
+    vencRow.querySelector("label").textContent = "Data (para agendamento — opcional)";
+    if(!vencEl.value) vencEl.value = dstr(TODAY);
+  } else {
+    vencRow.querySelector("label").textContent = "Vencimento";
+  }
+
+  if(updateTitle && !document.getElementById("moTit").textContent.includes("Editar")){
+    document.getElementById("moTit").textContent = isPix ? "⚡ Novo Pix" : "📄 Novo Boleto";
+  }
+
+  // Reset pix fields when switching to boleto
+  if(!isPix){
+    document.getElementById("fPixChave").value="";
+    document.getElementById("fPixNome").value="";
+    document.getElementById("fPixPayload").value="";
+    document.getElementById("pixDecoded").style.display="none";
+  }
+  onPixTipoChange();
+}
+
+function onPixTipoChange(){
+  const tipo = document.getElementById("fPixTipo").value;
+  const isCopiaECola = tipo==="copia_cola";
+  document.getElementById("pixCopiaCola").style.display = isCopiaECola?"":"none";
+
+  const chaveEl = document.getElementById("fPixChave");
+  const chavePH = {
+    cpf:"000.000.000-00",
+    cnpj:"00.000.000/0001-00",
+    telefone:"+55 11 99999-9999",
+    email:"exemplo@email.com",
+    aleatoria:"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    copia_cola:""
+  };
+  chaveEl.placeholder = chavePH[tipo]||"";
+  chaveEl.style.display = isCopiaECola?"none":"";
+  chaveEl.closest(".fi") && (chaveEl.closest(".pix-key-row").style.display = isCopiaECola?"none":"");
+}
+
+// Parse EMV Pix Copia e Cola - extrai valor e nome do beneficiário
+function onPixPayloadInput(){
+  const raw = document.getElementById("fPixPayload").value.trim();
+  const dec = document.getElementById("pixDecoded");
+  if(raw.length < 10){dec.style.display="none";return;}
+
+  try{
+    // EMV-like: fields are Tag(2)Length(2)Value
+    // Tag 26 = Merchant Account Info (Pix), Tag 54 = Amount, Tag 59 = Name
+    let pos=0, nome="", valor=0, chave="";
+    while(pos < raw.length - 3){
+      const tag=raw.slice(pos,pos+2);
+      const len=parseInt(raw.slice(pos+2,pos+4),10);
+      if(isNaN(len)||len<0)break;
+      const val=raw.slice(pos+4,pos+4+len);
+      if(tag==="54"&&val){valor=parseFloat(val)||0;}
+      if(tag==="59"&&val){nome=val;}
+      // Tag 26: Merchant Account, look for 01 inside (Pix key)
+      if(tag==="26"&&val){
+        let p2=0;
+        while(p2<val.length-3){
+          const t2=val.slice(p2,p2+2);
+          const l2=parseInt(val.slice(p2+2,p2+4),10);
+          if(isNaN(l2))break;
+          const v2=val.slice(p2+4,p2+4+l2);
+          if(t2==="01")chave=v2;
+          p2+=4+l2;
+        }
+      }
+      pos+=4+len;
+    }
+
+    if(nome||valor||chave){
+      let parts=[];
+      if(nome) parts.push("Beneficiário: <strong>"+escHTML(nome)+"</strong>");
+      if(valor) parts.push("Valor: <strong>"+fmtR(valor)+"</strong>");
+      if(chave) parts.push("Chave: <code style='font-family:DM Mono,monospace;font-size:10px'>"+escHTML(chave)+"</code>");
+
+      dec.innerHTML="✓ Decodificado — "+parts.join(" · ");
+      dec.style.display="";
+
+      // Auto-fill fields
+      if(nome && !document.getElementById("fPixNome").value) document.getElementById("fPixNome").value=nome;
+      if(valor && !document.getElementById("fValor").value) document.getElementById("fValor").value=valor.toFixed(2);
+      if(nome && !document.getElementById("fDesc").value) document.getElementById("fDesc").value=nome;
+    } else {
+      dec.innerHTML="⚠ Payload não reconhecido (formato EMV). Os dados foram salvos mesmo assim.";
+      dec.style.display="";
+    }
+  } catch(e){
+    dec.style.display="none";
+  }
+}
+
+// Open copy of pix key
+function copyPixKey(id){
+  const b=boletos[id];if(!b)return;
+  const text=b.pixPayload||b.pixChave||"";
+  if(!text){toast("Nenhuma chave salva.","err");return;}
+  navigator.clipboard.writeText(text).then(()=>{
+    toast("⚡ Chave Pix copiada!","ok");
+  }).catch(()=>{
+    // fallback
+    const ta=document.createElement("textarea");
+    ta.value=text;document.body.appendChild(ta);ta.select();document.execCommand("copy");ta.remove();
+    toast("⚡ Chave Pix copiada!","ok");
+  });
+}
+
 // ══════════════════════════════════════════════
 // DUPLICATE BOLETO
 // ══════════════════════════════════════════════
@@ -1476,6 +2366,15 @@ function duplicateB(id){
   document.getElementById("fCartao").value = b.cartao || "";
   document.getElementById("fRecorrente").checked = false;
   onRecorrenteChange();
+  setModalidade(b.modalidade||"boleto", false);
+  document.getElementById("moTit").textContent="📋 Duplicar Lançamento";
+  if(b.modalidade==="pix"){
+    document.getElementById("fPixTipo").value=b.pixTipo||"cpf";
+    document.getElementById("fPixChave").value=b.pixChave||"";
+    document.getElementById("fPixNome").value=b.pixNome||"";
+    document.getElementById("fPixPayload").value=b.pixPayload||"";
+    onPixTipoChange();
+  }
   onGrupoChange(); onCasaCatChange();
   document.getElementById("moB").classList.add("open");
 }
@@ -1666,12 +2565,96 @@ document.addEventListener("keydown", e=>{
   if(e.key==="n" || e.key==="N"){
     openModal();
     e.preventDefault();
+  } else if(e.key==="p" || e.key==="P"){
+    openModal();
+    setTimeout(()=>setModalidade("pix"), 50);
+    e.preventDefault();
   } else if(e.key==="/"){
     const si = document.getElementById("searchInput");
     if(si){ si.focus(); si.select(); }
     e.preventDefault();
   }
 });
+
+
+// ══════════════════════════════════════════════
+// MOBILE NAV & SIDEBAR DRAWER
+// ══════════════════════════════════════════════
+const isMobile = () => window.innerWidth <= 480;
+
+function toggleMobSidebar(){
+  const sb = document.getElementById("sidebar") || document.querySelector(".sidebar");
+  const ov = document.getElementById("sideOverlay");
+  if(!sb) return;
+  const open = sb.classList.toggle("mob-open");
+  ov.classList.toggle("on", open);
+  document.getElementById("bnavMenu").classList.toggle("bnav-active", open);
+  if(open) document.body.style.overflow="hidden";
+  else document.body.style.overflow="";
+}
+function closeMobSidebar(){
+  const sb = document.querySelector(".sidebar");
+  const ov = document.getElementById("sideOverlay");
+  if(!sb) return;
+  sb.classList.remove("mob-open");
+  ov.classList.remove("on");
+  document.getElementById("bnavMenu").classList.remove("bnav-active");
+  document.body.style.overflow="";
+}
+
+function toggleMobSearch(){
+  const bar = document.getElementById("mobSearchBar");
+  const inp = document.getElementById("mobSearchInput");
+  const btn = document.getElementById("bnavSearch");
+  const isHidden = bar.style.display==="none";
+  bar.style.display = isHidden ? "flex" : "none";
+  btn.classList.toggle("bnav-active", isHidden);
+  if(isHidden){ inp.focus(); }
+}
+
+function syncMobSearch(val){
+  // Sync mobile search to desktop search input
+  document.getElementById("searchInput").value = val;
+  renderAll();
+}
+
+function setMobFC(el){
+  // Sync mobile filter chip with sidebar QF
+  document.querySelectorAll(".mfc").forEach(c=>c.classList.remove("active"));
+  el.classList.add("active");
+  // Close sidebar on mobile after selecting filter
+  if(isMobile()) closeMobSidebar();
+}
+
+// Sync sidebar QF clicks to mobile chips
+const _origSetQF = setQF;
+// Override setQF to also update mobile chips
+function setQFMob(key){
+  _origSetQF(key);
+  const mfcEl = document.getElementById("mfc-"+key);
+  if(mfcEl){
+    document.querySelectorAll(".mfc").forEach(c=>c.classList.remove("active"));
+    mfcEl.classList.add("active");
+  }
+}
+
+// (card view + modal handled via isMobile() checks inline)
+
+// Update mobile filter strip counts after render
+function updateMobFilterCounts(){
+  // Mirror qn- counts to mfc buttons
+  ["todos","7du","hoje","vencido","pendente","pago","casa"].forEach(k=>{
+    const src = document.getElementById("qn-"+k);
+    const mfc = document.getElementById("mfc-"+k);
+    if(src && mfc){
+      const n = src.textContent;
+      // show count as badge if > 0
+      if(n && n!=="0"){
+        mfc.textContent = mfc.textContent.split("(")[0].trim() + " ("+n+")";
+      }
+    }
+  });
+}
 
 // ══════════════════════════════════════════════
 // INIT
@@ -1680,6 +2663,486 @@ initCal();
 renderCal();
 initFirebase();
 setView(viewMode);
+
+// Mobile class on body for CSS targeting
+function updateMobileClass(){
+  document.body.classList.toggle("is-mobile", window.innerWidth <= 480);
+}
+updateMobileClass();
+window.addEventListener("resize", updateMobileClass);
+
+// On mobile, close sidebar when scrolling main
+document.querySelector(".main") && document.querySelector(".main").addEventListener("touchstart", ()=>{
+  if(window.innerWidth <= 480) closeMobSidebar();
+}, {passive:true});
+
+
+// ════════════════════════════════════════════
+// v5 — TEMAS DE COR
+// ════════════════════════════════════════════
+(function initTheme(){
+  const saved = localStorage.getItem('gbTheme') || 'dark-gold';
+  applyTheme(saved, false);
+})();
+
+function setTheme(name){
+  applyTheme(name, true);
+}
+
+function applyTheme(name, save){
+  document.body.setAttribute('data-theme', name);
+  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+  const dot = document.getElementById('td-' + name);
+  if(dot) dot.classList.add('active');
+  if(save) localStorage.setItem('gbTheme', name);
+}
+
+// ════════════════════════════════════════════
+// v5 — NOME DA EMPRESA PERSONALIZÁVEL
+// ════════════════════════════════════════════
+(function initLogoName(){
+  const saved = localStorage.getItem('gbAppName');
+  if(saved) renderLogoName(saved);
+})();
+
+function renderLogoName(name){
+  const area = document.getElementById('logoArea');
+  if(!area) return;
+  const parts = name.split('-');
+  if(parts.length === 2){
+    area.innerHTML = `<span style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:800;font-size:17px">${escHTML(parts[0])}<span style="color:var(--text)">${escHTML(parts[1])}</span></span>`;
+  } else {
+    area.innerHTML = `<span style="color:var(--accent);font-family:'Syne',sans-serif;font-weight:800;font-size:17px">${escHTML(name)}</span>`;
+  }
+  area.ondblclick = editLogoName;
+}
+
+function editLogoName(){
+  const area = document.getElementById('logoArea');
+  if(!area) return;
+  const current = localStorage.getItem('gbAppName') || 'Gere-Boleto';
+  area.innerHTML = `<input class="logo-text-input" id="logoInput" value="${escHTML(current)}" placeholder="Nome-Empresa" maxlength="24" autofocus>`;
+  const inp = document.getElementById('logoInput');
+  inp.focus(); inp.select();
+  inp.addEventListener('blur', commitLogoName);
+  inp.addEventListener('keydown', e => { if(e.key==='Enter') commitLogoName(); if(e.key==='Escape'){ area.ondblclick=editLogoName; renderLogoName(localStorage.getItem('gbAppName')||'Gere-Boleto'); } });
+}
+
+function commitLogoName(){
+  const inp = document.getElementById('logoInput');
+  if(!inp) return;
+  const val = inp.value.trim() || 'Gere-Boleto';
+  localStorage.setItem('gbAppName', val);
+  renderLogoName(val);
+  // Also update page title & PWA meta
+  document.title = val.replace('-','');
+}
+
+// ════════════════════════════════════════════
+// v5 — MODO FOCO / SILENCIOSO
+// ════════════════════════════════════════════
+let _focoAtivo = localStorage.getItem('gbFoco') === '1';
+
+(function initFoco(){ if(_focoAtivo) _applyFocoDOM(); })();
+
+function toggleFoco(){
+  _focoAtivo = !_focoAtivo;
+  localStorage.setItem('gbFoco', _focoAtivo ? '1' : '0');
+  _applyFocoDOM();
+  toast(_focoAtivo ? '👁 Modo Foco ativo — boletos pagos ocultos' : '👁 Modo Foco desativado', 'info', 2500);
+}
+
+function _applyFocoDOM(){
+  document.body.classList.toggle('modo-foco', _focoAtivo);
+  // Update all foco buttons
+  ['focoBtn','focoBtnSidebar'].forEach(id=>{
+    const btn = document.getElementById(id);
+    if(!btn) return;
+    btn.setAttribute('aria-pressed', _focoAtivo ? 'true' : 'false');
+    btn.style.background = _focoAtivo ? 'var(--ok)' : '';
+    btn.style.color = _focoAtivo ? '#fff' : '';
+    btn.style.borderColor = _focoAtivo ? 'var(--ok)' : '';
+    btn.textContent = _focoAtivo ? '👁 Foco ON' : '👁 Modo Foco';
+  });
+  const badge = document.getElementById('focoBadgeDash');
+  if(badge) badge.style.display = _focoAtivo ? 'inline-flex' : 'none';
+}
+
+// Mark pago rows with class for foco mode
+const _origRenderGroups_foco = typeof renderGroups === 'function' ? renderGroups : null;
+// We'll patch after renderGroups runs via MutationObserver
+const _focoObserver = new MutationObserver(()=>{
+  document.querySelectorAll('tbody tr').forEach(tr=>{
+    const cell = tr.querySelector('td:nth-child(5)');
+    if(cell && cell.innerHTML.includes('Pago')) tr.classList.add('row-pago');
+  });
+});
+_focoObserver.observe(document.body, { childList: true, subtree: true });
+
+// ════════════════════════════════════════════
+// v5 — TAGS LIVRES
+// ════════════════════════════════════════════
+let _tagFilter = null; // null | 'urgente' | 'contestado' | 'aguardando'
+
+const TAG_META = {
+  urgente:    { label: '🔴 Urgente',     cls: 'free-tag-urgente' },
+  contestado: { label: '🟡 Contestado',  cls: 'free-tag-contestado' },
+  aguardando: { label: '🔵 Aguard. NF',  cls: 'free-tag-aguardando' },
+};
+
+function setTagFilter(tag){
+  _tagFilter = tag;
+  renderAll();
+}
+
+function getBoletosForTag(tag){
+  return boletoArr().filter(b => (b.tags||[]).includes(tag));
+}
+
+function updateTagCounts(){
+  ['urgente','contestado','aguardando'].forEach(tag=>{
+    const el = document.getElementById('qnt-'+tag);
+    if(el) el.textContent = getBoletosForTag(tag).length;
+  });
+  ['qf-tag-urgente','qf-tag-contestado','qf-tag-aguardando','qf-tag-todos'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el){
+      const isActive = id === 'qf-tag-' + _tagFilter;
+      el.classList.toggle('active', isActive);
+      el.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    }
+  });
+}
+
+function toggleTag(id, tag){
+  const b = boletos[id];
+  if(!b) return;
+  const tags = [...(b.tags||[])];
+  const idx = tags.indexOf(tag);
+  if(idx >= 0) tags.splice(idx, 1);
+  else tags.push(tag);
+  fbSet('boletos/'+id+'/tags', tags.length ? tags : null);
+  toast(idx >= 0 ? `Tag "${TAG_META[tag].label}" removida` : `Tag "${TAG_META[tag].label}" adicionada`, 'info', 2000);
+}
+
+// Tag menu popup
+let _tagMenuOpen = null;
+function openTagMenu(event, id){
+  closeTagMenu();
+  const b = boletos[id];
+  if(!b) return;
+  const tags = b.tags || [];
+  const menu = document.createElement('div');
+  menu.className = 'tag-menu';
+  menu.id = 'tagMenu_' + id;
+  menu.style.position = 'fixed';
+  const rect = event.target.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 4) + 'px';
+  menu.style.left = rect.left + 'px';
+  Object.entries(TAG_META).forEach(([tag, meta])=>{
+    const item = document.createElement('div');
+    item.className = 'tag-menu-item';
+    item.innerHTML = `${tags.includes(tag)?'✓ ':''}${meta.label}`;
+    item.onclick = (e)=>{ e.stopPropagation(); toggleTag(id, tag); closeTagMenu(); };
+    menu.appendChild(item);
+  });
+  document.body.appendChild(menu);
+  _tagMenuOpen = menu;
+  setTimeout(()=>{ document.addEventListener('click', closeTagMenu, {once:true}); }, 10);
+}
+
+function closeTagMenu(){
+  if(_tagMenuOpen){ _tagMenuOpen.remove(); _tagMenuOpen = null; }
+}
+
+function renderTagBadges(tags){
+  if(!tags || !tags.length) return '';
+  return tags.map(t=>{
+    const m = TAG_META[t];
+    if(!m) return '';
+    return `<span class="free-tag ${m.cls}" title="${m.label}">${m.label}</span>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════
+// v5 — DESFAZER AÇÃO (Toast com Undo)
+// ════════════════════════════════════════════
+let _undoStack = {}; // id -> { data, type, timer }
+
+function toastUndo(msg, undoFn, dur=5000){
+  const c = document.getElementById('toastContainer');
+  const el = document.createElement('div');
+  el.className = 'toast-item ok';
+  el.innerHTML = `<div class="toast-undo"><span>${msg}</span><button class="toast-undo-btn" tabindex="0">↩ Desfazer</button></div>`;
+  c.appendChild(el);
+  const btn = el.querySelector('.toast-undo-btn');
+  const timer = setTimeout(()=>{ el.style.opacity='0'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, dur);
+  btn.addEventListener('click', ()=>{
+    clearTimeout(timer);
+    el.remove();
+    undoFn();
+    toast('↩ Ação desfeita!', 'info', 2000);
+  });
+}
+
+// Patch markPago to support undo
+const _origMarkPago = markPago;
+window.markPago = function(id){
+  const b = boletos[id];
+  if(!b) return;
+  const snapshot = JSON.parse(JSON.stringify(b));
+  const desc = b.desc || 'boleto';
+  const pagoEm = new Date().toISOString().slice(0,10);
+  fbSet('boletos/'+id, {...b, pago:true, pagoEm});
+  if(b.modalidade==='pix' && (b.pixChave||b.pixPayload)){
+    const text = b.pixPayload || b.pixChave;
+    navigator.clipboard.writeText(text).catch(()=>{});
+  }
+  toastUndo(`✓ "${desc}" marcado como pago`, ()=>{
+    fbSet('boletos/'+id, snapshot);
+  });
+};
+
+// Patch confirmDel to support undo
+const _origConfirmDel = window.confirmDel;
+window.confirmDel = function(id, desc){
+  _pendingDelId = id;
+  document.getElementById('confirmMsg').textContent = `Remover o boleto "${desc}"?`;
+  document.getElementById('confirmOkBtn').onclick = ()=>{
+    if(!_pendingDelId){ closeConfirm(); return; }
+    const snapshot = JSON.parse(JSON.stringify(boletos[_pendingDelId]||{}));
+    const delId = _pendingDelId;
+    fbRemove('boletos/'+delId);
+    _pendingDelId = null;
+    closeConfirm();
+    toastUndo(`🗑 "${desc}" removido`, ()=>{
+      fbSet('boletos/'+delId, snapshot);
+    });
+  };
+  document.getElementById('moConfirm').classList.add('open');
+};
+
+// ════════════════════════════════════════════
+// v5 — DASHBOARD RESUMO
+// ════════════════════════════════════════════
+let _dashCollapsed = localStorage.getItem('gbDashCollapsed') === '1';
+
+(function initDash(){ if(_dashCollapsed) _applyDashCollapse(); })();
+
+function toggleDash(){
+  _dashCollapsed = !_dashCollapsed;
+  localStorage.setItem('gbDashCollapsed', _dashCollapsed ? '1' : '0');
+  _applyDashCollapse();
+}
+function _applyDashCollapse(){
+  const panel = document.getElementById('dashPanel');
+  if(!panel) return;
+  panel.classList.toggle('collapsed', _dashCollapsed);
+  const hdr = panel.querySelector('.dash-header');
+  if(hdr) hdr.setAttribute('aria-expanded', _dashCollapsed ? 'false' : 'true');
+}
+
+function updateDashboard(){
+  const now = new Date();
+  const currentMonthStr = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
+  const allB = boletoArr();
+  
+  // Maior gasto do mês (pagos no mês corrente)
+  const pagosMes = allB.filter(b => b.pago && b.vencimento && b.vencimento.startsWith(currentMonthStr));
+  let maiorGasto = 0, maiorDesc = '—';
+  pagosMes.forEach(b=>{ if((b.valor||0) > maiorGasto){ maiorGasto=(b.valor||0); maiorDesc=b.desc||'—'; } });
+  const elMG = document.getElementById('dashMaiorGasto');
+  const elMGD = document.getElementById('dashMaiorGastoDesc');
+  if(elMG) elMG.textContent = maiorGasto > 0 ? fmtR(maiorGasto) : '—';
+  if(elMGD) elMGD.textContent = maiorDesc.length > 22 ? maiorDesc.slice(0,22)+'…' : maiorDesc;
+
+  // Fornecedor mais frequente (todos os boletos pendentes/vencidos)
+  const freq = {};
+  allB.filter(b => !b.pago).forEach(b=>{ const k = (b.desc||'').trim(); if(k) freq[k] = (freq[k]||0) + 1; });
+  let topForn = '—', topQtd = 0;
+  Object.entries(freq).forEach(([k,v])=>{ if(v>topQtd){ topForn=k; topQtd=v; } });
+  const elFF = document.getElementById('dashFornFreq');
+  const elFFQ = document.getElementById('dashFornFreqQtd');
+  if(elFF) elFF.textContent = topForn.length > 20 ? topForn.slice(0,20)+'…' : topForn;
+  if(elFFQ) elFFQ.textContent = topQtd > 1 ? `${topQtd}× no histórico` : topForn !== '—' ? '1× no histórico' : '—';
+
+  // Média de atraso (vencidos, diferença em dias)
+  const vencidos = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
+  let somaAtraso = 0;
+  vencidos.forEach(b=>{ somaAtraso += Math.round((TODAY - toDate(b.vencimento)) / 86400000); });
+  const medAtraso = vencidos.length ? Math.round(somaAtraso / vencidos.length) : 0;
+  const elMA = document.getElementById('dashMedAtraso');
+  const elMAS = document.getElementById('dashMedAtrasoSub');
+  if(elMA) elMA.textContent = vencidos.length ? medAtraso + ' dias' : '0 dias';
+  if(elMAS) elMAS.textContent = vencidos.length ? `${vencidos.length} vencido${vencidos.length > 1 ? 's' : ''}` : 'sem atrasos';
+  if(elMA) elMA.style.color = medAtraso > 7 ? 'var(--danger)' : medAtraso > 0 ? 'var(--warn)' : 'var(--ok)';
+
+  // Update tag counts
+  updateTagCounts();
+}
+
+// ════════════════════════════════════════════
+// v5 — MÁSCARA CURRENCY NO INPUT VALOR
+// ════════════════════════════════════════════
+(function initValueMask(){
+  document.addEventListener('DOMContentLoaded', ()=>{ _attachValueMask(); });
+  // Also attach after modal opens (input may be re-created)
+  const obs = new MutationObserver(()=>{ _attachValueMask(); });
+  obs.observe(document.body, {childList:true, subtree:true});
+})();
+
+let _maskAttached = false;
+function _attachValueMask(){
+  const inp = document.getElementById('fValor');
+  if(!inp || inp._maskAttached) return;
+  inp._maskAttached = true;
+  inp.addEventListener('input', function(){
+    this.classList.toggle('has-value', parseFloat(this.value) > 0);
+  });
+  inp.addEventListener('focus', function(){
+    if(this.value === '0' || this.value === '0.00') this.value = '';
+  });
+}
+
+// ════════════════════════════════════════════
+// v5 — PATCH renderAll to call updateDashboard
+// ════════════════════════════════════════════
+const _origRenderAll = renderAll;
+window.renderAll = function(){
+  _origRenderAll();
+  updateDashboard();
+  // Apply foco classes to rows after render
+  setTimeout(()=>{
+    document.querySelectorAll('tbody tr').forEach(tr=>{
+      const stCell = tr.querySelector('td:nth-child(5)');
+      if(stCell && stCell.textContent.includes('Pago')) tr.classList.add('row-pago');
+    });
+  }, 50);
+};
+
+// ════════════════════════════════════════════
+// v5 — PATCH renderGroups to include tags in table rows + filter by tag
+// ════════════════════════════════════════════
+const _origRenderGroups = renderGroups;
+window.renderGroups = function(){
+  _origRenderGroups();
+  // After render, we need to inject tags. Do it via post-process.
+  _injectTagsAndFilter();
+};
+
+function _injectTagsAndFilter(){
+  // For dense table view: add tag badges next to desc
+  document.querySelectorAll('tbody tr').forEach(tr=>{
+    const firstTd = tr.querySelector('td:first-child strong');
+    if(!firstTd) return;
+    // Find boleto by desc match (imperfect but works)
+    // Better: use data-id attribute added via patch — inject it in td
+    const bId = tr.getAttribute('data-bid');
+    if(!bId) return;
+    const b = boletos[bId];
+    if(!b || !b.tags || !b.tags.length) return;
+    const tagsHtml = renderTagBadges(b.tags);
+    if(tagsHtml && !tr.querySelector('.free-tag')){
+      firstTd.insertAdjacentHTML('afterend', tagsHtml);
+    }
+  });
+
+  // Apply tag filter
+  if(_tagFilter){
+    document.querySelectorAll('tbody tr').forEach(tr=>{
+      const bId = tr.getAttribute('data-bid');
+      if(!bId){ tr.style.display='none'; return; }
+      const b = boletos[bId];
+      const has = b && (b.tags||[]).includes(_tagFilter);
+      tr.style.display = has ? '' : 'none';
+    });
+    document.querySelectorAll('.bol-card').forEach(card=>{
+      const bId = card.getAttribute('data-bid');
+      if(!bId){ card.style.display='none'; return; }
+      const b = boletos[bId];
+      const has = b && (b.tags||[]).includes(_tagFilter);
+      card.style.display = has ? '' : '';
+    });
+  }
+}
+
+// We also need data-bid on rows. Patch the HTML output via post-processing:
+const _obs2 = new MutationObserver((muts)=>{
+  muts.forEach(mut=>{
+    mut.addedNodes.forEach(node=>{
+      if(node.nodeType !== 1) return;
+      // Add data-bid attributes to table rows that have action buttons with IDs
+      node.querySelectorAll && node.querySelectorAll('button[onclick*="markPago(\'"]').forEach(btn=>{
+        const m = btn.getAttribute('onclick').match(/markPago\('([^']+)'\)/);
+        if(m){
+          const tr = btn.closest('tr') || btn.closest('.bol-card');
+          if(tr && !tr.getAttribute('data-bid')) tr.setAttribute('data-bid', m[1]);
+        }
+      });
+      node.querySelectorAll && node.querySelectorAll('button[onclick*="editB(\'"]').forEach(btn=>{
+        const m = btn.getAttribute('onclick').match(/editB\('([^']+)'\)/);
+        if(m){
+          const tr = btn.closest('tr') || btn.closest('.bol-card');
+          if(tr && !tr.getAttribute('data-bid')) tr.setAttribute('data-bid', m[1]);
+        }
+      });
+    });
+  });
+});
+_obs2.observe(document.body, {childList:true, subtree:true});
+
+// Add tag button to action columns via MutationObserver
+const _obs3 = new MutationObserver((muts)=>{
+  muts.forEach(mut=>{
+    mut.addedNodes.forEach(node=>{
+      if(node.nodeType !== 1) return;
+      node.querySelectorAll && node.querySelectorAll('.act-btns, .bc-acts').forEach(actDiv=>{
+        if(actDiv.querySelector('.tag-btn')) return; // already added
+        const row = actDiv.closest('tr') || actDiv.closest('.bol-card');
+        const bId = row && row.getAttribute('data-bid');
+        if(!bId) return;
+        const tagBtn = document.createElement('button');
+        tagBtn.className = 'btn btn-g btn-sm tag-btn';
+        tagBtn.title = 'Tags';
+        tagBtn.setAttribute('aria-label', 'Gerenciar tags deste boleto');
+        tagBtn.textContent = '🏷';
+        tagBtn.onclick = (e)=>{ e.stopPropagation(); openTagMenu(e, bId); };
+        actDiv.appendChild(tagBtn);
+        // Render existing tags
+        const b = boletos[bId];
+        if(b && b.tags && b.tags.length){
+          const firstTd = row.querySelector('td:first-child') || row.querySelector('.bc-desc');
+          if(firstTd && !firstTd.querySelector('.free-tag')){
+            firstTd.insertAdjacentHTML('beforeend', renderTagBadges(b.tags));
+          }
+        }
+      });
+    });
+  });
+});
+_obs3.observe(document.body, {childList:true, subtree:true});
+
+// ════════════════════════════════════════════
+// v5 — ARIA-PRESSED on view toggle buttons
+// ════════════════════════════════════════════
+const _origSetView = setView;
+window.setView = function(mode){
+  _origSetView(mode);
+  document.getElementById('vtDense').setAttribute('aria-pressed', mode==='dense' ? 'true' : 'false');
+  document.getElementById('vtCard').setAttribute('aria-pressed', mode==='card' ? 'true' : 'false');
+};
+
+// ════════════════════════════════════════════
+// v5 — INIT
+// ════════════════════════════════════════════
+// Apply saved theme immediately
+(function(){ applyTheme(localStorage.getItem('gbTheme')||'dark-gold', false); })();
+// Apply foco on load
+if(_focoAtivo) _applyFocoDOM();
+// Apply dash collapse on load
+if(_dashCollapsed) _applyDashCollapse();
+// Apply logo name on load
+(function(){ const n = localStorage.getItem('gbAppName'); if(n) renderLogoName(n); })();
 
 </script>
 </body>

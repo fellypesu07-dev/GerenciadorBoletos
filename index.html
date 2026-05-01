@@ -104,8 +104,7 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .btn-ok{background:transparent;color:var(--ok);border:1px solid var(--ok);}
 .btn-ok:hover{background:var(--ok);color:#fff;}
 .btn-sm{padding:4px 8px;font-size:11px;border-radius:4px;}
-.btn-notion{background:#37352f;color:#fff;border:1px solid #555;}
-.btn-notion:hover{background:#4a4845;border-color:var(--accent);}
+
 
 /* SEARCH */
 .sinp{background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;outline:none;width:150px;transition:.12s;}
@@ -207,16 +206,7 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .ld-val{color:var(--text);font-weight:700;font-family:'DM Mono',monospace;}
 .ld-err{background:#e05c3a12;border:1px solid #e05c3a44;border-radius:7px;padding:10px 12px;font-size:12px;color:#ff9988;margin-top:10px;}
 
-/* NOTION CONFIG BOX */
-.notion-cfg{background:#37352f18;border:1px solid #37352f55;border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;}
-.notion-status{display:flex;align-items:center;gap:6px;font-size:11px;}
-.notion-dot{width:7px;height:7px;border-radius:50%;}
-.notion-dot.on{background:var(--ok);}
-.notion-dot.off{background:var(--muted);}
-.notion-sync-log{background:var(--card);border:1px solid var(--border);border-radius:5px;padding:8px;font-size:10px;font-family:'DM Mono',monospace;color:var(--muted);max-height:80px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;}
-.log-ok{color:var(--ok);}
-.log-err{color:var(--danger);}
-.log-info{color:var(--blue);}
+/* btn-notion kept for compatibility */
 
 /* CSV DROPDOWN */
 .csv-wrap{position:relative;display:inline-block;}
@@ -243,6 +233,40 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .toast-item.err{border-color:#e05c3a55;background:#e05c3a12;color:var(--danger);}
 .toast-item.info{border-color:#6f8fff55;background:#6f8fff12;color:var(--blue);}
 @keyframes slideIn{from{transform:translateX(20px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+
+/* ── INLINE EDIT ── */
+.val-inline{font-family:'DM Mono',monospace;font-size:12px;background:var(--card2);border:1px solid var(--accent);border-radius:4px;color:var(--text);padding:2px 6px;width:90px;outline:none;}
+
+/* ── CHART MODAL ── */
+.chart-bar-wrap{display:flex;align-items:flex-end;gap:8px;height:140px;padding:10px 0;}
+.chart-col{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
+.chart-bar-group{display:flex;gap:2px;align-items:flex-end;height:110px;}
+.chart-bar{border-radius:3px 3px 0 0;min-width:10px;transition:height .3s;}
+.chart-lbl{font-size:8px;color:var(--muted);text-align:center;white-space:nowrap;}
+.chart-legend{display:flex;gap:12px;margin-top:8px;font-size:10px;}
+.chart-legend span{display:flex;align-items:center;gap:4px;}
+.chart-legend-dot{width:8px;height:8px;border-radius:2px;display:inline-block;}
+
+/* ── COMPACT / CARD TOGGLE ── */
+.view-toggle{display:flex;gap:3px;}
+.vt-btn{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer;color:var(--muted);transition:.12s;}
+.vt-btn.active{background:var(--accent);color:#0f0f0d;border-color:var(--accent);font-weight:700;}
+
+/* ── CARD VIEW ── */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:6px 0;}
+.bol-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;flex-direction:column;gap:6px;transition:.12s;}
+.bol-card:hover{border-color:var(--accent);background:#f0c04005;}
+.bol-card.pago-card{opacity:.7;}
+.bc-desc{font-weight:700;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bc-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;}
+.bc-meta{font-size:10px;color:var(--muted);}
+.bc-acts{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap;}
+
+/* ── PUSH NOTIF badge ── */
+.notif-btn{position:relative;}
+.notif-dot{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--ok);display:none;}
+.notif-dot.on{display:block;}
 
 @media(max-width:800px){
   .layout{grid-template-columns:1fr;}
@@ -273,9 +297,14 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   <div class="hright">
     <span class="sync ok" id="syncBadge">✓ Online</span>
     <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="renderAll()">
+    <div class="view-toggle">
+      <button class="vt-btn active" id="vtDense" onclick="setView('dense')" title="Modo tabela (denso)">☰</button>
+      <button class="vt-btn" id="vtCard" onclick="setView('card')" title="Modo cartão">⊞</button>
+    </div>
+    <button class="btn btn-g btn-sm" onclick="openChartModal()" title="Resumo mensal">📊</button>
+    <button class="btn btn-g btn-sm notif-btn" id="notifBtn" onclick="toggleNotifications()" title="Notificações de vencimento"><span>🔔</span><span class="notif-dot" id="notifDot"></span></button>
     <button class="btn btn-g btn-sm" onclick="openLD()">🔢 Linha Digitável</button>
     <button class="btn btn-g btn-sm" onclick="openCNPJModal()">⚙ CNPJs</button>
-    <button class="btn btn-g btn-sm btn-notion" onclick="openNotionModal()">🔗 Notion</button>
     <button class="btn btn-p" onclick="openModal()">＋ Boleto</button>
   </div>
 </header>
@@ -467,63 +496,6 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 </div>
 </div>
 
-<!-- ═══════════════════════════════════════════ -->
-<!-- MODAL NOTION -->
-<!-- ═══════════════════════════════════════════ -->
-<div class="mo" id="moNotion">
-<div class="mbox" style="max-width:520px">
-  <div class="mtit">🔗 Integração com Notion</div>
-  <p style="font-size:12px;color:var(--muted);margin-bottom:14px">
-    Ao clicar <strong>✓ Pago</strong>, o sistema envia automaticamente o lançamento para uma Database no Notion. Configure abaixo.
-  </p>
-
-  <div class="notion-cfg">
-    <div class="notion-status">
-      <div class="notion-dot" id="notionDot" style="background:var(--muted)"></div>
-      <span id="notionStatusTxt" style="color:var(--muted)">Não configurado</span>
-    </div>
-    <div class="fi">
-      <label>Integration Token (Internal)</label>
-      <input type="password" id="nToken" placeholder="secret_xxxxxxxxxxxxxxxxxxxx" oninput="onNotionInputChange()">
-    </div>
-    <div class="fi">
-      <label>Database ID</label>
-      <input type="text" id="nDbId" placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" oninput="onNotionInputChange()">
-      <span style="font-size:10px;color:var(--muted)">Abra a database → Share → Copy link → o ID é a parte antes do ?v=</span>
-    </div>
-
-    <!-- Mapeamento de propriedades -->
-    <div style="border-top:1px solid var(--border);padding-top:10px">
-      <div class="slbl" style="margin-bottom:7px">Propriedades da sua Database</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
-        <div class="fi"><label>Nome da coluna "Descrição"</label><input type="text" id="nPDesc" value="Nome" placeholder="Nome"></div>
-        <div class="fi"><label>Nome da coluna "Valor"</label><input type="text" id="nPValor" value="Valor" placeholder="Valor"></div>
-        <div class="fi"><label>Nome da coluna "Data"</label><input type="text" id="nPData" value="Data" placeholder="Data"></div>
-        <div class="fi"><label>Nome da coluna "Categoria"</label><input type="text" id="nPCat" value="Categoria" placeholder="Categoria"></div>
-        <div class="fi"><label>Nome da coluna "Grupo/CNPJ"</label><input type="text" id="nPGrupo" value="Grupo" placeholder="Grupo"></div>
-        <div class="fi"><label>Nome da coluna "Status"</label><input type="text" id="nPStatus" value="Status" placeholder="Status"></div>
-      </div>
-    </div>
-
-    <div style="display:flex;gap:7px;flex-wrap:wrap">
-      <button class="btn btn-g btn-sm" onclick="testNotion()">🧪 Testar Conexão</button>
-      <button class="btn btn-p btn-sm" onclick="saveNotionCfg()">💾 Salvar Configuração</button>
-    </div>
-
-    <!-- LOG -->
-    <div>
-      <div class="slbl" style="margin-bottom:4px">Log de Sincronização</div>
-      <div class="notion-sync-log" id="notionLog">
-        <span class="log-info">Aguardando configuração…</span>
-      </div>
-    </div>
-  </div>
-
-  <div class="mact">
-    <button class="btn btn-g" onclick="closeNotionModal()">Fechar</button>
-  </div>
-</div>
-</div>
 
 <!-- ═══════════════════════════════════════════ -->
 <!-- MODAL CONFIRMAR EXCLUSÃO -->
@@ -538,6 +510,21 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   </div>
 </div>
 </div>
+
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL GRÁFICO MENSAL -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="mo" id="moChart">
+<div class="mbox" style="max-width:580px">
+  <div class="mtit">📊 Resumo Mensal</div>
+  <div id="chartContent" style="min-height:200px"></div>
+  <div class="mact">
+    <button class="btn btn-g" onclick="closeChart()">Fechar</button>
+  </div>
+</div>
+</div>
+
 
 <script>
 // ══════════════════════════════════════════════
@@ -571,9 +558,16 @@ let calSel=null, duSel=null;
 let calY, calM;
 let editId=null;
 
-// NOTION state
-let notionCfg = JSON.parse(localStorage.getItem("notionCfg")||"{}");
-let notionLog = [];
+// View mode: "dense" | "card"
+let viewMode = localStorage.getItem("viewMode") || "dense";
+
+function setView(mode){
+  viewMode = mode;
+  localStorage.setItem("viewMode", mode);
+  document.getElementById("vtDense").classList.toggle("active", mode==="dense");
+  document.getElementById("vtCard").classList.toggle("active", mode==="card");
+  renderGroups();
+}
 
 const TODAY=(()=>{const d=new Date();d.setHours(0,0,0,0);return d;})();
 
@@ -594,7 +588,7 @@ function toast(msg, type="ok", dur=3000){
 // ══════════════════════════════════════════════
 function initFirebase(){
   setSyncBadge("saving","Conectando…");
-  db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};renderAll();});
+  db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};renderAll();checkNotificationsOnLoad();});
   db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};renderAll();});
   db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};renderAll();});
   db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};renderAll();});
@@ -1044,6 +1038,30 @@ function renderGroups(){
     if(!coll){
       if(glist.length===0){
         html+=`<div class="gb-empty">Nenhum boleto neste grupo.</div>`;
+      } else if(viewMode==="card"){
+        html+=`<div class="card-grid">`;
+        glist.forEach(b=>{
+          const s=status(b),du=duAte(b.vencimento);
+          const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):(b.cat||"");
+          let duEl="";
+          if(b.pago)duEl=`<span style="color:var(--ok);font-size:10px">pago${b.pagoEm?" · "+fmtD(b.pagoEm):""}</span>`;
+          else if(du===null)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">atrasado</span>`;
+          else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
+          else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
+          html+=`<div class="bol-card ${b.pago?"pago-card":""}">
+            <div class="bc-desc" title="${escHTML(b.desc||"")}">${escHTML(b.desc||"")}${b.recorrente?` <span class="rec-tag">🔁</span>`:""}</div>
+            <div class="bc-val" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}" title="Duplo clique para editar" ondblclick="startInlineEdit('${b.id}', ${b.valor||0}, this)">${fmtR(b.valor)}</div>
+            <div class="bc-meta">${fmtD(b.vencimento)} · ${duEl}</div>
+            ${catLabel?`<div class="bc-meta">${escHTML(catLabel)}</div>`:""}
+            <div class="bc-acts">
+              ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')">✓ Pago</button>`:""}
+              <button class="btn btn-g btn-sm" onclick="editB('${b.id}')">✏</button>
+              <button class="btn btn-g btn-sm" onclick="duplicateB('${b.id}')">⧉</button>
+              <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')">🗑</button>
+            </div>
+          </div>`;
+        });
+        html+=`</div>`;
       } else {
         html+=`<div style="overflow-x:auto"><table><thead><tr>
           <th>Descrição</th><th>Valor</th><th>Vencimento</th><th>D.U.</th><th>Status</th><th>✔ Verif.</th><th>Obs.</th><th>Ações</th>
@@ -1054,7 +1072,7 @@ function renderGroups(){
           const isFerV=isFer(b.vencimento)&&!b.pago,isWEV=isWE(toDate(b.vencimento))&&!b.pago;
           const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):(b.cat||"");
           let duEl;
-          if(b.pago)duEl=`<span style="color:var(--ok);font-size:10px">pago</span>`;
+          if(b.pago)duEl=`<span style="color:var(--ok);font-size:10px">pago${b.pagoEm?" · "+fmtD(b.pagoEm):""}</span>`;
           else if(du===null)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">atrasado</span>`;
           else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
           else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
@@ -1066,7 +1084,7 @@ function renderGroups(){
               ${in7?`<span style="margin-left:4px;font-size:8px;background:#6f8fff15;color:var(--blue);border:1px solid #6f8fff30;border-radius:3px;padding:1px 3px">7DU</span>`:""}
               ${catLabel?`<br><span style="color:var(--muted);font-size:10px">${escHTML(catLabel)}</span>`:""}
             </td>
-            <td class="mono" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}">${fmtR(b.valor)}</td>
+            <td class="mono" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}" title="Clique duplo para editar" ondblclick="startInlineEdit('${b.id}', ${b.valor||0}, this)">${fmtR(b.valor)}</td>
             <td class="mono" style="font-size:11px;color:${s==="vencido"?"var(--danger)":s==="hoje"?"#ff9988":"var(--muted)"}">
               ${fmtD(b.vencimento)}
               ${isFerV?`<br><span style="font-size:9px;color:var(--danger)">feriado</span>`:""}
@@ -1085,8 +1103,9 @@ function renderGroups(){
             <td>
               <div class="act-btns">
                 ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')" title="Marcar como pago">✓ Pago</button>`:""}
-                <button class="btn btn-g btn-sm" onclick="editB('${b.id}')" title="Editar boleto">✏ Editar</button>
-                <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')">🗑 Del</button>
+                <button class="btn btn-g btn-sm" onclick="editB('${b.id}')" title="Editar boleto">✏</button>
+                <button class="btn btn-g btn-sm" onclick="duplicateB('${b.id}')" title="Duplicar boleto">⧉</button>
+                <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')">🗑</button>
               </div>
             </td>
           </tr>`;
@@ -1128,10 +1147,9 @@ function tck(id,k){
 function markPago(id){
   const b = boletos[id];
   if(!b) return;
-  fbSet("boletos/"+id+"/pago", true).then(()=>{
-    // Notion sync automático ao marcar pago
-    notionSyncPagamento(id, b);
-  });
+  const pagoEm = new Date().toISOString().slice(0,10);
+  fbSet("boletos/"+id, {...b, pago:true, pagoEm});
+  toast("✓ Marcado como pago!", "ok");
 }
 
 // Confirm delete modal
@@ -1382,7 +1400,7 @@ function renderCSVMenu(){
 function exportCSV(filtroGrupo){
   document.getElementById("csvMenu").classList.remove("open");
 
-  const header = ["Data de Vencimento","Mês/Ano","CNPJ/Grupo","Categoria","Descrição","Valor","Status"];
+  const header = ["Data de Vencimento","Mês/Ano","CNPJ/Grupo","Categoria","Descrição","Valor","Status","Data de Pagamento"];
 
   const rows = boletoArr()
     .filter(b => filtroGrupo === "todos" || b.grupo === filtroGrupo)
@@ -1403,7 +1421,8 @@ function exportCSV(filtroGrupo){
         cat,
         b.desc||"",
         Number(b.valor||0).toFixed(2).replace(".",","),
-        statusPtBR
+        statusPtBR,
+        b.pagoEm ? fmtD(b.pagoEm) : ""
       ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",");
     });
 
@@ -1422,188 +1441,236 @@ document.addEventListener("click",()=>{
 });
 
 // ══════════════════════════════════════════════
-// TAREFA 4: NOTION INTEGRATION
-// ══════════════════════════════════════════════
-function openNotionModal(){
-  // Preenche campos com config salva
-  if(notionCfg.token) document.getElementById("nToken").value = notionCfg.token;
-  if(notionCfg.dbId)  document.getElementById("nDbId").value  = notionCfg.dbId;
-  if(notionCfg.props){
-    document.getElementById("nPDesc").value   = notionCfg.props.desc   || "Nome";
-    document.getElementById("nPValor").value  = notionCfg.props.valor  || "Valor";
-    document.getElementById("nPData").value   = notionCfg.props.data   || "Data";
-    document.getElementById("nPCat").value    = notionCfg.props.cat    || "Categoria";
-    document.getElementById("nPGrupo").value  = notionCfg.props.grupo  || "Grupo";
-    document.getElementById("nPStatus").value = notionCfg.props.status || "Status";
-  }
-  updateNotionStatusUI();
-  renderNotionLog();
-  document.getElementById("moNotion").classList.add("open");
-}
-function closeNotionModal(){document.getElementById("moNotion").classList.remove("open");}
-
-function onNotionInputChange(){
-  // Resetar status visual ao digitar
-  document.getElementById("notionDot").style.background="var(--muted)";
-  document.getElementById("notionStatusTxt").style.color="var(--muted)";
-  document.getElementById("notionStatusTxt").textContent="Não testado";
-}
-
-function saveNotionCfg(){
-  notionCfg = {
-    token: document.getElementById("nToken").value.trim(),
-    dbId:  document.getElementById("nDbId").value.trim().replace(/-/g,""),
-    props:{
-      desc:   document.getElementById("nPDesc").value.trim()   || "Nome",
-      valor:  document.getElementById("nPValor").value.trim()  || "Valor",
-      data:   document.getElementById("nPData").value.trim()   || "Data",
-      cat:    document.getElementById("nPCat").value.trim()    || "Categoria",
-      grupo:  document.getElementById("nPGrupo").value.trim()  || "Grupo",
-      status: document.getElementById("nPStatus").value.trim() || "Status",
-    }
-  };
-  localStorage.setItem("notionCfg", JSON.stringify(notionCfg));
-  toast("Configuração do Notion salva!","ok");
-  updateNotionStatusUI();
-}
-
-function updateNotionStatusUI(){
-  const ok = !!(notionCfg.token && notionCfg.dbId);
-  document.getElementById("notionDot").style.background = ok ? "var(--ok)" : "var(--muted)";
-  document.getElementById("notionStatusTxt").style.color = ok ? "var(--ok)" : "var(--muted)";
-  document.getElementById("notionStatusTxt").textContent = ok ? "Configurado" : "Não configurado";
-}
-
-function addNotionLog(msg, tipo="info"){
-  const ts = new Date().toLocaleTimeString("pt-BR");
-  notionLog.unshift({msg,tipo,ts});
-  if(notionLog.length > 20) notionLog.pop();
-  renderNotionLog();
-}
-
-function renderNotionLog(){
-  const el = document.getElementById("notionLog");
-  if(!el) return;
-  if(!notionLog.length){ el.innerHTML=`<span class="log-info">Nenhuma atividade ainda.</span>`; return; }
-  el.innerHTML = notionLog.map(l=>`<span class="log-${l.tipo}">[${l.ts}] ${escHTML(l.msg)}</span>`).join("");
-}
-
-async function testNotion(){
-  saveNotionCfg();
-  if(!notionCfg.token || !notionCfg.dbId){
-    toast("Configure o Token e o Database ID primeiro.","err"); return;
-  }
-  addNotionLog("Testando conexão com o Notion…","info");
-  try{
-    const resp = await notionFetch(`databases/${notionCfg.dbId}`, "GET");
-    if(resp.ok){
-      const data = await resp.json();
-      const nome = data.title?.[0]?.plain_text || "Database sem nome";
-      addNotionLog(`✓ Conectado! Database: "${nome}"`, "ok");
-      toast(`Notion conectado: ${nome}`,"ok");
-      document.getElementById("notionDot").style.background="var(--ok)";
-      document.getElementById("notionStatusTxt").style.color="var(--ok)";
-      document.getElementById("notionStatusTxt").textContent="Conectado ✓";
-    } else {
-      const err = await resp.json();
-      addNotionLog(`✕ Erro ${resp.status}: ${err.message||""}`, "err");
-      toast("Falha ao conectar no Notion — verifique o token e o DB ID.","err");
-    }
-  } catch(e){
-    addNotionLog("✕ Erro de rede: "+e.message, "err");
-    toast("Erro de rede ao testar Notion.","err");
-  }
-}
-
-// Proxy via allOrigins para contornar CORS no browser
-function notionFetch(endpoint, method="GET", body=null){
-  const url = `https://api.notion.com/v1/${endpoint}`;
-  // Notion requer CORS permissão — no browser puro, usamos um proxy simples
-  // Para produção, mova para um backend/Cloud Function. Aqui usamos proxy público de dev.
-  const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-  const opts = {
-    method,
-    headers:{
-      "Authorization": `Bearer ${notionCfg.token}`,
-      "Notion-Version": "2022-06-28",
-      "Content-Type": "application/json"
-    }
-  };
-  if(body) opts.body = JSON.stringify(body);
-  return fetch(proxyUrl, opts);
-}
-
-async function notionSyncPagamento(id, boletoData){
-  if(!notionCfg.token || !notionCfg.dbId){
-    // Silencioso se não configurado
-    return;
-  }
-
-  const b = boletoData;
-  const grp = getGroups().find(g => g.isCasa ? b.grupo===CASA : g.id===b.grupo);
-  const grupoNome = grp ? grp.name : "—";
-  const cat = b.grupo===CASA
-    ? (b.casaCat||"") + (b.cartao ? ` · ${b.cartao}` : "")
-    : (b.cat||"");
-
-  const p = notionCfg.props || {};
-
-  // Monta propriedades dinamicamente conforme o mapeamento do usuário
-  const properties = {};
-
-  // Título (Nome)
-  if(p.desc) properties[p.desc] = { title:[{text:{content: b.desc||""}}] };
-
-  // Número (Valor)
-  if(p.valor) properties[p.valor] = { number: Number(b.valor||0) };
-
-  // Data
-  if(p.data && b.vencimento) properties[p.data] = { date:{ start: b.vencimento } };
-
-  // Select (Categoria)
-  if(p.cat && cat) properties[p.cat] = { select:{ name: cat } };
-
-  // Select (Grupo)
-  if(p.grupo) properties[p.grupo] = { select:{ name: grupoNome } };
-
-  // Select (Status)
-  if(p.status) properties[p.status] = { select:{ name: "Pago" } };
-
-  addNotionLog(`Enviando "${b.desc}" para o Notion…`, "info");
-
-  try{
-    const resp = await notionFetch(`pages`, "POST", {
-      parent:{ database_id: notionCfg.dbId },
-      properties
-    });
-
-    if(resp.ok){
-      addNotionLog(`✓ "${b.desc}" (${fmtR(b.valor)}) enviado ao Notion!`, "ok");
-      toast(`Notion: "${b.desc}" registrado!`, "ok");
-    } else {
-      const err = await resp.json();
-      addNotionLog(`✕ Erro Notion "${b.desc}": ${err.message||resp.status}`, "err");
-      toast(`Notion: erro ao enviar "${b.desc}"`, "err");
-    }
-  } catch(e){
-    addNotionLog(`✕ Falha de rede: ${e.message}`, "err");
-  }
-}
-
-// ══════════════════════════════════════════════
 // CLOSE MODALS ON BACKDROP
 // ══════════════════════════════════════════════
-["moB","moC","moS","moLD","moNotion","moConfirm"].forEach(id=>{
+["moB","moC","moS","moLD","moConfirm","moChart"].forEach(id=>{
   document.getElementById(id).addEventListener("click",e=>{
     if(e.target===e.currentTarget){
       if(id==="moB")closeModal();
       if(id==="moC")closeCNPJ();
       if(id==="moS")closeSaldo();
       if(id==="moLD")closeLD();
-      if(id==="moNotion")closeNotionModal();
       if(id==="moConfirm")closeConfirm();
+      if(id==="moChart")closeChart();
     }
   });
+});
+
+
+// ══════════════════════════════════════════════
+// DUPLICATE BOLETO
+// ══════════════════════════════════════════════
+function duplicateB(id){
+  const b = boletos[id];
+  if(!b) return;
+  editId = null;
+  populateGrupoSel();
+  document.getElementById("moTit").textContent = "📋 Duplicar Boleto";
+  document.getElementById("fDesc").value = b.desc || "";
+  document.getElementById("fGrupo").value = b.grupo || "";
+  document.getElementById("fValor").value = b.valor || "";
+  document.getElementById("fVenc").value = dstr(TODAY);
+  document.getElementById("fCat").value = b.cat || "Mercadoria";
+  document.getElementById("fObs").value = b.obs || "";
+  document.getElementById("fCasaCat").value = b.casaCat || "Água";
+  document.getElementById("fCartao").value = b.cartao || "";
+  document.getElementById("fRecorrente").checked = false;
+  onRecorrenteChange();
+  onGrupoChange(); onCasaCatChange();
+  document.getElementById("moB").classList.add("open");
+}
+
+// ══════════════════════════════════════════════
+// INLINE VALUE EDIT
+// ══════════════════════════════════════════════
+function startInlineEdit(id, currentVal, el){
+  const inp = document.createElement("input");
+  inp.className = "val-inline";
+  inp.type = "number";
+  inp.step = "0.01";
+  inp.value = currentVal;
+  inp.title = "Enter para salvar, Esc para cancelar";
+  const orig = el.innerHTML;
+  el.innerHTML = "";
+  el.appendChild(inp);
+  inp.focus(); inp.select();
+  const done = (save) => {
+    if(save){
+      const nv = parseFloat(inp.value);
+      if(!isNaN(nv) && nv > 0){
+        fbSet("boletos/"+id+"/valor", nv);
+        toast("Valor atualizado!", "ok");
+        return;
+      }
+    }
+    el.innerHTML = orig;
+  };
+  inp.addEventListener("keydown", e=>{
+    if(e.key==="Enter"){ e.preventDefault(); done(true); }
+    if(e.key==="Escape"){ done(false); }
+  });
+  inp.addEventListener("blur", ()=> done(true));
+}
+
+// ══════════════════════════════════════════════
+// CHART MODAL
+// ══════════════════════════════════════════════
+function openChartModal(){
+  const meses = {};
+  boletoArr().forEach(b=>{
+    const key = b.vencimento ? b.vencimento.slice(0,7) : null;
+    if(!key) return;
+    if(!meses[key]) meses[key] = {pago:0, aberto:0};
+    if(b.pago) meses[key].pago += Number(b.valor||0);
+    else meses[key].aberto += Number(b.valor||0);
+  });
+
+  const keys = Object.keys(meses).sort().slice(-6);
+  if(!keys.length){
+    document.getElementById("chartContent").innerHTML = '<p style="color:var(--muted);font-size:12px;text-align:center;padding:30px">Nenhum dado para exibir.</p>';
+    document.getElementById("moChart").classList.add("open");
+    return;
+  }
+
+  const maxVal = Math.max(...keys.map(k => meses[k].pago + meses[k].aberto), 1);
+  const H = 110;
+
+  let bars = keys.map(k=>{
+    const pg = meses[k].pago, ab = meses[k].aberto;
+    const hPg = Math.round((pg/maxVal)*H);
+    const hAb = Math.round((ab/maxVal)*H);
+    const [y,m] = k.split("-");
+    const lbl = MESES[parseInt(m)-1].slice(0,3)+"/"+y.slice(2);
+    return `<div class="chart-col">
+      <div class="chart-bar-group">
+        <div class="chart-bar" style="background:var(--ok);height:${hPg}px;width:18px" title="Pago: ${fmtR(pg)}"></div>
+        <div class="chart-bar" style="background:#f0c04088;height:${hAb}px;width:18px" title="Aberto: ${fmtR(ab)}"></div>
+      </div>
+      <div class="chart-lbl">${lbl}</div>
+    </div>`;
+  }).join("");
+
+  const totalPago = keys.reduce((a,k)=>a+meses[k].pago,0);
+  const totalAberto = keys.reduce((a,k)=>a+meses[k].aberto,0);
+
+  document.getElementById("chartContent").innerHTML = `
+    <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Últimos ${keys.length} meses com vencimento</div>
+    <div class="chart-bar-wrap">${bars}</div>
+    <div class="chart-legend">
+      <span><span class="chart-legend-dot" style="background:var(--ok)"></span>Pago: ${fmtR(totalPago)}</span>
+      <span><span class="chart-legend-dot" style="background:#f0c04088"></span>Em aberto: ${fmtR(totalAberto)}</span>
+    </div>
+    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">
+      <div class="slbl" style="margin-bottom:6px">Por Grupo (em aberto)</div>
+      ${getGroups().map(g=>{
+        const ab = boletoArr().filter(b=>status(b)!=="pago"&&(g.isCasa?b.grupo===CASA:b.grupo===g.id)).reduce((a,b)=>a+Number(b.valor||0),0);
+        if(!ab) return "";
+        const pct = Math.round((ab/Math.max(totalAberto,1))*100);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${g.color};flex-shrink:0"></div>
+          <div style="flex:1;font-size:11px">${g.name}</div>
+          <div style="font-family:'DM Mono',monospace;font-size:11px">${fmtR(ab)}</div>
+          <div style="width:80px;height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+            <div style="width:${pct}%;height:100%;background:${g.color};border-radius:3px"></div>
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`;
+  document.getElementById("moChart").classList.add("open");
+}
+function closeChart(){ document.getElementById("moChart").classList.remove("open"); }
+
+// ══════════════════════════════════════════════
+// PUSH NOTIFICATIONS
+// ══════════════════════════════════════════════
+let notifEnabled = localStorage.getItem("notifEnabled") === "1";
+
+function updateNotifUI(){
+  const dot = document.getElementById("notifDot");
+  if(dot) dot.classList.toggle("on", notifEnabled);
+}
+
+async function toggleNotifications(){
+  if(!("Notification" in window)){
+    toast("Notificações não suportadas neste browser.", "err"); return;
+  }
+  if(!notifEnabled){
+    const perm = await Notification.requestPermission();
+    if(perm === "granted"){
+      notifEnabled = true;
+      localStorage.setItem("notifEnabled","1");
+      updateNotifUI();
+      scheduleNotifications();
+      toast("🔔 Notificações ativadas! Você receberá alertas diários.", "ok");
+    } else {
+      toast("Permissão negada para notificações.", "err");
+    }
+  } else {
+    notifEnabled = false;
+    localStorage.setItem("notifEnabled","0");
+    updateNotifUI();
+    toast("Notificações desativadas.", "info");
+  }
+}
+
+function scheduleNotifications(){
+  if(!notifEnabled || Notification.permission !== "granted") return;
+  const hoje = dstr(TODAY);
+  const vencHoje = boletoArr().filter(b=>!b.pago && b.vencimento===hoje);
+  const vencidos = boletoArr().filter(b=>!b.pago && b.vencimento < hoje);
+  if(vencHoje.length > 0 || vencidos.length > 0){
+    const total = vencHoje.reduce((a,b)=>a+Number(b.valor||0),0)
+                + vencidos.reduce((a,b)=>a+Number(b.valor||0),0);
+    let msg = [];
+    if(vencidos.length) msg.push(`${vencidos.length} vencido(s)`);
+    if(vencHoje.length) msg.push(`${vencHoje.length} vencem hoje`);
+    new Notification("GereBoleto ⚠️", {
+      body: msg.join(" · ") + " — " + fmtR(total),
+      icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%230f0f0d' width='32' height='32' rx='8'/><text x='16' y='22' text-anchor='middle' fill='%23f0c040' font-size='18'>💰</text></svg>"
+    });
+  }
+}
+
+// Check notifications on load (after data loaded)
+function checkNotificationsOnLoad(){
+  updateNotifUI();
+  if(notifEnabled && Notification.permission === "granted"){
+    // Slight delay to allow data to load
+    setTimeout(scheduleNotifications, 3000);
+  }
+}
+
+// ══════════════════════════════════════════════
+// KEYBOARD SHORTCUTS
+// ══════════════════════════════════════════════
+document.addEventListener("keydown", e=>{
+  // Don't trigger when typing in inputs/textareas
+  const tag = document.activeElement.tagName;
+  if(tag==="INPUT"||tag==="TEXTAREA"||tag==="SELECT") return;
+
+  // Don't trigger when modifier keys are held
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+
+  const anyModalOpen = document.querySelector(".mo.open");
+
+  if(e.key==="Escape" && anyModalOpen){
+    // close all modals
+    document.querySelectorAll(".mo.open").forEach(m=>m.classList.remove("open"));
+    editId = null;
+    e.preventDefault();
+    return;
+  }
+
+  if(anyModalOpen) return; // don't trigger shortcuts when modal open
+
+  if(e.key==="n" || e.key==="N"){
+    openModal();
+    e.preventDefault();
+  } else if(e.key==="/"){
+    const si = document.getElementById("searchInput");
+    if(si){ si.focus(); si.select(); }
+    e.preventDefault();
+  }
 });
 
 // ══════════════════════════════════════════════
@@ -1612,6 +1679,8 @@ async function notionSyncPagamento(id, boletoData){
 initCal();
 renderCal();
 initFirebase();
+setView(viewMode);
+
 </script>
 </body>
 </html>

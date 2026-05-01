@@ -405,10 +405,11 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
     width: 100% !important;
     max-width: 100% !important;
     border-radius: 16px 16px 0 0;
-    max-height: 90dvh;
-    overflow-y: auto;
-    padding: 20px 16px 24px;
-    padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
+    max-height: 92dvh;
+    overflow-y: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
   }
   /* Drag handle visual hint */
   .mbox::before{
@@ -417,11 +418,34 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
     width: 36px; height: 4px;
     background: var(--border);
     border-radius: 2px;
-    margin: 0 auto 14px;
+    margin: 14px auto 0;
+    flex-shrink: 0;
+  }
+  /* Scrollable content area inside modal */
+  .mbox > .mtit {
+    padding: 12px 16px 8px;
+    flex-shrink: 0;
+  }
+  .mbox > .mod-toggle {
+    padding: 0 16px 10px;
+    flex-shrink: 0;
+  }
+  .mbox > .fg {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mbox > .mact {
+    flex-shrink: 0;
+    flex-direction: row;
+    padding: 10px 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    border-top: 1px solid var(--border);
+    background: var(--surf);
   }
   .fg{ grid-template-columns: 1fr; }
   .fg .full{ grid-column: 1; }
-  .mact{ flex-direction: row; }
 
   /* ── Bottom Nav Bar ── */
   #bottomNav{
@@ -927,33 +951,44 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   color: #111;
 }
 
-.aberto-toggle {
-  display: inline-flex;
-  background: var(--card2);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  overflow: hidden;
-}
-.aberto-btn {
-  background: none;
-  border: none;
-  color: var(--muted);
-  font-size: 8px;
-  font-family: 'DM Mono', monospace;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .4px;
-  padding: 2px 6px;
+/* ── Aberto selector dropdown options ── */
+.aberto-opt {
+  padding: 8px 12px;
+  font-size: 11px;
   cursor: pointer;
-  transition: background .15s, color .15s;
-}
-.aberto-btn.active {
-  background: var(--accent);
-  color: #111;
-}
-.aberto-btn:hover:not(.active) {
-  background: var(--border);
   color: var(--text);
+  border-bottom: 1px solid var(--border);
+  transition: background .1s;
+  font-family: 'DM Sans', sans-serif;
+}
+.aberto-opt:hover { background: var(--card); }
+.aberto-opt.active { color: var(--accent); font-weight: 700; }
+
+/* ── Collapsible sidebar section ── */
+.sb-collapsible-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 2px 0;
+}
+.sb-collapsible-hd:hover .slbl { color: var(--text); }
+.sb-chevron {
+  font-size: 9px;
+  color: var(--muted);
+  transition: transform .2s;
+}
+.sb-chevron.open { transform: rotate(90deg); }
+.sb-collapsible-body {
+  overflow: hidden;
+  transition: max-height .25s cubic-bezier(.4,0,.2,1), opacity .2s;
+  max-height: 400px;
+  opacity: 1;
+}
+.sb-collapsible-body.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
 }
 #stAbertoMensal .aberto-mes-row {
   display: flex;
@@ -1076,14 +1111,21 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     </div>
     <div class="div"></div>
     <div>
-      <div class="slbl">Filtros</div>
-      <button class="qf" id="qf-todos"    onclick="setQF('todos')">📋 Todos            <span class="qct" id="qn-todos">0</span></button>
-      <button class="qf" id="qf-7du"      onclick="setQF('7du')"> 📅 7 Dias Úteis     <span class="qct" id="qn-7du">0</span></button>
-      <button class="qf" id="qf-hoje"     onclick="setQF('hoje')">🔥 Vence Hoje        <span class="qct" id="qn-hoje">0</span></button>
-      <button class="qf" id="qf-vencido"  onclick="setQF('vencido')">⚠ Vencidos        <span class="qct" id="qn-vencido">0</span></button>
-      <button class="qf" id="qf-pendente" onclick="setQF('pendente')">⏳ Pendentes     <span class="qct" id="qn-pendente">0</span></button>
-      <button class="qf" id="qf-pago"     onclick="setQF('pago')">✓ Pagos mês          <span class="qct" id="qn-pago">0</span></button>
-      <button class="qf" id="qf-casa"     onclick="setQF('casa')" aria-pressed="false">🏠 Só Casa           <span class="qct" id="qn-casa">0</span></button>
+      <div class="sb-collapsible-hd" onclick="toggleSbSection('filtros')" aria-expanded="true">
+        <div class="slbl" style="margin:0">Filtros</div>
+        <span class="sb-chevron open" id="sbchev-filtros">▶</span>
+      </div>
+      <div class="sb-collapsible-body" id="sbsec-filtros">
+        <div style="margin-top:4px">
+          <button class="qf" id="qf-todos"    onclick="setQF('todos')">📋 Todos            <span class="qct" id="qn-todos">0</span></button>
+          <button class="qf" id="qf-7du"      onclick="setQF('7du')"> 📅 7 Dias Úteis     <span class="qct" id="qn-7du">0</span></button>
+          <button class="qf" id="qf-hoje"     onclick="setQF('hoje')">🔥 Vence Hoje        <span class="qct" id="qn-hoje">0</span></button>
+          <button class="qf" id="qf-vencido"  onclick="setQF('vencido')">⚠ Vencidos        <span class="qct" id="qn-vencido">0</span></button>
+          <button class="qf" id="qf-pendente" onclick="setQF('pendente')">⏳ Pendentes     <span class="qct" id="qn-pendente">0</span></button>
+          <button class="qf" id="qf-pago"     onclick="setQF('pago')">✓ Pagos mês          <span class="qct" id="qn-pago">0</span></button>
+          <button class="qf" id="qf-casa"     onclick="setQF('casa')" aria-pressed="false">🏠 Só Casa           <span class="qct" id="qn-casa">0</span></button>
+        </div>
+      </div>
     </div>
     <div class="div"></div>
     <!-- FILTRO MENSAL -->
@@ -1123,16 +1165,30 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <div class="div"></div>
     <!-- TAGS LIVRES (v5) -->
     <div>
-      <div class="slbl">Tags</div>
-      <button class="qf" id="qf-tag-urgente"    onclick="setTagFilter('urgente')"    aria-pressed="false">🔴 Urgente      <span class="qct" id="qnt-urgente">0</span></button>
-      <button class="qf" id="qf-tag-contestado" onclick="setTagFilter('contestado')" aria-pressed="false">🟡 Contestado   <span class="qct" id="qnt-contestado">0</span></button>
-      <button class="qf" id="qf-tag-aguardando" onclick="setTagFilter('aguardando')" aria-pressed="false">🔵 Aguard. NF   <span class="qct" id="qnt-aguardando">0</span></button>
-      <button class="qf" id="qf-tag-todos"      onclick="setTagFilter(null)"         aria-pressed="false">✕ Limpar tag    </button>
+      <div class="sb-collapsible-hd" onclick="toggleSbSection('tags')" aria-expanded="true">
+        <div class="slbl" style="margin:0">Tags</div>
+        <span class="sb-chevron open" id="sbchev-tags">▶</span>
+      </div>
+      <div class="sb-collapsible-body" id="sbsec-tags">
+        <div style="margin-top:4px">
+          <button class="qf" id="qf-tag-urgente"    onclick="setTagFilter('urgente')"    aria-pressed="false">🔴 Urgente      <span class="qct" id="qnt-urgente">0</span></button>
+          <button class="qf" id="qf-tag-contestado" onclick="setTagFilter('contestado')" aria-pressed="false">🟡 Contestado   <span class="qct" id="qnt-contestado">0</span></button>
+          <button class="qf" id="qf-tag-aguardando" onclick="setTagFilter('aguardando')" aria-pressed="false">🔵 Aguard. NF   <span class="qct" id="qnt-aguardando">0</span></button>
+          <button class="qf" id="qf-tag-todos"      onclick="setTagFilter(null)"         aria-pressed="false">✕ Limpar tag    </button>
+        </div>
+      </div>
     </div>
     <div class="div"></div>
     <div>
-      <div class="slbl">7 Dias Úteis</div>
-      <div class="du-strip" id="duStrip"></div>
+      <div class="sb-collapsible-hd" onclick="toggleSbSection('7du')" aria-expanded="true">
+        <div class="slbl" style="margin:0">7 Dias Úteis</div>
+        <span class="sb-chevron open" id="sbchev-7du">▶</span>
+      </div>
+      <div class="sb-collapsible-body" id="sbsec-7du">
+        <div style="margin-top:4px">
+          <div class="du-strip" id="duStrip"></div>
+        </div>
+      </div>
     </div>
     <div style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;">
       <!-- Modo Foco -->
@@ -1181,12 +1237,28 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       </div>
     </div>
     <div class="stats-row">
-      <div class="sc" id="scAberto">
-        <div class="sl" style="display:flex;align-items:center;gap:6px">
+    <div class="sc" id="scAberto">
+        <div class="sl" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           Em Aberto
-          <div class="aberto-toggle" role="group" aria-label="Visão de boletos abertos">
-            <button class="aberto-btn active" id="abtTotal"  onclick="setAbertoView('total')"  title="Total geral">Total</button>
-            <button class="aberto-btn"        id="abtMensal" onclick="setAbertoView('mensal')" title="Agrupado por mês">Mensal</button>
+          <!-- Seletor dropdown -->
+          <div style="position:relative;display:inline-block" id="abertoSelWrap">
+            <button id="abertoSelBtn" onclick="toggleAbertoSel(event)"
+              style="display:inline-flex;align-items:center;gap:4px;background:var(--card2);border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:8px;font-family:'DM Mono',monospace;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:3px 7px;cursor:pointer;transition:.12s">
+              <span id="abertoSelLabel">Total</span><span style="font-size:9px">▾</span>
+            </button>
+            <div id="abertoSelDrop" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;min-width:150px;background:var(--surf);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);overflow:hidden">
+              <div class="aberto-opt" onclick="pickAbertoView('total')">📊 Total geral</div>
+              <div class="aberto-opt" onclick="pickAbertoView('mes')">📅 Este mês</div>
+              <div class="aberto-opt" style="border-bottom:none;padding-bottom:0">
+                <div style="padding:6px 10px 4px;font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px">Mês específico</div>
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:0 8px 6px">
+                  <button onclick="abertoPickerNavY(-1);event.stopPropagation()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 5px">‹</button>
+                  <span id="abertoPickerYear" style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--text)"></span>
+                  <button onclick="abertoPickerNavY(1);event.stopPropagation()"  style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:2px 5px">›</button>
+                </div>
+                <div id="abertoPickerGrid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:0 8px 8px"></div>
+              </div>
+            </div>
           </div>
         </div>
         <div class="sv" style="color:var(--warn)" id="stAberto">R$ 0,00</div>
@@ -1803,12 +1875,21 @@ function updateStats(){
     if(b.grupo===CASA&&s!=="pago")ca+=Number(b.valor||0);
   });
   document.getElementById("stAberto").textContent=fmtR(ab);
-  // Aberto toggle: show total or monthly breakdown
-  const mensal = _abertoView === "mensal";
-  document.getElementById("stAberto").style.display = mensal ? "none" : "";
+  // Aberto selector: show correct value and/or breakdown
+  const showMensal = _abertoView !== "total";
+  const esteMes = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  let abertoVal = ab;
+  if(_abertoView === 'mes'){
+    abertoVal = boletoArr().filter(b=>status(b)!=="pago"&&b.vencimento&&b.vencimento.startsWith(esteMes)).reduce((a,b)=>a+Number(b.valor||0),0);
+  } else if(_abertoView === 'custom' && _abertoMesSel){
+    abertoVal = boletoArr().filter(b=>status(b)!=="pago"&&b.vencimento&&b.vencimento.startsWith(_abertoMesSel)).reduce((a,b)=>a+Number(b.valor||0),0);
+  }
+  document.getElementById("stAberto").textContent = fmtR(abertoVal);
+  document.getElementById("stAberto").style.display = _abertoView==="total" ? "" : "none";
   const mensalDiv = document.getElementById("stAbertoMensal");
-  if(mensalDiv) mensalDiv.style.display = mensal ? "" : "none";
-  if(mensal) updateAbertoMensal();
+  if(mensalDiv) mensalDiv.style.display = _abertoView!=="total" ? "" : "none";
+  if(_abertoView !== "total") updateAbertoMensal();
+  else document.getElementById("stAberto").style.display = "";
   document.getElementById("stHoje").textContent=hj;
   document.getElementById("stVenc").textContent=vn;
   document.getElementById("stPago").textContent=fmtR(pg);
@@ -3524,35 +3605,129 @@ function maskConta(el){
 }
 
 // ════════════════════════════════════════════
-// v6 — VISÃO MENSAL DE BOLETOS ABERTOS
+// v9 — VISÃO "EM ABERTO" — DROPDOWN SELETOR
 // ════════════════════════════════════════════
 let _abertoView = localStorage.getItem("gbAbertoView") || "total";
+let _abertoMesSel = null; // "YYYY-MM" when custom month chosen
+let _abertoPickerYear = TODAY.getFullYear();
 
-function setAbertoView(mode){
+function toggleAbertoSel(e){
+  e.stopPropagation();
+  const drop = document.getElementById('abertoSelDrop');
+  const isOpen = drop.style.display !== 'none';
+  drop.style.display = isOpen ? 'none' : '';
+  if(!isOpen){
+    _abertoPickerYear = TODAY.getFullYear();
+    document.getElementById('abertoPickerYear').textContent = _abertoPickerYear;
+    renderAbertoPickerGrid();
+    // mark active option
+    document.querySelectorAll('.aberto-opt').forEach(el=>el.classList.remove('active'));
+    const map = {'total':0,'mes':1};
+    const idx = map[_abertoView];
+    if(idx !== undefined) document.querySelectorAll('.aberto-opt')[idx]?.classList.add('active');
+  }
+}
+
+function pickAbertoView(mode, mesKey){
   _abertoView = mode;
+  _abertoMesSel = mesKey || null;
   localStorage.setItem("gbAbertoView", mode);
-  document.getElementById("abtTotal").classList.toggle("active", mode==="total");
-  document.getElementById("abtMensal").classList.toggle("active", mode==="mensal");
+  if(mesKey) localStorage.setItem("gbAbertoMesSel", mesKey);
+  // Update label
+  updateAbertoSelLabel();
+  document.getElementById('abertoSelDrop').style.display='none';
   updateStats();
 }
 
+function abertoPickerNavY(d){
+  _abertoPickerYear += d;
+  document.getElementById('abertoPickerYear').textContent = _abertoPickerYear;
+  renderAbertoPickerGrid();
+}
+
+function renderAbertoPickerGrid(){
+  const grid = document.getElementById('abertoPickerGrid');
+  if(!grid) return;
+  grid.innerHTML = MESES.map((m,i)=>{
+    const key = `${_abertoPickerYear}-${p2(i+1)}`;
+    const isActive = _abertoView==='custom' && _abertoMesSel===key;
+    return `<button onclick="pickAbertoView('custom','${key}');event.stopPropagation()"
+      style="padding:5px 2px;border-radius:5px;border:1px solid ${isActive?'var(--accent)':'var(--border)'};
+      background:${isActive?'var(--accent)':'var(--card)'};color:${isActive?'#111':'var(--text)'};
+      font-size:10px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:.12s">
+      ${m.slice(0,3)}
+    </button>`;
+  }).join('');
+}
+
+function updateAbertoSelLabel(){
+  const lbl = document.getElementById('abertoSelLabel');
+  if(!lbl) return;
+  if(_abertoView==='total') lbl.textContent='Total';
+  else if(_abertoView==='mes') lbl.textContent='Este mês';
+  else if(_abertoView==='custom' && _abertoMesSel){
+    const [y,m] = _abertoMesSel.split('-');
+    lbl.textContent = MESES[parseInt(m)-1].slice(0,3)+'/'+y.slice(2);
+  }
+}
+
+// Close aberto dropdown on outside click
+document.addEventListener('click', e=>{
+  const drop = document.getElementById('abertoSelDrop');
+  const wrap = document.getElementById('abertoSelWrap');
+  if(drop && wrap && !wrap.contains(e.target)) drop.style.display='none';
+});
+
+function setAbertoView(mode){ pickAbertoView(mode); } // legacy compat
+
 function updateAbertoMensal(){
-  const abertos = boletoArr().filter(b=>status(b)!=="pago");
-  const byMonth = {};
-  abertos.forEach(b=>{
-    if(!b.vencimento) return;
-    const key = b.vencimento.slice(0,7);
-    byMonth[key] = (byMonth[key]||0) + Number(b.valor||0);
-  });
-  const sorted = Object.keys(byMonth).sort();
+  // Determine which month(s) to show
+  const esteMes = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
   const div = document.getElementById("stAbertoMensal");
   if(!div) return;
-  if(!sorted.length){ div.innerHTML='<span style="color:var(--muted)">Nenhum em aberto</span>'; return; }
-  div.innerHTML = sorted.map(k=>{
-    const [y,m] = k.split("-");
-    const label = MESES[parseInt(m)-1].slice(0,3)+"/"+y.slice(2);
-    return `<div class="aberto-mes-row"><span>${label}</span><span>${fmtR(byMonth[k])}</span></div>`;
-  }).join("");
+
+  if(_abertoView === 'mes'){
+    // Single month total
+    const abertos = boletoArr().filter(b=>status(b)!=="pago" && b.vencimento && b.vencimento.startsWith(esteMes));
+    const total = abertos.reduce((a,b)=>a+Number(b.valor||0),0);
+    div.innerHTML = `<div class="aberto-mes-row"><span>${MESES[TODAY.getMonth()]}/${TODAY.getFullYear()}</span><span>${fmtR(total)}</span></div>`;
+  } else if(_abertoView === 'custom' && _abertoMesSel){
+    const abertos = boletoArr().filter(b=>status(b)!=="pago" && b.vencimento && b.vencimento.startsWith(_abertoMesSel));
+    const total = abertos.reduce((a,b)=>a+Number(b.valor||0),0);
+    const [y,m] = _abertoMesSel.split('-');
+    div.innerHTML = `<div class="aberto-mes-row"><span>${MESES[parseInt(m)-1]}/${y}</span><span>${fmtR(total)}</span></div>`;
+  } else {
+    // total — show breakdown by month
+    const abertos = boletoArr().filter(b=>status(b)!=="pago");
+    const byMonth = {};
+    abertos.forEach(b=>{
+      if(!b.vencimento) return;
+      const key = b.vencimento.slice(0,7);
+      byMonth[key] = (byMonth[key]||0) + Number(b.valor||0);
+    });
+    const sorted = Object.keys(byMonth).sort();
+    if(!sorted.length){ div.innerHTML='<span style="color:var(--muted)">Nenhum em aberto</span>'; return; }
+    div.innerHTML = sorted.map(k=>{
+      const [y,m] = k.split("-");
+      const label = MESES[parseInt(m)-1].slice(0,3)+"/"+y.slice(2);
+      return `<div class="aberto-mes-row"><span>${label}</span><span>${fmtR(byMonth[k])}</span></div>`;
+    }).join("");
+  }
+}
+
+// ════════════════════════════════════════════
+// v9 — SIDEBAR COLLAPSIBLE SECTIONS
+// ════════════════════════════════════════════
+const _sbState = {};
+
+function toggleSbSection(id){
+  const body = document.getElementById('sbsec-'+id);
+  const chev = document.getElementById('sbchev-'+id);
+  if(!body) return;
+  const isCollapsed = body.classList.contains('collapsed');
+  body.classList.toggle('collapsed', !isCollapsed);
+  if(chev) chev.classList.toggle('open', isCollapsed);
+  _sbState[id] = !isCollapsed ? 'collapsed' : 'open';
 }
 
 
@@ -3695,13 +3870,13 @@ if(_focoAtivo) _applyFocoDOM();
 if(_dashCollapsed) _applyDashCollapse();
 // Apply logo name on load
 (function(){ const n = localStorage.getItem('gbAppName'); if(n) renderLogoName(n); })();
-// Apply aberto view toggle state
+// Apply aberto view selector state on load
 (function(){
   const mode = localStorage.getItem("gbAbertoView")||"total";
-  const tBtn = document.getElementById("abtTotal");
-  const mBtn = document.getElementById("abtMensal");
-  if(tBtn) tBtn.classList.toggle("active", mode==="total");
-  if(mBtn) mBtn.classList.toggle("active", mode==="mensal");
+  const mesSel = localStorage.getItem("gbAbertoMesSel")||null;
+  _abertoView = mode;
+  _abertoMesSel = mesSel;
+  updateAbertoSelLabel();
 })();
 // Apply saldo modo toggle state
 (function(){

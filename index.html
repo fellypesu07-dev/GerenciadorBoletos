@@ -699,16 +699,17 @@ body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
 .theme-trigger-caret.open { transform: rotate(180deg); }
 .theme-dropdown {
   display: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 0;
+  position: fixed;
+  top: 52px;
+  right: 8px;
+  left: auto;
   background: var(--surf);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px;
-  z-index: 500;
-  min-width: 140px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  z-index: 600;
+  min-width: 160px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.5);
   flex-direction: column;
   gap: 2px;
 }
@@ -726,7 +727,7 @@ body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
   transition: background .12s;
 }
 .theme-dropdown-item:hover { background: var(--card2); }
-.theme-dropdown-item.active { background: var(--accent)18; color: var(--accent); font-weight: 600; }
+.theme-dropdown-item.active { background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent); font-weight: 600; }
 .theme-dot {
   width: 18px; height: 18px;
   border-radius: 50%;
@@ -1873,7 +1874,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 // ══════════════════════════════════════════════
 const FB_CFG = {
   apiKey: "AIzaSyDoQAoAwfPrNf3cpfzuywbIpwCN63p0Gvk",
-  authDomain: "fellypesu07-dev.github.io",
+  authDomain: "gerenciador-boletos-1d534.firebaseapp.com",
   databaseURL: "https://gerenciador-boletos-1d534-default-rtdb.firebaseio.com",
   projectId: "gerenciador-boletos-1d534",
   storageBucket: "gerenciador-boletos-1d534.firebasestorage.app",

@@ -473,7 +473,8 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
     padding: 0 16px 10px;
     flex-shrink: 0;
   }
-  .mbox > .fg {
+  .mbox > .fg,
+  .mbox > .mscroll {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
@@ -1576,13 +1577,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 <div class="mo" id="moLD">
 <div class="mbox" style="max-width:480px">
   <div class="mtit">🔢 Decodificar Linha Digitável</div>
-  <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Cole os 47 ou 48 dígitos da linha digitável do boleto. O sistema extrai valor e vencimento automaticamente, sem Internet.</p>
-  <div class="fi">
-    <label>Linha Digitável (só números, sem espaços ou pontos)</label>
-    <textarea class="ld-inp" id="ldInput" rows="3" placeholder="10491.23456 78901.234567 89012.345678 9 12340000015000" oninput="onLDInput()"></textarea>
+  <div class="mscroll">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Cole os 47 ou 48 dígitos da linha digitável do boleto. O sistema extrai valor e vencimento automaticamente, sem Internet.</p>
+    <div class="fi">
+      <label>Linha Digitável (só números, sem espaços ou pontos)</label>
+      <textarea class="ld-inp" id="ldInput" rows="3" placeholder="10491.23456 78901.234567 89012.345678 9 12340000015000" oninput="onLDInput()"></textarea>
+    </div>
+    <div id="ldResult" style="display:none"></div>
+    <div id="ldErr" style="display:none" class="ld-err"></div>
   </div>
-  <div id="ldResult" style="display:none"></div>
-  <div id="ldErr" style="display:none" class="ld-err"></div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeLD()">Cancelar</button>
     <button class="btn btn-p" id="ldUseBtn" style="display:none" onclick="applyLD()">✓ Usar esses dados</button>
@@ -1596,10 +1599,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 <div class="mo" id="moC">
 <div class="mbox">
   <div class="mtit">🏢 Meus CNPJs</div>
-  <div id="cnpjMList" style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px;"></div>
-  <div class="fg" style="grid-template-columns:1fr 1fr">
-    <div class="fi full"><label>Nome / Apelido</label><input type="text" id="nN" placeholder="Lanchonete Real"></div>
-    <div class="fi full"><label>CNPJ</label><input type="text" id="nNum" placeholder="00.000.000/0001-00" maxlength="18"></div>
+  <div class="mscroll">
+    <div id="cnpjMList" style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px;"></div>
+    <div class="fg" style="grid-template-columns:1fr 1fr">
+      <div class="fi full"><label>Nome / Apelido</label><input type="text" id="nN" placeholder="Lanchonete Real"></div>
+      <div class="fi full"><label>CNPJ</label><input type="text" id="nNum" placeholder="00.000.000/0001-00" maxlength="18"></div>
+    </div>
   </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeCNPJ()">Fechar</button>
@@ -1614,8 +1619,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 <div class="mo" id="moS">
 <div class="mbox">
   <div class="mtit">💰 Atualizar Saldos</div>
-  <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Informe o saldo atual de cada conta. O sistema calcula o que sobra após os boletos em aberto.</p>
-  <div id="saldoForm" style="display:flex;flex-direction:column;gap:16px"></div>
+  <div class="mscroll">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Informe o saldo atual de cada conta. O sistema calcula o que sobra após os boletos em aberto.</p>
+    <div id="saldoForm" style="display:flex;flex-direction:column;gap:16px"></div>
+  </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeSaldo()">Cancelar</button>
     <button class="btn btn-p" onclick="saveSaldos()">Salvar</button>
@@ -1645,7 +1652,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 <div class="mo" id="moChart">
 <div class="mbox" style="max-width:580px">
   <div class="mtit">📊 Resumo Mensal</div>
-  <div id="chartContent" style="min-height:200px"></div>
+  <div class="mscroll">
+    <div id="chartContent" style="min-height:200px"></div>
+  </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeChart()">Fechar</button>
   </div>
@@ -2891,7 +2900,9 @@ function openSaldoModal(){
     </div>`;
   });
   document.getElementById("saldoForm").innerHTML=h;
-  document.getElementById("moS").classList.add("open");
+  const moS = document.getElementById("moS");
+  if(moS.classList.contains("open")){closeSaldo();return;}
+  moS.classList.add("open");
 }
 
 function closeSaldo(){document.getElementById("moS").classList.remove("open");}

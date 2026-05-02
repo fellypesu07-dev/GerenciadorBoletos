@@ -157,6 +157,12 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .sg-foot{border-top:1px solid var(--border);padding:5px 11px;display:flex;justify-content:space-between;align-items:center;}
 .sg-bol{color:var(--muted);font-size:10px;}
 .sg-sobra{font-family:'DM Mono',monospace;font-size:12px;font-weight:700;}
+.sg-banco-valwrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end;}
+.sg-previa{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--ok);white-space:nowrap;}
+.sg-dia-ant{margin-top:6px;padding-top:6px;border-top:1px dashed var(--border);font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;}
+.saldo-dash-panel:not(.collapsed){max-height:min(88vh,1600px);}
+.saldo-dash-inner{padding:10px 12px 12px;display:flex;flex-direction:column;gap:8px;border-top:none;}
+.saldo-dash-inner .saldo-panel{margin-top:0;}
 
 /* GROUPS */
 .gb{background:var(--card);border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:10px;}
@@ -309,6 +315,7 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .notif-btn{position:relative;}
 .notif-dot{position:absolute;top:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--ok);display:none;}
 .notif-dot.on{display:block;}
+#bottomNav .bnav-btn.notif-btn .notif-dot{top:2px;right:calc(50% - 18px);}
 
 /* ════════════════════════════════════════════
    TABLET (≤ 800px)
@@ -390,16 +397,31 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   }
   #sideOverlay.on{ display: block; }
 
-  /* ── Main area ── */
-  .main{ padding: 10px 12px; gap: 10px; }
+  /* ── Main area — tipografia maior (acessibilidade) ── */
+  .main{ padding: 10px 12px; gap: 12px; font-size: 16px; }
+  body{ font-size: 16px; }
 
   /* ── Stats cards: 2 per row ── */
   .stats-row{
     grid-template-columns: repeat(2,1fr);
     gap: 6px;
   }
-  .sc{ padding: 9px 11px; }
-  .sv{ font-size: 14px; }
+  .sc{ padding: 10px 12px; }
+  .sc .sl{ font-size: 11px; letter-spacing: .5px; }
+  .sc .sv{ font-size: 18px; }
+  .alertbar{ font-size: 14px; }
+
+  /* Boletos — valores e textos mais legíveis */
+  .bol-card .bc-desc{ font-size: 15px; }
+  .bol-card .bc-val{ font-size: 19px; }
+  .bol-card .bc-meta{ font-size: 12px; }
+  table td{ font-size: 15px; padding: 10px 10px; }
+  table th{ font-size: 10px; padding: 8px 10px; }
+  .mono, td.mono{ font-size: 15px; }
+  .btn-sm{ font-size: 13px; padding: 6px 10px; }
+  .gb-name{ font-size: 14px; }
+  .dash-stat-lbl{ font-size: 10px; }
+  .dash-stat-val{ font-size: 16px; }
 
   /* ── Saldo panel: 1 per row ── */
   .saldo-panel{ grid-template-columns: 1fr; gap: 6px; }
@@ -412,7 +434,6 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   /* ── Card grid 1 col on small screens ── */
   .card-grid{ grid-template-columns: 1fr; gap: 6px; }
   .bol-card{ padding: 10px 12px; }
-  .bc-val{ font-size: 14px; }
 
   /* ── Group header ── */
   .gb-head{
@@ -1119,6 +1140,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <span class="bnav-icon">📊</span>
     <span>Resumo</span>
   </button>
+  <button class="bnav-btn notif-btn" id="bnavNotif" onclick="toggleNotifications()" title="Notificações de vencimento" aria-label="Notificações de vencimento">
+    <span class="bnav-icon">🔔</span>
+    <span>Alertas</span>
+    <span class="notif-dot" id="notifDotMob" aria-hidden="true"></span>
+  </button>
   <button class="bnav-btn" id="bnavPix" onclick="openModal();setTimeout(()=>setModalidade('pix'),50)">
     <span class="bnav-icon">⚡</span>
     <span>Pix</span>
@@ -1347,20 +1373,38 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <div class="sc"><div class="sl">Vencem Hoje</div><div class="sv" style="color:var(--danger)" id="stHoje">0</div></div>
       <div class="sc"><div class="sl">Vencidos</div><div class="sv" style="color:var(--danger)" id="stVenc">0</div></div>
       <div class="sc"><div class="sl">Pagos no Mês</div><div class="sv" style="color:var(--ok)" id="stPago">R$ 0,00</div></div>
-      <div class="sc"><div class="sl">🏠 Casa Aberto</div><div class="sv" style="color:var(--pink)" id="stCasa">R$ 0,00</div></div>
-    </div>
-    <div>
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:7px">
-        <div class="slbl" style="margin:0">💰 Saldo de Caixa por Empresa</div>
-        <div style="display:flex;align-items:center;gap:6px">
-          <span id="saldoMesLabel" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)"></span>
-          <div class="saldo-toggle" role="group" aria-label="Período do saldo">
-            <button class="saldo-tbtn active" id="stbTodos"  onclick="setSaldoModo('todos')"  title="Todos os boletos em aberto">Todos</button>
-            <button class="saldo-tbtn"        id="stbMes"    onclick="setSaldoModo('mes')"    title="Somente boletos do mês atual">Este mês</button>
+      <div class="sc" id="scCasa">
+        <div class="sl" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          🏠 Casa Aberto
+          <div style="position:relative;display:inline-block" id="casaSelWrap">
+            <button id="casaSelBtn" onclick="toggleCasaSel(event)"
+              style="display:inline-flex;align-items:center;gap:4px;background:var(--card2);border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:8px;font-family:'DM Mono',monospace;font-weight:700;text-transform:uppercase;letter-spacing:.4px;padding:3px 7px;cursor:pointer;transition:.12s">
+              <span id="casaSelLabel">Total</span><span style="font-size:9px">▾</span>
+            </button>
+            <div id="casaSelDrop" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:200;min-width:150px;background:var(--surf);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.5);overflow:hidden">
+              <div class="aberto-opt" onclick="pickCasaView('total')">📊 Total</div>
+              <div class="aberto-opt" onclick="pickCasaView('mes')" style="border-bottom:none">📅 Este mês</div>
+            </div>
           </div>
         </div>
+        <div class="sv" style="color:var(--pink)" id="stCasa">R$ 0,00</div>
       </div>
-      <div class="saldo-panel" id="saldoPanel"></div>
+    </div>
+    <div class="dash-panel saldo-dash-panel" id="saldoDashPanel">
+      <div class="dash-header" onclick="toggleSaldoDash()" aria-expanded="true" aria-controls="saldoDashBody" role="button" tabindex="0" onkeydown="if(event.key==='Enter')toggleSaldoDash()">
+        <div class="dash-title">💰 Saldo de Caixa por Empresa</div>
+        <span class="dash-chevron" aria-hidden="true">▼</span>
+      </div>
+      <div class="saldo-dash-inner" id="saldoDashBody">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:2px">
+          <span id="saldoMesLabel" style="font-size:10px;font-family:'DM Mono',monospace;color:var(--muted)"></span>
+          <div class="saldo-toggle" role="group" aria-label="Período do saldo">
+            <button class="saldo-tbtn active" id="stbTodos"  onclick="event.stopPropagation();setSaldoModo('todos')"  title="Todos os boletos em aberto">Todos</button>
+            <button class="saldo-tbtn"        id="stbMes"    onclick="event.stopPropagation();setSaldoModo('mes')"    title="Somente boletos do mês atual">Este mês</button>
+          </div>
+        </div>
+        <div class="saldo-panel" id="saldoPanel"></div>
+      </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap" id="chipArea"></div>
@@ -1629,6 +1673,7 @@ let qfAtual="todos", cnpjFil="todos";
 let calSel=null, duSel=null;
 let calY, calM;
 let editId=null;
+let _casaAbertoView = localStorage.getItem("gbCasaAbertoView") || "total";
 
 // View mode: "dense" | "card"
 let viewMode = localStorage.getItem("viewMode") || "dense";
@@ -1929,7 +1974,7 @@ function renderDUStrip(){
     return`<div class="${cls}" onclick="duClick('${s}')">
       <div class="du-wd">${DIAS[dt.getDay()]}</div>
       <div class="du-n" style="${isTod?"color:var(--accent)":""}">${p2(dt.getDate())}/${p2(dt.getMonth()+1)}</div>
-      <div class="du-i ${bs.length?"dh":""}">${bs.length?bs.length+"bol":"livre"}</div>
+      <div class="du-i ${bs.length?"dh":""}">${bs.length?bs.length+" boleto(s)":"livre"}</div>
       ${bs.length?`<div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace">${fmtR(tot)}</div>`:""}
     </div>`;
   }).join("");
@@ -1942,7 +1987,8 @@ function duClick(s){if(duSel===s){duSel=null;qfAtual="7du";}else{duSel=s;calSel=
 // ══════════════════════════════════════════════
 function updateStats(){
   const mes=TODAY.getMonth(),ano=TODAY.getFullYear();
-  let ab=0,hj=0,vn=0,pg=0,ca=0;
+  const esteMes = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  let ab=0,hj=0,vn=0,pg=0,caTotal=0,caMes=0;
   let nT=0,n7=0,nH=0,nV=0,nP=0,nPg=0,nC=0;
   const d7=new Set(next7DU());
   boletoArr().forEach(b=>{
@@ -1953,12 +1999,13 @@ function updateStats(){
     if(s!=="pago")ab+=Number(b.valor||0);
     if(s==="hoje")hj++;if(s==="vencido")vn++;
     if(s==="pago"){const d=toDate(b.vencimento);if(d.getMonth()===mes&&d.getFullYear()===ano)pg+=Number(b.valor||0);}
-    if(b.grupo===CASA&&s!=="pago")ca+=Number(b.valor||0);
+    if(b.grupo===CASA&&s!=="pago"){
+      caTotal+=Number(b.valor||0);
+      if(b.vencimento&&b.vencimento.startsWith(esteMes))caMes+=Number(b.valor||0);
+    }
   });
-  document.getElementById("stAberto").textContent=fmtR(ab);
+  const casaVal = _casaAbertoView === "mes" ? caMes : caTotal;
   // Aberto selector: show correct value and/or breakdown
-  const showMensal = _abertoView !== "total";
-  const esteMes = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
   let abertoVal = ab;
   if(_abertoView === 'mes'){
     abertoVal = boletoArr().filter(b=>status(b)!=="pago"&&b.vencimento&&b.vencimento.startsWith(esteMes)).reduce((a,b)=>a+Number(b.valor||0),0);
@@ -1974,7 +2021,7 @@ function updateStats(){
   document.getElementById("stHoje").textContent=hj;
   document.getElementById("stVenc").textContent=vn;
   document.getElementById("stPago").textContent=fmtR(pg);
-  document.getElementById("stCasa").textContent=fmtR(ca);
+  document.getElementById("stCasa").textContent=fmtR(casaVal);
   const qm={todos:nT,"7du":n7,hoje:nH,vencido:nV,pendente:nP,pago:nPg,casa:nC};
   Object.keys(qm).forEach(k=>{const el=document.getElementById("qn-"+k);if(el)el.textContent=qm[k];});
   const ab2=document.getElementById("alertBar");
@@ -2149,7 +2196,8 @@ function renderSaldoPanel(){
       : '';
     h+=`<div class="sg">
       <div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}${modeTag}</div></div>
-      <div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span></div>`).join("")}</div>
+      <div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><div class="sg-banco-valwrap"><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span><span class="sg-previa">(+ ${fmtR(0)})</span></div></div>`).join("")}
+      <div class="sg-dia-ant">Saldo do dia anterior: ${fmtR(0)}</div></div>
       <div class="sg-foot"><span class="sg-bol">Boletos${_saldoModo==='mes'?' (mês)':''}: ${fmtR(ab)}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
     </div>`;
   });
@@ -2706,6 +2754,11 @@ function openSaldoModal(){
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
         </div>`).join("")}
+        <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
+          <label style="display:block;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia</label>
+          <input type="number" readonly tabindex="-1" value="0" step="0.01" min="0" aria-label="Previsão de entradas (visual)"
+            style="background:var(--card);border:1px dashed var(--border);border-radius:4px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right;opacity:.85">
+        </div>
       </div>
     </div>`;
   });
@@ -2717,8 +2770,9 @@ function closeSaldo(){document.getElementById("moS").classList.remove("open");}
 
 function saveSaldos(){
   const ns={...saldos};
-  document.querySelectorAll("#saldoForm input").forEach(inp=>{
+  document.querySelectorAll("#saldoForm input[data-banco]").forEach(inp=>{
     const gid=inp.dataset.gid,banco=inp.dataset.banco;
+    if(!gid||!banco)return;
     if(!ns[gid])ns[gid]={};
     ns[gid][banco]=parseFloat(inp.value)||0;
   });
@@ -3083,8 +3137,10 @@ function closeChart(){ document.getElementById("moChart").classList.remove("open
 let notifEnabled = localStorage.getItem("notifEnabled") === "1";
 
 function updateNotifUI(){
-  const dot = document.getElementById("notifDot");
-  if(dot) dot.classList.toggle("on", notifEnabled);
+  ["notifDot","notifDotMob"].forEach(id=>{
+    const dot = document.getElementById(id);
+    if(dot) dot.classList.toggle("on", notifEnabled);
+  });
 }
 
 async function toggleNotifications(){
@@ -3266,7 +3322,26 @@ let _pinMode = "enter"; // "enter" | "setup"
 function startApp(){
   // Show auth screen while Firebase checks session
   document.getElementById("authScreen").style.display = "flex";
-  auth.onAuthStateChanged(user => {
+  // Retorno do Google após signInWithRedirect (mobile-friendly)
+  auth.getRedirectResult()
+    .then(function(result){
+      if(result.user){
+        // Sessão já ativa; onAuthStateChanged abaixo tratará email/PIN
+      }
+    })
+    .catch(function(err){
+      var ign = ["auth/popup-closed-by-user","auth/cancelled-popup-request"];
+      if(err && err.code && ign.indexOf(err.code) === -1){
+        toast("Erro ao entrar: " + (err.message || err.code), "err");
+      }
+    })
+    .finally(function(){
+      attachAuthStateListener();
+    });
+}
+
+function attachAuthStateListener(){
+  auth.onAuthStateChanged(function(user){
     if(user){
       // ── EMAILS AUTORIZADOS ──
       const EMAILS_OK = [
@@ -3406,9 +3481,9 @@ function changePin(){
 }
 
 function signInGoogle(){
-  const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => {
-    toast("Erro ao entrar: " + err.message, "err");
+  var provider = new firebase.auth.GoogleAuthProvider();
+  auth.signInWithRedirect(provider).catch(function(err){
+    toast("Erro ao iniciar login: " + (err.message || err.code), "err");
   });
 }
 
@@ -3711,6 +3786,21 @@ function _applyDashCollapse(){
   if(hdr) hdr.setAttribute('aria-expanded', _dashCollapsed ? 'false' : 'true');
 }
 
+let _saldoDashCollapsed = localStorage.getItem('gbSaldoDashCollapsed') === '1';
+
+function toggleSaldoDash(){
+  _saldoDashCollapsed = !_saldoDashCollapsed;
+  localStorage.setItem('gbSaldoDashCollapsed', _saldoDashCollapsed ? '1' : '0');
+  _applySaldoDashCollapse();
+}
+function _applySaldoDashCollapse(){
+  const panel = document.getElementById('saldoDashPanel');
+  if(!panel) return;
+  panel.classList.toggle('collapsed', _saldoDashCollapsed);
+  const hdr = panel.querySelector('.dash-header');
+  if(hdr) hdr.setAttribute('aria-expanded', _saldoDashCollapsed ? 'false' : 'true');
+}
+
 function updateDashboard(){
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
@@ -3923,11 +4013,36 @@ function updateAbertoSelLabel(){
   }
 }
 
+function toggleCasaSel(e){
+  e.stopPropagation();
+  const drop = document.getElementById('casaSelDrop');
+  const isOpen = drop && drop.style.display !== 'none';
+  if(drop) drop.style.display = isOpen ? 'none' : 'block';
+}
+
+function pickCasaView(mode){
+  _casaAbertoView = mode;
+  localStorage.setItem('gbCasaAbertoView', mode);
+  updateCasaSelLabel();
+  const drop = document.getElementById('casaSelDrop');
+  if(drop) drop.style.display = 'none';
+  updateStats();
+}
+
+function updateCasaSelLabel(){
+  const lbl = document.getElementById('casaSelLabel');
+  if(!lbl) return;
+  lbl.textContent = _casaAbertoView === 'mes' ? 'Este mês' : 'Total';
+}
+
 // Close aberto dropdown on outside click
 document.addEventListener('click', e=>{
   const drop = document.getElementById('abertoSelDrop');
   const wrap = document.getElementById('abertoSelWrap');
   if(drop && wrap && !wrap.contains(e.target)) drop.style.display='none';
+  const cDrop = document.getElementById('casaSelDrop');
+  const cWrap = document.getElementById('casaSelWrap');
+  if(cDrop && cWrap && !cWrap.contains(e.target)) cDrop.style.display='none';
 });
 
 function setAbertoView(mode){ pickAbertoView(mode); } // legacy compat
@@ -4118,8 +4233,8 @@ window.setView = function(mode){
 (function(){ applyTheme(localStorage.getItem('gbTheme')||'dark-gold', false); })();
 // Apply foco on load
 if(_focoAtivo) _applyFocoDOM();
-// Apply dash collapse on load
-if(_dashCollapsed) _applyDashCollapse();
+if(_saldoDashCollapsed) _applySaldoDashCollapse();
+(function(){ updateCasaSelLabel(); })();
 // Apply logo name on load
 (function(){ const n = localStorage.getItem('gbAppName'); if(n) renderLogoName(n); })();
 // Apply aberto view selector state on load

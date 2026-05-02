@@ -352,9 +352,13 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   .hright .notif-btn,
   .hright [onclick*="openChartModal"],
   .hright [onclick*="openLD"],
-  .hright [onclick*="openCNPJModal"] {
+  .hright [onclick*="openCNPJModal"],
+  .hright .foco-badge,
+  .hright .desktop-only {
     display: none !important;
   }
+  /* theme picker: keep visible on mobile but compact */
+  .theme-picker-wrap { display: flex; }
   /* + Boleto gets full-width feel but stays compact */
   .hright .btn-p{
     font-size: 13px;
@@ -668,11 +672,61 @@ body[data-theme="light"] .gb-head:hover { background: #e8e8e4; }
 body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
 
 /* ── Theme toggle pill ── */
-.theme-picker {
+.theme-picker-wrap {
+  position: relative;
   display: flex;
-  gap: 4px;
   align-items: center;
 }
+.theme-trigger {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 6px;
+  cursor: pointer;
+  transition: border-color .15s;
+}
+.theme-trigger:hover { border-color: var(--accent); }
+.theme-trigger-caret {
+  font-size: 10px;
+  color: var(--muted);
+  transition: transform .2s;
+  line-height: 1;
+  margin-top: 1px;
+}
+.theme-trigger-caret.open { transform: rotate(180deg); }
+.theme-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--surf);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px;
+  z-index: 500;
+  min-width: 140px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  flex-direction: column;
+  gap: 2px;
+}
+.theme-dropdown.open { display: flex; }
+.theme-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  transition: background .12s;
+}
+.theme-dropdown-item:hover { background: var(--card2); }
+.theme-dropdown-item.active { background: var(--accent)18; color: var(--accent); font-weight: 600; }
 .theme-dot {
   width: 18px; height: 18px;
   border-radius: 50%;
@@ -681,8 +735,10 @@ body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
   transition: transform .15s, border-color .15s;
   flex-shrink: 0;
 }
-.theme-dot:hover { transform: scale(1.2); }
+.theme-dot:hover { transform: scale(1.15); }
 .theme-dot.active { border-color: var(--text); }
+/* Desktop-only elements */
+.desktop-only { display: inline-flex; }
 
 /* ── Company name customization ── */
 .logo-text-input {
@@ -1284,12 +1340,30 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   <div class="logo" id="logoArea" title="Clique duplo para personalizar o nome" ondblclick="editLogoName()">Real<span>Financeiro</span></div>
   <div class="hright">
     <span class="sync ok" id="syncBadge" aria-live="polite">✓ Online</span>
-    <!-- Temas de cor -->
-    <div class="theme-picker" title="Tema de cor" aria-label="Selecionar tema de cor">
-      <div class="theme-dot active" id="td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#f0c040)" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"  onkeydown="if(event.key==='Enter')setTheme('dark-gold')"></div>
-      <div class="theme-dot"        id="td-dark-green" style="background:linear-gradient(135deg,#0c110e,#4cdf88)" title="Dark Green" onclick="setTheme('dark-green')" tabindex="0" role="button" aria-label="Tema Dark Green" onkeydown="if(event.key==='Enter')setTheme('dark-green')"></div>
-      <div class="theme-dot"        id="td-dark-blue"  style="background:linear-gradient(135deg,#0c0f16,#6f8fff)" title="Dark Blue"  onclick="setTheme('dark-blue')"  tabindex="0" role="button" aria-label="Tema Dark Blue"  onkeydown="if(event.key==='Enter')setTheme('dark-blue')"></div>
-      <div class="theme-dot"        id="td-light"      style="background:linear-gradient(135deg,#f5f5f2,#e08020)" title="Light"      onclick="setTheme('light')"      tabindex="0" role="button" aria-label="Tema Light"      onkeydown="if(event.key==='Enter')setTheme('light')"></div>
+    <!-- Temas de cor — seletor retrátil -->
+    <div class="theme-picker-wrap" id="themePickerWrap" title="Tema de cor">
+      <button class="theme-trigger" id="themeTriggerBtn" onclick="toggleThemePicker()" aria-label="Selecionar tema de cor" title="Tema de cor">
+        <div class="theme-dot active" id="td-active-preview" style="background:linear-gradient(135deg,#0f0f0d,#f0c040);pointer-events:none;border:2px solid var(--text)"></div>
+        <span class="theme-trigger-caret" id="themeCaretIcon">▾</span>
+      </button>
+      <div class="theme-dropdown" id="themeDropdown">
+        <div class="theme-dropdown-item" id="td-dark-gold"  onclick="setTheme('dark-gold');toggleThemePicker(false)"  tabindex="0" role="button" aria-label="Dark Gold">
+          <div class="theme-dot" style="background:linear-gradient(135deg,#0f0f0d,#f0c040)"></div>
+          <span>Dark Gold</span>
+        </div>
+        <div class="theme-dropdown-item" id="td-dark-green" onclick="setTheme('dark-green');toggleThemePicker(false)" tabindex="0" role="button" aria-label="Dark Green">
+          <div class="theme-dot" style="background:linear-gradient(135deg,#0c110e,#4cdf88)"></div>
+          <span>Dark Green</span>
+        </div>
+        <div class="theme-dropdown-item" id="td-dark-blue"  onclick="setTheme('dark-blue');toggleThemePicker(false)"  tabindex="0" role="button" aria-label="Dark Blue">
+          <div class="theme-dot" style="background:linear-gradient(135deg,#0c0f16,#6f8fff)"></div>
+          <span>Dark Blue</span>
+        </div>
+        <div class="theme-dropdown-item" id="td-light"      onclick="setTheme('light');toggleThemePicker(false)"      tabindex="0" role="button" aria-label="Light">
+          <div class="theme-dot" style="background:linear-gradient(135deg,#f5f5f2,#e08020)"></div>
+          <span>Light</span>
+        </div>
+      </div>
     </div>
     <!-- Modo foco -->
     <button class="btn btn-g btn-sm foco-badge" id="focoBtn" onclick="toggleFoco()" aria-pressed="false" title="Modo Foco: oculta pagos">👁 Foco</button>
@@ -1300,6 +1374,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     </div>
     <button class="btn btn-g btn-sm" onclick="openChartModal()" title="Resumo mensal" aria-label="Resumo mensal">📊</button>
     <button class="btn btn-g btn-sm notif-btn" id="notifBtn" onclick="toggleNotifications()" title="Notificações de vencimento" aria-label="Notificações de vencimento"><span>🔔</span><span class="notif-dot" id="notifDot" aria-hidden="true"></span></button>
+    <button class="btn btn-g btn-sm desktop-only" onclick="openSaldoModal()" aria-label="Atualizar saldos" title="Atualizar Saldos">💰 Saldos</button>
     <button class="btn btn-g btn-sm" onclick="openLD()" aria-label="Decodificar linha digitável">🔢 Linha Digitável</button>
     <button class="btn btn-g btn-sm" onclick="openCNPJModal()" aria-label="Gerenciar CNPJs">⚙ CNPJs</button>
     <button class="btn btn-p" onclick="openModal()" aria-label="Adicionar novo boleto">＋ Boleto</button>
@@ -1744,6 +1819,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 </div>
 </div>
 
+<!-- ═══════════════════════════════════════════ -->
+<!-- MODAL BANCO PAGAMENTO -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="mo" id="moBancoPagto">
+<div class="mbox" style="max-width:360px">
+  <div class="mtit">🏦 Qual banco foi pago?</div>
+  <div class="mscroll">
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px" id="moBancoPagtoDesc"></p>
+    <div id="moBancoPagtoList" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+  <div class="mact">
+    <button class="btn btn-g" onclick="closeBancoPagto()">Cancelar</button>
+  </div>
+</div>
+</div>
+
 
 <!-- ═══════════════════════════════════════════ -->
 <!-- MODAL CONFIRMAR EXCLUSÃO -->
@@ -1844,7 +1935,7 @@ function initFirebase(){
   db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};renderAll();});
   db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};renderAll();});
   db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};renderAll();});
-  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};renderAll();});
+  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};renderAll();_applyPrevisaoSe24h();});
   db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};renderAll();});
   _snapshotSaldoAnterior();
   db.ref(".info/connected").on("value",snap=>{
@@ -2415,7 +2506,15 @@ function renderSaldoPanel(){
   groups.forEach(g=>{
     const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
     const tot=bancos.reduce((a,b)=>a+Number(gs[b]||0),0);
-    const prev=Number(previsoes[g.id]||0);
+    // Support both old (number) and new (object per-banco) previsão
+    const gPrev = previsoes[g.id];
+    const _prevForBanco = (banco) => {
+      if(!gPrev) return 0;
+      if(typeof gPrev==='object') return Number(gPrev[banco]||0);
+      // Legacy: single value, assign to first banco only
+      return bancos[0]===banco ? Number(gPrev||0) : 0;
+    };
+    const prev = bancos.reduce((a,b)=>a+_prevForBanco(b),0);
     // Saldo anterior (ontem)
     const ontem=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
     const saldoAntVal=(saldosAnt[g.id]||{})[ontem];
@@ -2438,15 +2537,19 @@ function renderSaldoPanel(){
     }
 
     const ab=abertos.reduce((a,b)=>a+Number(b.valor||0),0);
-    // Para modo dia: sobra = saldo atual − o que foi pago hoje
+    // Para modo dia: sobra = saldo atual − o que foi pago hoje + previsão
     // Para outros:  sobra = saldo + previsão − boletos abertos
-    const s = _saldoModo==='dia' ? tot - ab : tot + prev - ab;
-    const prevTag = (_saldoModo!=='dia' && prev>0) ? `<span style="font-size:9px;color:var(--ok);font-family:'DM Mono',monospace;margin-left:4px">(+${fmtR(prev)} prev.)</span>` : '';
-    const boletoLabel = _saldoModo==='dia' ? `Pago hoje: ${fmtR(ab)}` : `Boletos${modeLabel}: ${fmtR(ab)}${prevTag}`;
-    const sobraLabel = _saldoModo==='dia' ? 'Sobrou hoje' : 'Saldo projetado';
+    const s = _saldoModo==='dia' ? tot - ab + prev : tot + prev - ab;
+    const prevTag = (prev>0) ? `<span style="font-size:9px;color:var(--ok);font-family:'DM Mono',monospace;margin-left:4px">(+${fmtR(prev)} prev.)</span>` : '';
+    const boletoLabel = _saldoModo==='dia' ? `Pago hoje: ${fmtR(ab)}${prevTag}` : `Boletos${modeLabel}: ${fmtR(ab)}${prevTag}`;
+    const sobraLabel = _saldoModo==='dia' ? 'Saldo+prev hoje' : 'Saldo projetado';
     h+=`<div class="sg">
       <div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}${modeTag}</div></div>
-      <div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><div class="sg-banco-valwrap"><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span>${(_saldoModo!=='dia'&&prev>0)?`<span class="sg-previa">(+ ${fmtR(prev)})</span>`:''}</div></div>`).join("")}
+      <div class="sg-body">${bancos.map(b=>{
+        const bancoVal = Number(gs[b]||0);
+        const prevB = _prevForBanco(b);
+        return `<div class="banco-row"><span class="banco-nm">${b}</span><div class="sg-banco-valwrap"><span class="banco-vl" style="color:${bancoVal>0?"var(--ok)":"var(--muted)"}">${fmtR(bancoVal)}</span>${prevB>0?`<span class="sg-previa">(+ ${fmtR(prevB)})</span>`:''}</div></div>`;
+      }).join("")}
       <div class="sg-dia-ant">Saldo ontem: <strong>${saldoAntStr}</strong></div></div>
       <div class="sg-foot"><span class="sg-bol">${boletoLabel}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
     </div>`;
@@ -2986,11 +3089,27 @@ function removeCNPJ(id){
 // ══════════════════════════════════════════════
 // MODAL SALDO
 // ══════════════════════════════════════════════
+function _fmtSaldoInp(val){
+  // Format a number to Brazilian decimal string for input display
+  if(val==null||val==="") return "";
+  const n = parseFloat(String(val).replace(",","."));
+  if(isNaN(n)) return "";
+  return n.toFixed(2).replace(".",",");
+}
+
+function _parseSaldoInp(val){
+  // Parse a Brazilian decimal string (accepts comma or dot)
+  const s = String(val||"").trim().replace(/\./g,"").replace(",",".");
+  const n = parseFloat(s);
+  return isNaN(n) ? 0 : n;
+}
+
 function openSaldoModal(){
   const groups=getGroups().filter(g=>!g.isCasa);
   let h="";
   groups.forEach(g=>{
     const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
+    const gPrev = (previsoes[g.id]&&typeof previsoes[g.id]==='object') ? previsoes[g.id] : {};
     h+=`<div>
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
         <div style="width:4px;height:16px;border-radius:2px;background:${g.color};flex-shrink:0"></div>
@@ -2998,18 +3117,26 @@ function openSaldoModal(){
         ${g.num?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${escHTML(g.num)}</span>`:""}
       </div>
       <div style="display:flex;flex-direction:column;gap:7px;padding-left:11px">
-        ${bancos.map(b=>`<div style="display:flex;align-items:center;gap:10px">
-          <div style="width:110px;font-size:12px;color:var(--muted)">${b}</div>
-          <input type="number" data-gid="${g.id}" data-banco="${b}" value="${gs[b]!=null?gs[b]:""}" placeholder="0,00" step="0.01" min="0"
-            style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right"
-            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-        </div>`).join("")}
-        <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
-          <label style="display:block;font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia</label>
-          <input type="number" data-gid="${g.id}" data-previsao="1" value="${previsoes[g.id]!=null?previsoes[g.id]:''}" placeholder="0,00" step="0.01" min="0" aria-label="Previsão de entradas"
-            style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right;"
-            onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
-        </div>
+        ${bancos.map(b=>{
+          const prevBanco = gPrev[b]!=null ? gPrev[b] : (typeof previsoes[g.id]==='number'&&bancos[0]===b ? previsoes[g.id] : "");
+          return `<div style="display:flex;flex-direction:column;gap:3px;border-bottom:1px solid var(--border)22;padding-bottom:6px">
+            <div style="font-size:11px;color:var(--muted);font-weight:700">${b}</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px;font-size:10px;color:var(--muted)">Saldo atual</div>
+              <input type="text" inputmode="decimal" data-gid="${g.id}" data-banco="${b}"
+                value="${_fmtSaldoInp(gs[b])}" placeholder="0,00"
+                style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="width:80px;font-size:10px;color:var(--ok)">Previsão entrada</div>
+              <input type="text" inputmode="decimal" data-gid="${g.id}" data-banco="${b}" data-previsao="1"
+                value="${_fmtSaldoInp(prevBanco)}" placeholder="0,00"
+                style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right"
+                onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+          </div>`;
+        }).join("")}
       </div>
     </div>`;
   });
@@ -3026,23 +3153,24 @@ function saveSaldos(){
   const ns = JSON.parse(JSON.stringify(saldos||{}));
   const np = JSON.parse(JSON.stringify(previsoes||{}));
 
-  document.querySelectorAll("#saldoForm input[data-banco]").forEach(inp=>{
+  document.querySelectorAll("#saldoForm input[data-banco]:not([data-previsao])").forEach(inp=>{
     const gid=inp.dataset.gid, banco=inp.dataset.banco;
     if(!gid||!banco)return;
     if(!ns[gid])ns[gid]={};
-    const val = parseFloat(String(inp.value).replace(",","."));
+    const val = _parseSaldoInp(inp.value);
     ns[gid][banco] = isNaN(val) ? 0 : val;
   });
 
-  document.querySelectorAll("#saldoForm input[data-previsao]").forEach(inp=>{
-    const gid=inp.dataset.gid;
-    if(!gid)return;
-    const val = parseFloat(String(inp.value).replace(",","."));
-    np[gid] = isNaN(val) ? 0 : val;
+  // Per-banco previsão
+  document.querySelectorAll("#saldoForm input[data-banco][data-previsao]").forEach(inp=>{
+    const gid=inp.dataset.gid, banco=inp.dataset.banco;
+    if(!gid||!banco)return;
+    if(!np[gid]||typeof np[gid]!=='object') np[gid]={};
+    const val = _parseSaldoInp(inp.value);
+    np[gid][banco] = isNaN(val) ? 0 : val;
   });
 
   // Salva cada grupo individualmente via update atomico
-  // Evita sobrescrever dados de outros grupos caso o listener ainda nao carregou tudo
   const updates = {};
   Object.entries(ns).forEach(([gid, bancos])=>{
     updates["saldos/"+gid] = bancos;
@@ -3056,6 +3184,7 @@ function saveSaldos(){
     .then(()=>{
       setSyncBadge("ok","✓ Online");
       toast("Saldos atualizados com sucesso","ok");
+      _applyPrevisaoSe24h(); // Check if need to apply previsão
     })
     .catch(()=>setSyncBadge("err","⚠ Erro ao salvar"));
 
@@ -3131,8 +3260,10 @@ document.addEventListener("click",()=>{
 // ══════════════════════════════════════════════
 // CLOSE MODALS ON BACKDROP
 // ══════════════════════════════════════════════
-["moB","moC","moS","moLD","moConfirm","moChart"].forEach(id=>{
-  document.getElementById(id).addEventListener("click",e=>{
+["moB","moC","moS","moLD","moConfirm","moChart","moBancoPagto"].forEach(id=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener("click",e=>{
     if(e.target===e.currentTarget){
       if(id==="moB")closeModal();
       if(id==="moC")closeCNPJ();
@@ -3140,9 +3271,51 @@ document.addEventListener("click",()=>{
       if(id==="moLD")closeLD();
       if(id==="moConfirm")closeConfirm();
       if(id==="moChart")closeChart();
+      if(id==="moBancoPagto")closeBancoPagto();
     }
   });
 });
+
+// ══════════════════════════════════════════════
+// PREVISÃO 24H — aplica previsão ao saldo real
+// Roda uma vez por dia, após 24h da última atualização de saldo.
+// ══════════════════════════════════════════════
+function _applyPrevisaoSe24h(){
+  const CHAVE = 'gbPrevApplied';
+  const hoje = new Date().toISOString().slice(0,10);
+  const ultimo = localStorage.getItem(CHAVE);
+  if(ultimo === hoje) return; // já aplicou hoje
+
+  // Para cada grupo, adiciona previsão por banco ao saldo
+  const updates = {};
+  getGroups().filter(g=>!g.isCasa).forEach(g=>{
+    const gs = saldos[g.id]||{};
+    const gPrev = previsoes[g.id];
+    if(!gPrev) return;
+    const bancos = bancosDoGrupo(g.name);
+    bancos.forEach(banco=>{
+      let prevVal = 0;
+      if(typeof gPrev==='object') prevVal = Number(gPrev[banco]||0);
+      else if(bancos[0]===banco) prevVal = Number(gPrev||0);
+      if(prevVal > 0){
+        const saldoAtual = Number(gs[banco]||0);
+        updates['saldos/'+g.id+'/'+banco] = saldoAtual + prevVal;
+      }
+    });
+  });
+
+  if(Object.keys(updates).length === 0){
+    localStorage.setItem(CHAVE, hoje);
+    return;
+  }
+
+  db.ref().update(updates)
+    .then(()=>{
+      localStorage.setItem(CHAVE, hoje);
+      toast('📈 Previsão de entradas aplicada aos saldos!','ok',4000);
+    })
+    .catch(()=>{}); // silently fail
+}
 
 
 
@@ -3823,13 +3996,41 @@ function setTheme(name){
   applyTheme(name, true);
 }
 
+// Theme gradient map for the preview dot
+const _THEME_GRAD = {
+  'dark-gold':  'linear-gradient(135deg,#0f0f0d,#f0c040)',
+  'dark-green': 'linear-gradient(135deg,#0c110e,#4cdf88)',
+  'dark-blue':  'linear-gradient(135deg,#0c0f16,#6f8fff)',
+  'light':      'linear-gradient(135deg,#f5f5f2,#e08020)',
+};
+
 function applyTheme(name, save){
   document.body.setAttribute('data-theme', name);
-  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
-  const dot = document.getElementById('td-' + name);
-  if(dot) dot.classList.add('active');
+  // Update active state on dropdown items
+  document.querySelectorAll('.theme-dropdown-item').forEach(d => d.classList.remove('active'));
+  const item = document.getElementById('td-' + name);
+  if(item) item.classList.add('active');
+  // Update preview dot in trigger button
+  const preview = document.getElementById('td-active-preview');
+  if(preview && _THEME_GRAD[name]) preview.style.background = _THEME_GRAD[name];
   if(save) localStorage.setItem('gbTheme', name);
 }
+
+// ── Theme picker toggle ─────────────────────
+let _themePickerOpen = false;
+function toggleThemePicker(forceClose){
+  _themePickerOpen = (forceClose === false) ? false : !_themePickerOpen;
+  const dd = document.getElementById('themeDropdown');
+  const caret = document.getElementById('themeCaretIcon');
+  if(dd) dd.classList.toggle('open', _themePickerOpen);
+  if(caret) caret.classList.toggle('open', _themePickerOpen);
+}
+// Close when clicking outside
+document.addEventListener('click', e => {
+  if(_themePickerOpen && !e.target.closest('#themePickerWrap')){
+    toggleThemePicker(false);
+  }
+});
 
 // ════════════════════════════════════════════
 // v5 — NOME DA EMPRESA PERSONALIZÁVEL
@@ -4019,22 +4220,117 @@ function toastUndo(msg, undoFn, dur=5000){
   });
 }
 
-// Patch markPago to support undo
-const _origMarkPago = markPago;
-window.markPago = function(id){
+// ══════════════════════════════════════════════
+// BANCO PAGAMENTO — seletor de banco ao pagar
+// ══════════════════════════════════════════════
+let _moBancoPagtoId = null;
+
+function closeBancoPagto(){
+  document.getElementById('moBancoPagto').classList.remove('open');
+  _moBancoPagtoId = null;
+}
+
+function _getGrupoFromBoleto(b){
+  const groups = getGroups();
+  return groups.find(g => g.id === b.grupo) || null;
+}
+
+function _markPagoComBanco(id, banco){
   const b = boletos[id];
   if(!b) return;
+  closeBancoPagto();
+
   const snapshot = JSON.parse(JSON.stringify(b));
+  const gid = b.grupo;
+  const valor = Number(b.valor||0);
   const desc = b.desc || 'boleto';
   const pagoEm = new Date().toISOString().slice(0,10);
-  fbSet('boletos/'+id, {...b, pago:true, pagoEm});
+
+  // Snapshot do saldo atual do banco para undo
+  const saldoAtual = (saldos[gid]||{})[banco];
+  const saldoAnterior = saldoAtual != null ? Number(saldoAtual) : null;
+
+  // Marcar boleto como pago
+  const updates = {};
+  updates['boletos/'+id] = {...b, pago:true, pagoEm, bancoPago: banco};
+
+  // Deduzir do saldo do banco se o saldo existe
+  if(saldoAnterior !== null){
+    const novoSaldo = Math.max(0, saldoAnterior - valor);
+    updates['saldos/'+gid+'/'+banco] = novoSaldo;
+  }
+
   if(b.modalidade==='pix' && (b.pixChave||b.pixPayload)){
     const text = b.pixPayload || b.pixChave;
     navigator.clipboard.writeText(text).catch(()=>{});
   }
-  toastUndo(`✓ "${desc}" marcado como pago`, ()=>{
-    fbSet('boletos/'+id, snapshot);
-  });
+
+  setSyncBadge('saving','Salvando…');
+  db.ref().update(updates)
+    .then(()=>{
+      setSyncBadge('ok','✓ Online');
+      toastUndo(`✓ "${desc}" pago via ${banco}`, ()=>{
+        // Undo: restaurar boleto E saldo
+        const undoUpdates = {};
+        undoUpdates['boletos/'+id] = snapshot;
+        if(saldoAnterior !== null){
+          undoUpdates['saldos/'+gid+'/'+banco] = saldoAnterior;
+        }
+        db.ref().update(undoUpdates)
+          .then(()=>toast('↩ Pagamento desfeito, saldo restaurado!','info',3000))
+          .catch(()=>toast('⚠ Erro ao desfazer','err'));
+      });
+    })
+    .catch(()=>setSyncBadge('err','⚠ Erro ao salvar'));
+}
+
+// Patch markPago to support bank selector and undo with balance reversal
+const _origMarkPago = markPago;
+window.markPago = function(id){
+  const b = boletos[id];
+  if(!b) return;
+  const g = _getGrupoFromBoleto(b);
+  if(!g || g.isCasa){
+    // Casa/pessoal: marcar pago sem banco
+    const snapshot = JSON.parse(JSON.stringify(b));
+    const desc = b.desc || 'boleto';
+    const pagoEm = new Date().toISOString().slice(0,10);
+    fbSet('boletos/'+id, {...b, pago:true, pagoEm});
+    toastUndo(`✓ "${desc}" marcado como pago`, ()=>{
+      fbSet('boletos/'+id, snapshot);
+    });
+    return;
+  }
+  const bancos = bancosDoGrupo(g.name);
+  if(bancos.length === 1){
+    // Only one bank — skip selector
+    _markPagoComBanco(id, bancos[0]);
+    return;
+  }
+  // Show bank selector modal
+  _moBancoPagtoId = id;
+  const valor = Number(b.valor||0);
+  document.getElementById('moBancoPagtoDesc').textContent = `${b.desc||'Boleto'} — ${fmtR(valor)}`;
+  const listEl = document.getElementById('moBancoPagtoList');
+  const gs = saldos[g.id]||{};
+  listEl.innerHTML = bancos.map(banco=>{
+    const saldo = gs[banco]!=null ? Number(gs[banco]) : null;
+    const saldoStr = saldo!==null ? fmtR(saldo) : '—';
+    const aposStr = saldo!==null ? fmtR(Math.max(0,saldo-valor)) : '';
+    const saldoCor = saldo!==null && saldo>0 ? 'var(--ok)' : 'var(--muted)';
+    return `<button onclick="_markPagoComBanco('${id}','${banco}')"
+      style="background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);
+        font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:10px 14px;
+        cursor:pointer;transition:.12s;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:8px"
+      onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'">
+      <span>${banco}</span>
+      <span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">
+        <span style="font-size:11px;color:${saldoCor};font-family:'DM Mono',monospace">${saldoStr}</span>
+        ${aposStr?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">→ ${aposStr}</span>`:''}
+      </span>
+    </button>`;
+  }).join('');
+  document.getElementById('moBancoPagto').classList.add('open');
 };
 
 // Patch confirmDel to support undo
@@ -4162,7 +4458,10 @@ function updateDashboard(){
     groups.forEach(g => {
       const gs = saldos[g.id] || {};
       const totalCaixa = Object.values(gs).reduce((s,v) => s+(parseFloat(v)||0), 0);
-      const previsao = parseFloat(previsoes[g.id]||0);
+      const gPrevD = previsoes[g.id];
+      const previsao = gPrevD
+        ? (typeof gPrevD==='object' ? Object.values(gPrevD).reduce((s,v)=>s+(Number(v)||0),0) : parseFloat(gPrevD||0))
+        : 0;
       const totalAberto = allB.filter(b => !b.pago && b.grupo === g.id).reduce((s,b) => s+(b.valor||0), 0);
       const liquido = totalCaixa + previsao - totalAberto;
       const pct = totalCaixa > 0 ? Math.min((totalAberto/totalCaixa)*100, 100) : (totalAberto>0?100:0);

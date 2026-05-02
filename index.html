@@ -1937,7 +1937,7 @@ function initFirebase(){
   db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};renderAll();checkNotificationsOnLoad();});
   db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};renderAll();});
   db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};renderAll();});
-  db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};renderAll();});
+  db.ref("gcoll").on("value",snap=>{const novo=snap.val()||{};gcoll=novo;renderGroups();});
   db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};renderAll();});
   db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};renderAll();});
   _snapshotSaldoAnterior();
@@ -1959,6 +1959,26 @@ function setSyncBadge(cls,txt){
 
 function fbSet(path,val){
   setSyncBadge("saving","Salvando…");
+  // Atualizar cache local imediatamente para paths de boletos
+  if(path.startsWith("boletos/")){
+    const parts = path.split("/");
+    if(parts.length === 2){
+      boletos[parts[1]] = val;
+    } else if(parts.length === 3){
+      if(!boletos[parts[1]]) boletos[parts[1]] = {};
+      boletos[parts[1]][parts[2]] = val;
+    }
+    renderAll();
+  } else if(path.startsWith("cnpjs/")){
+    const parts = path.split("/");
+    if(parts.length === 2) cnpjs[parts[1]] = val;
+  } else if(path.startsWith("saldos/")){
+    const parts = path.split("/");
+    if(parts.length === 2){ saldos[parts[1]] = val; renderAll(); }
+    else if(parts.length === 3){ if(!saldos[parts[1]])saldos[parts[1]]={};saldos[parts[1]][parts[2]]=val; renderAll(); }
+  } else if(path === "gcoll"){
+    gcoll = val;
+  }
   return db.ref(path).set(val)
     .then(()=>setSyncBadge("ok","✓ Online"))
     .catch(()=>setSyncBadge("err","⚠ Erro ao salvar"));
@@ -1966,6 +1986,15 @@ function fbSet(path,val){
 
 function fbRemove(path){
   setSyncBadge("saving","Removendo…");
+  // Atualizar cache local imediatamente
+  if(path.startsWith("boletos/")){
+    const id = path.split("/")[1];
+    if(id) delete boletos[id];
+    renderAll();
+  } else if(path.startsWith("cnpjs/")){
+    const id = path.split("/")[1];
+    if(id) delete cnpjs[id];
+  }
   return db.ref(path).remove()
     .then(()=>setSyncBadge("ok","✓ Online"))
     .catch(()=>setSyncBadge("err","⚠ Erro"));
@@ -2618,11 +2647,14 @@ function filteredList(){
 // GROUP TOGGLE
 // ══════════════════════════════════════════════
 function toggleGrp(gid){
-  const ng={...gcoll,[gid]:!gcoll[gid]};
-  fbSet("gcoll",ng);
+  gcoll={...gcoll,[gid]:!gcoll[gid]};
+  renderGroups();
+  fbSet("gcoll",gcoll);
 }
 function toggleAll(expand){
   const ng={};getGroups().forEach(g=>ng[g.id]=!expand);
+  gcoll=ng;
+  renderGroups();
   fbSet("gcoll",ng);
 }
 
@@ -2768,7 +2800,7 @@ function renderAll(){
   updateStats();
   renderChip();
   renderSaldoPanel();
-  renderGroups();
+  (window.renderGroups||renderGroups)();
   renderCSVMenu();
   renderMesFiltros();
   if(typeof updateTagCounts === 'function') updateTagCounts();
@@ -3064,13 +3096,17 @@ function saveB(){
     // Avulso normal
     const newId = "b"+Date.now();
     const vencFinal = venc || dstr(getToday());
-    fbSet("boletos/"+newId, {...baseObj, vencimento:vencFinal, pago:false, checks:{}, recorrente:false});
-    toast(modalidade==="pix"?"Pix salvo! ⚡":"Boleto salvo!","ok");
-    // Garante que o boleto novo seja visível: navega para o mês do vencimento
+    const newBoleto = {...baseObj, vencimento:vencFinal, pago:false, checks:{}, recorrente:false};
+    // Atualizar local imediatamente
+    boletos[newId] = newBoleto;
+    // Limpar filtros que bloqueariam a visualização
     const mesBoleto = vencFinal.slice(0,7);
-    if(_mesFil && _mesFil !== mesBoleto) setMesFil(mesBoleto);
-    // Se havia filtro de CNPJ diferente do grupo do boleto, limpa o filtro
-    if(cnpjFil !== "todos" && cnpjFil !== grupo) setCNPJFil("todos");
+    if(_mesFil && _mesFil !== mesBoleto) { _mesFil = null; }
+    if(qfAtual !== "todos" && qfAtual !== "pendente" && qfAtual !== "hoje" && qfAtual !== "vencido") { qfAtual = "todos"; }
+    if(cnpjFil !== "todos" && cnpjFil !== grupo) { cnpjFil = "todos"; }
+    renderAll();
+    fbSet("boletos/"+newId, newBoleto);
+    toast(modalidade==="pix"?"Pix salvo! ⚡":"Boleto salvo!","ok");
   }
 
   closeModal();
@@ -4268,14 +4304,22 @@ function _markPagoComBanco(id, banco){
   const saldoAtual = (saldos[gid]||{})[banco];
   const saldoAnterior = saldoAtual != null ? Number(saldoAtual) : null;
 
+  // Atualizar localmente imediato
+  const updatedBoleto = {...b, pago:true, pagoEm, bancoPago: banco};
+  boletos[id] = updatedBoleto;
+  if(saldoAnterior !== null){
+    if(!saldos[gid]) saldos[gid] = {};
+    saldos[gid][banco] = Math.max(0, saldoAnterior - valor);
+  }
+  renderAll();
+
   // Marcar boleto como pago
   const updates = {};
-  updates['boletos/'+id] = {...b, pago:true, pagoEm, bancoPago: banco};
+  updates['boletos/'+id] = updatedBoleto;
 
   // Deduzir do saldo do banco se o saldo existe
   if(saldoAnterior !== null){
-    const novoSaldo = Math.max(0, saldoAnterior - valor);
-    updates['saldos/'+gid+'/'+banco] = novoSaldo;
+    updates['saldos/'+gid+'/'+banco] = Math.max(0, saldoAnterior - valor);
   }
 
   if(b.modalidade==='pix' && (b.pixChave||b.pixPayload)){
@@ -4288,7 +4332,10 @@ function _markPagoComBanco(id, banco){
     .then(()=>{
       setSyncBadge('ok','✓ Online');
       toastUndo(`✓ "${desc}" pago via ${banco}`, ()=>{
-        // Undo: restaurar boleto E saldo
+        // Undo: restaurar boleto E saldo localmente e no Firebase
+        boletos[id] = snapshot;
+        if(saldoAnterior !== null && saldos[gid]) saldos[gid][banco] = saldoAnterior;
+        renderAll();
         const undoUpdates = {};
         undoUpdates['boletos/'+id] = snapshot;
         if(saldoAnterior !== null){
@@ -4313,8 +4360,13 @@ window.markPago = function(id){
     const snapshot = JSON.parse(JSON.stringify(b));
     const desc = b.desc || 'boleto';
     const pagoEm = dstr(getToday());
-    fbSet('boletos/'+id, {...b, pago:true, pagoEm});
+    const updated = {...b, pago:true, pagoEm};
+    boletos[id] = updated;
+    renderAll();
+    fbSet('boletos/'+id, updated);
     toastUndo(`✓ "${desc}" marcado como pago`, ()=>{
+      boletos[id] = snapshot;
+      renderAll();
       fbSet('boletos/'+id, snapshot);
     });
     return;
@@ -4360,10 +4412,15 @@ window.confirmDel = function(id, desc){
     if(!_pendingDelId){ closeConfirm(); return; }
     const snapshot = JSON.parse(JSON.stringify(boletos[_pendingDelId]||{}));
     const delId = _pendingDelId;
+    // Remove localmente imediato para a UI sumir na hora
+    delete boletos[delId];
+    renderAll();
     fbRemove('boletos/'+delId);
     _pendingDelId = null;
     closeConfirm();
     toastUndo(`🗑 "${desc}" removido`, ()=>{
+      boletos[delId] = snapshot;
+      renderAll();
       fbSet('boletos/'+delId, snapshot);
     });
   };
@@ -4815,13 +4872,16 @@ window.renderAll = function(){
   }, 50);
 };
 
+// Garantir que renderGroups dentro de renderAll usa a versão patched (com tags)
+const _renderAllOriginalRef = _origRenderAll;
+
+
 // ════════════════════════════════════════════
 // v5 — PATCH renderGroups to include tags in table rows + filter by tag
 // ════════════════════════════════════════════
 const _origRenderGroups = renderGroups;
 window.renderGroups = function(){
   _origRenderGroups();
-  // After render, we need to inject tags. Do it via post-process.
   _injectTagsAndFilter();
 };
 

@@ -1935,7 +1935,7 @@ function initFirebase(){
   db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};renderAll();});
   db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};renderAll();});
   db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};renderAll();});
-  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};renderAll();_applyPrevisaoSe24h();});
+  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};renderAll();});
   db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};renderAll();});
   _snapshotSaldoAnterior();
   db.ref(".info/connected").on("value",snap=>{
@@ -1943,6 +1943,8 @@ function initFirebase(){
     if(snap.val()){
       document.getElementById("loadingScreen").style.display="none";
       document.getElementById("app").style.display="block";
+      // Aplicar previsão uma vez por dia, com delay para garantir que todos os dados carregaram
+      setTimeout(_applyPrevisaoSe24h, 3000);
     }
   });
 }
@@ -3184,7 +3186,6 @@ function saveSaldos(){
     .then(()=>{
       setSyncBadge("ok","✓ Online");
       toast("Saldos atualizados com sucesso","ok");
-      _applyPrevisaoSe24h(); // Check if need to apply previsão
     })
     .catch(()=>setSyncBadge("err","⚠ Erro ao salvar"));
 

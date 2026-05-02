@@ -1668,7 +1668,7 @@ const CASACOL="#ff9fdf";
 const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const DIAS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
-let boletos={}, cnpjs={}, saldos={}, gcoll={};
+let boletos={}, cnpjs={}, saldos={}, gcoll={}, saldosAnt={}, previsoes={};
 let qfAtual="todos", cnpjFil="todos";
 let calSel=null, duSel=null;
 let calY, calM;
@@ -1709,6 +1709,9 @@ function initFirebase(){
   db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};renderAll();});
   db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};renderAll();});
   db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};renderAll();});
+  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};renderAll();});
+  db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};renderAll();});
+  _snapshotSaldoAnterior();
   db.ref(".info/connected").on("value",snap=>{
     setSyncBadge(snap.val()?"ok":"err",snap.val()?"✓ Online":"⚠ Offline");
     if(snap.val()){
@@ -1737,12 +1740,99 @@ function fbRemove(path){
     .catch(()=>setSyncBadge("err","⚠ Erro"));
 }
 
+// ══════════════════════════════════════════════
+// FEATURE 2: SNAPSHOT SALDO ANTERIOR (diário)
+// Grava o saldo líquido de ontem no primeiro acesso do dia.
+// Nó: saldosAnt/{gid}/{YYYY-MM-DD} = valor_liquido
+// ══════════════════════════════════════════════
+function _snapshotSaldoAnterior(){
+  const hoje = new Date().toISOString().slice(0,10);
+  const chave = 'gbLastSnap';
+  const ultimo = localStorage.getItem(chave);
+  if(ultimo === hoje) return; // já fez snapshot hoje
+  // Aguarda os dados carregarem antes de gravar
+  db.ref("saldos").once("value", snapSaldos=>{
+    db.ref("cnpjs").once("value", snapCnpjs=>{
+      db.ref("boletos").once("value", snapBoletos=>{
+        const _s = snapSaldos.val()||{};
+        const _c = snapCnpjs.val()||{};
+        const _b = snapBoletos.val()||{};
+        const updates = {};
+        const ontem=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+        // Para cada grupo CNPJ calcular saldo líquido
+        Object.values(_c).forEach(cnpj=>{
+          if(!cnpj||!cnpj.nome)return;
+          const gid=Object.keys(_c).find(k=>_c[k]===cnpj);
+          if(!gid)return;
+          const gs=_s[gid]||{};
+          // bancos = palavras que coincidem com 'Bradesco','Caixa',etc — reutilizar lógica simples
+          const tot=Object.values(gs).reduce((a,v)=>a+Number(v||0),0);
+          const ab=Object.values(_b).filter(b=>b&&b.grupo===gid&&!b.pago)
+            .reduce((a,b)=>a+Number(b.valor||0),0);
+          updates['saldosAnt/'+gid+'/'+ontem]=tot-ab;
+        });
+        if(Object.keys(updates).length){
+          db.ref().update(updates)
+            .then(()=>{ localStorage.setItem(chave, hoje); })
+            .catch(e=>console.warn("Snapshot saldo:", e));
+        } else {
+          localStorage.setItem(chave, hoje);
+        }
+      });
+    });
+  });
+}
+
+// ══════════════════════════════════════════════
+// FEATURE 3: FCM / SERVICE WORKER
+// Para ativar notificações push (iOS/Android/Chrome),
+// crie um arquivo /firebase-messaging-sw.js no servidor
+// com o conteúdo abaixo, e adicione sua VAPID key no FB_CFG.
+//
+// Conteúdo do firebase-messaging-sw.js:
+// importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js');
+// importScripts('https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js');
+// firebase.initializeApp({ apiKey:"...", messagingSenderId:"...", appId:"..." });
+// const messaging = firebase.messaging();
+// messaging.onBackgroundMessage(payload => {
+//   self.registration.showNotification(payload.notification.title,
+//     { body: payload.notification.body, icon: '/icon.png' });
+// });
+//
+// Para solicitar permissão e obter token FCM:
+// ══════════════════════════════════════════════
+function registrarSW(){
+  if(!('serviceWorker' in navigator)){
+    toast("Service Worker não suportado neste navegador.","info");return;
+  }
+  navigator.serviceWorker.register('/firebase-messaging-sw.js')
+    .then(reg=>{
+      console.log('[FCM] SW registrado:', reg.scope);
+      // Se firebase/messaging estiver carregado:
+      if(firebase.messaging){
+        const msg = firebase.messaging();
+        msg.getToken({vapidKey: FB_CFG.vapidKey||'', serviceWorkerRegistration: reg})
+          .then(token=>{
+            if(token){
+              console.log('[FCM] Token:', token);
+              // Salvar token no Firebase para envio server-side:
+              const uid = auth.currentUser?.uid;
+              if(uid) db.ref('fcmTokens/'+uid).set(token);
+              toast("✔ Push notifications ativas!","ok");
+            }
+          }).catch(e=>console.warn('[FCM] Token error:',e));
+      }
+    })
+    .catch(e=>{console.error('[FCM] SW erro:',e); toast("Erro ao registrar SW.","err");});
+}
+
 function loadData(){
   setSyncBadge("saving","Atualizando…");
   db.ref("/").once("value",snap=>{
     const d=snap.val()||{};
     boletos=d.boletos||{}; cnpjs=d.cnpjs||{};
     saldos=d.saldos||{}; gcoll=d.gcoll||{};
+    previsoes=d.previsoes||{}; saldosAnt=d.saldosAnt||{};
     setSyncBadge("ok","✓ Online");
     renderAll();
   }).catch(()=>setSyncBadge("err","⚠ Erro"));
@@ -2184,21 +2274,28 @@ function renderSaldoPanel(){
   groups.forEach(g=>{
     const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
     const tot=bancos.reduce((a,b)=>a+Number(gs[b]||0),0);
+    // Previsão de entradas do dia para este CNPJ
+    const prev=Number(previsoes[g.id]||0);
+    // Saldo anterior (ontem)
+    const ontem=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+    const saldoAntVal=(saldosAnt[g.id]||{})[ontem];
+    const saldoAntStr=saldoAntVal!=null?fmtR(saldoAntVal):"—";
     // Filter boletos based on mode
     let abertos = boletoArr().filter(b=>b.grupo===g.id&&status(b)!=="pago");
     if(_saldoModo==='mes'){
       abertos = abertos.filter(b=> b.vencimento && b.vencimento.startsWith(mesAtual));
     }
     const ab=abertos.reduce((a,b)=>a+Number(b.valor||0),0);
-    const s=tot-ab;
+    const s=tot+prev-ab;
     const modeTag = _saldoModo==='mes'
       ? `<span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--accent);background:var(--accent)18;border:1px solid var(--accent)33;border-radius:3px;padding:1px 4px;margin-left:4px">mês</span>`
       : '';
+    const prevTag=prev>0?`<span style="font-size:9px;color:var(--ok);font-family:'DM Mono',monospace;margin-left:4px">(+${fmtR(prev)} prev.)</span>`:'';
     h+=`<div class="sg">
       <div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}${modeTag}</div></div>
-      <div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><div class="sg-banco-valwrap"><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span><span class="sg-previa">(+ ${fmtR(0)})</span></div></div>`).join("")}
-      <div class="sg-dia-ant">Saldo do dia anterior: ${fmtR(0)}</div></div>
-      <div class="sg-foot"><span class="sg-bol">Boletos${_saldoModo==='mes'?' (mês)':''}: ${fmtR(ab)}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
+      <div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><div class="sg-banco-valwrap"><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span>${prev>0?`<span class="sg-previa">(+ ${fmtR(prev)})</span>`:''}</div></div>`).join("")}
+      <div class="sg-dia-ant">Saldo ontem: <strong>${saldoAntStr}</strong></div></div>
+      <div class="sg-foot"><span class="sg-bol">Boletos${_saldoModo==='mes'?' (mês)':''}: ${fmtR(ab)}${prevTag}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
     </div>`;
   });
   el.innerHTML=h;
@@ -2755,9 +2852,10 @@ function openSaldoModal(){
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
         </div>`).join("")}
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
-          <label style="display:block;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia</label>
-          <input type="number" readonly tabindex="-1" value="0" step="0.01" min="0" aria-label="Previsão de entradas (visual)"
-            style="background:var(--card);border:1px dashed var(--border);border-radius:4px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right;opacity:.85">
+          <label style="display:block;font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia</label>
+          <input type="number" data-gid="${g.id}" data-previsao="1" value="${previsoes[g.id]||''}" placeholder="0,00" step="0.01" min="0" aria-label="Previsão de entradas"
+            style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right;"
+            onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
         </div>
       </div>
     </div>`;
@@ -2770,13 +2868,21 @@ function closeSaldo(){document.getElementById("moS").classList.remove("open");}
 
 function saveSaldos(){
   const ns={...saldos};
+  const np={...previsoes};
   document.querySelectorAll("#saldoForm input[data-banco]").forEach(inp=>{
     const gid=inp.dataset.gid,banco=inp.dataset.banco;
     if(!gid||!banco)return;
     if(!ns[gid])ns[gid]={};
     ns[gid][banco]=parseFloat(inp.value)||0;
   });
-  fbSet("saldos",ns);closeSaldo();
+  document.querySelectorAll("#saldoForm input[data-previsao]").forEach(inp=>{
+    const gid=inp.dataset.gid;
+    if(!gid)return;
+    np[gid]=parseFloat(inp.value)||0;
+  });
+  fbSet("saldos",ns);
+  fbSet("previsoes",np);
+  closeSaldo();
 }
 
 // ══════════════════════════════════════════════
@@ -3330,7 +3436,7 @@ function startApp(){
       }
     })
     .catch(function(err){
-      var ign = ["auth/popup-closed-by-user","auth/cancelled-popup-request"];
+      var ign = ["auth/popup-closed-by-user","auth/cancelled-popup-request","auth/redirect-cancelled-by-user"];
       if(err && err.code && ign.indexOf(err.code) === -1){
         toast("Erro ao entrar: " + (err.message || err.code), "err");
       }

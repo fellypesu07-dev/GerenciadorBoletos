@@ -1912,7 +1912,9 @@ function setView(mode){
   renderGroups();
 }
 
-const TODAY=(()=>{const d=new Date();d.setHours(0,0,0,0);return d;})();
+// TODAY recalculado dinamicamente — evita bug quando app fica aberto além da meia-noite
+function getToday(){const d=new Date();d.setHours(0,0,0,0);return d;}
+const TODAY=getToday(); // legado — funções críticas chamam getToday() diretamente
 
 // ══════════════════════════════════════════════
 // TOAST
@@ -1974,7 +1976,7 @@ function fbRemove(path){
 // Nó: saldosAnt/{gid}/{YYYY-MM-DD} = valor_liquido
 // ══════════════════════════════════════════════
 function _snapshotSaldoAnterior(){
-  const hoje = new Date().toISOString().slice(0,10);
+  const hoje = dstr(getToday());
   const chave = 'gbLastSnap';
   const ultimo = localStorage.getItem(chave);
   if(ultimo === hoje) return; // já fez snapshot hoje
@@ -1986,7 +1988,7 @@ function _snapshotSaldoAnterior(){
         const _c = snapCnpjs.val()||{};
         const _b = snapBoletos.val()||{};
         const updates = {};
-        const ontem=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+        const ontem=(()=>{const d=getToday();d.setDate(d.getDate()-1);return dstr(d);})();
         // Para cada grupo CNPJ calcular saldo líquido
         Object.values(_c).forEach(cnpj=>{
           if(!cnpj||!cnpj.nome)return;
@@ -2087,14 +2089,15 @@ function feriadosAno(y){
 function isFer(s){const y=+s.slice(0,4);if(!_fc[y])_fc[y]=feriadosAno(y);return _fc[y].has(s);}
 function isWE(d){return d.getDay()===0||d.getDay()===6;}
 function isDU(s){return!isWE(toDate(s))&&!isFer(s);}
-function next7DU(){const r=[];let d=new Date(TODAY);while(r.length<7){const s=dstr(d);if(isDU(s))r.push(s);d.setDate(d.getDate()+1);}return r;}
-function duAte(s){const v=toDate(s);if(v<TODAY)return null;let n=0,d=new Date(TODAY);while(d<v){if(isDU(dstr(d)))n++;d.setDate(d.getDate()+1);}return n;}
+function next7DU(){const TODAY_NOW=getToday();const r=[];let d=new Date(TODAY_NOW);while(r.length<7){const s=dstr(d);if(isDU(s))r.push(s);d.setDate(d.getDate()+1);}return r;}
+function duAte(s){const TODAY_NOW=getToday();const v=toDate(s);if(v<TODAY_NOW)return null;let n=0,d=new Date(TODAY_NOW);while(d<v){if(isDU(dstr(d)))n++;d.setDate(d.getDate()+1);}return n;}
 
 function status(b){
   if(b.pago)return"pago";
+  const TODAY_NOW=getToday();
   const d=toDate(b.vencimento);
-  if(d<TODAY)return"vencido";
-  if(d.getTime()===TODAY.getTime())return"hoje";
+  if(d<TODAY_NOW)return"vencido";
+  if(d.getTime()===TODAY_NOW.getTime())return"hoje";
   return"pendente";
 }
 
@@ -2240,7 +2243,7 @@ function applyLD(){
   document.getElementById("fDesc").value="";
   document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
   document.getElementById("fValor").value=lastLD.valor||"";
-  document.getElementById("fVenc").value=lastLD.vencimento||dstr(TODAY);
+  document.getElementById("fVenc").value=lastLD.vencimento||dstr(getToday());
   document.getElementById("fCat").value="Mercadoria";
   const obs = `Banco: ${lastLD.nomeBanco}`;
   document.getElementById("fObs").value=obs;
@@ -2258,7 +2261,7 @@ function applyLD(){
 // ══════════════════════════════════════════════
 // CALENDAR
 // ══════════════════════════════════════════════
-function initCal(){calY=TODAY.getFullYear();calM=TODAY.getMonth();}
+function initCal(){const _tdc=getToday();calY=_tdc.getFullYear();calM=_tdc.getMonth();}
 function calNav(d){calM+=d;if(calM>11){calM=0;calY++;}if(calM<0){calM=11;calY--;}renderCal();}
 
 function renderCal(){
@@ -2269,7 +2272,7 @@ function renderCal(){
   for(let i=0;i<first;i++)h+=`<div class="cc ce"></div>`;
   for(let d=1;d<=days;d++){
     const s=`${calY}-${p2(calM+1)}-${p2(d)}`,dt=toDate(s);
-    const isTod=s===dstr(TODAY),isSel=s===calSel,we=isWE(dt),fer=isFer(s),bs=bmap[s]||[];
+    const todayStr_cal=dstr(getToday()),isTod=s===todayStr_cal,isSel=s===calSel,we=isWE(dt),fer=isFer(s),bs=bmap[s]||[];
     let cls="cc";if(we&&!fer)cls+=" cwe";if(fer)cls+=" cfer";if(isTod&&!isSel)cls+=" ct";if(isSel)cls+=" cs";
     const dots=bs.length?`<div class="dot-row">${bs.slice(0,4).map(b=>{const c=status(b)==="pago"?"#4caf7d":status(b)==="vencido"?"#e05c3a":status(b)==="hoje"?"#ff9988":"#f0c040";return`<div class="bd" style="background:${c}"></div>`;}).join("")}</div>`:"";
     h+=`<div class="${cls}" onclick="calClick('${s}')">${d}${dots}</div>`;
@@ -2286,7 +2289,7 @@ function renderDUStrip(){
   const days=next7DU(),bmap={};
   boletoArr().forEach(b=>{if(!bmap[b.vencimento])bmap[b.vencimento]=[];bmap[b.vencimento].push(b);});
   document.getElementById("duStrip").innerHTML=days.map(s=>{
-    const dt=toDate(s),isTod=s===dstr(TODAY),isSel=s===duSel;
+    const dt=toDate(s),isTod=s===dstr(getToday()),isSel=s===duSel;
     const bs=(bmap[s]||[]).filter(b=>!b.pago),tot=bs.reduce((a,b)=>a+Number(b.valor||0),0);
     let cls="duc";if(isTod)cls+=" dt";if(isSel)cls+=" ds";
     return`<div class="${cls}" onclick="duClick('${s}')">
@@ -2304,13 +2307,17 @@ function duClick(s){if(duSel===s){duSel=null;qfAtual="7du";}else{duSel=s;calSel=
 // STATS
 // ══════════════════════════════════════════════
 function updateStats(){
-  const mes=TODAY.getMonth(),ano=TODAY.getFullYear();
-  const esteMes = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  const TODAY_NOW=getToday();
+  const mes=TODAY_NOW.getMonth(),ano=TODAY_NOW.getFullYear();
+  const esteMes = `${ano}-${p2(mes+1)}`;
   let ab=0,hj=0,vn=0,pg=0,caTotal=0,caMes=0;
   let nT=0,n7=0,nH=0,nV=0,nP=0,nPg=0,nC=0;
   const d7=new Set(next7DU());
   boletoArr().forEach(b=>{
-    const s=status(b);nT++;
+    const s=status(b);
+    // Badge "Todos" respeita _mesFil; outros badges (hoje, vencido, etc.) contam todos os boletos independente do mês
+    const passaMes = !_mesFil || !b.vencimento || b.vencimento.startsWith(_mesFil);
+    if(passaMes) nT++;
     if(d7.has(b.vencimento)&&!b.pago)n7++;
     if(s==="hoje")nH++;if(s==="vencido")nV++;if(s==="pendente")nP++;if(s==="pago")nPg++;
     if(b.grupo===CASA)nC++;
@@ -2323,7 +2330,6 @@ function updateStats(){
     }
   });
   const casaVal = _casaAbertoView === "mes" ? caMes : caTotal;
-  // Aberto selector: show correct value and/or breakdown
   let abertoVal = ab;
   if(_abertoView === 'mes'){
     abertoVal = boletoArr().filter(b=>status(b)!=="pago"&&b.vencimento&&b.vencimento.startsWith(esteMes)).reduce((a,b)=>a+Number(b.valor||0),0);
@@ -2362,7 +2368,7 @@ function setMesFil(mes){
   const limpar = document.getElementById('qf-mes-limpar');
   if(limpar) limpar.style.display = mes ? '' : 'none';
   // Update Este Mês button active state
-  const esteMesKey = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  const esteMesKey = `${getToday().getFullYear()}-${p2(getToday().getMonth()+1)}`;
   const esteMesBtn = document.getElementById('qf-este-mes');
   if(esteMesBtn) esteMesBtn.classList.toggle('active', mes === esteMesKey);
   // Update picker label
@@ -2371,7 +2377,7 @@ function setMesFil(mes){
 }
 
 function setMesFilEsteMes(){
-  const key = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  const key = `${getToday().getFullYear()}-${p2(getToday().getMonth()+1)}`;
   setMesFil(_mesFil === key ? null : key);
 }
 
@@ -2418,7 +2424,7 @@ function updateMesPickerLabel(){
   if(!lbl) return;
   if(!_mesFil){ lbl.textContent='🗓 Selecionar mês…'; return; }
   const [y,m] = _mesFil.split('-');
-  const esteMes = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  const _tdml=getToday();const esteMes = `${_tdml.getFullYear()}-${p2(_tdml.getMonth()+1)}`;
   if(_mesFil !== esteMes){
     lbl.textContent = `🗓 ${MESES[parseInt(m)-1]}/${y}`;
   } else {
@@ -2428,7 +2434,7 @@ function updateMesPickerLabel(){
 
 function renderMesFiltros(){
   // Update "Este mês" count
-  const esteMesKey = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  const esteMesKey = `${getToday().getFullYear()}-${p2(getToday().getMonth()+1)}`;
   const cnt = boletoArr().filter(b=>b.vencimento&&b.vencimento.startsWith(esteMesKey)).length;
   const cntEl = document.getElementById('qn-este-mes');
   if(cntEl) cntEl.textContent = cnt;
@@ -2494,7 +2500,7 @@ function renderSaldoPanel(){
   const now = new Date();
   const mesAtual = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
   const mesLabel = MESES[now.getMonth()] + '/' + now.getFullYear();
-  const hoje = now.toISOString().slice(0,10);
+  const hoje = dstr(getToday());
 
   // Update label
   const lblEl = document.getElementById('saldoMesLabel');
@@ -2518,7 +2524,7 @@ function renderSaldoPanel(){
     };
     const prev = bancos.reduce((a,b)=>a+_prevForBanco(b),0);
     // Saldo anterior (ontem)
-    const ontem=(()=>{const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);})();
+    const ontem=(()=>{const d=getToday();d.setDate(d.getDate()-1);return dstr(d);})();
     const saldoAntVal=(saldosAnt[g.id]||{})[ontem];
     const saldoAntStr=saldoAntVal!=null?fmtR(saldoAntVal):"—";
 
@@ -2632,7 +2638,7 @@ function renderGroups(){
   const list=filteredList();
   const groups=getGroups();
   const d7=new Set(next7DU());
-  const showEmpty=!calSel&&!duSel&&qfAtual==="todos"&&cnpjFil==="todos";
+  const showEmpty=!calSel&&!duSel&&qfAtual==="todos"&&cnpjFil==="todos"&&!_mesFil;
   let html="";
 
   groups.forEach(g=>{
@@ -2777,7 +2783,7 @@ function tck(id,k){
 function markPago(id){
   const b = boletos[id];
   if(!b) return;
-  const pagoEm = new Date().toISOString().slice(0,10);
+  const pagoEm = dstr(getToday());
   fbSet("boletos/"+id, {...b, pago:true, pagoEm});
   if(b.modalidade==="pix" && (b.pixChave||b.pixPayload)){
     // Auto-copy pix key when marking paid
@@ -2899,7 +2905,7 @@ function openModal(id){
     document.getElementById("fDesc").value="";
     document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
     setMaskedValor(0);
-    document.getElementById("fVenc").value=calSel||dstr(TODAY);
+    document.getElementById("fVenc").value=calSel||dstr(getToday());
     document.getElementById("fCat").value="Mercadoria";
     document.getElementById("fObs").value="";
     document.getElementById("fCasaCat").value="Água";
@@ -2970,7 +2976,7 @@ function saveB(){
 
   const baseObj={
     desc,grupo,valor,modalidade,
-    vencimento: venc || dstr(TODAY),
+    vencimento: venc || dstr(getToday()),
     cat:grupo!==CASA?cat:"",
     casaCat:grupo===CASA?casaCat:"",
     cartao:grupo===CASA&&casaCat==="Cartão de Crédito"?cartao:"",
@@ -3045,7 +3051,7 @@ function saveB(){
   } else {
     // Avulso normal
     const newId = "b"+Date.now();
-    const vencFinal = venc || dstr(TODAY);
+    const vencFinal = venc || dstr(getToday());
     fbSet("boletos/"+newId, {...baseObj, vencimento:vencFinal, pago:false, checks:{}, recorrente:false});
     toast(modalidade==="pix"?"Pix salvo! ⚡":"Boleto salvo!","ok");
   }
@@ -3248,7 +3254,7 @@ function exportCSV(filtroGrupo){
   const csv = [header.join(","), ...rows].join("\n");
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));
-  a.download = `RealFinanceiro_${nomeGrupo.replace(/[\/\s]/g,"_")}_${dstr(TODAY)}.csv`;
+  a.download = `RealFinanceiro_${nomeGrupo.replace(/[\/\s]/g,"_")}_${dstr(getToday())}.csv`;
   a.click();
   toast(`CSV exportado: ${rows.length} boletos`, "ok");
 }
@@ -3283,7 +3289,7 @@ document.addEventListener("click",()=>{
 // ══════════════════════════════════════════════
 function _applyPrevisaoSe24h(){
   const CHAVE = 'gbPrevApplied';
-  const hoje = new Date().toISOString().slice(0,10);
+  const hoje = dstr(getToday());
   const ultimo = localStorage.getItem(CHAVE);
   if(ultimo === hoje) return; // já aplicou hoje
 
@@ -3334,7 +3340,7 @@ function setModalidade(mode, updateTitle=true){
   const vencRow = vencEl.closest(".fi");
   if(isPix){
     vencRow.querySelector("label").textContent = "Data (para agendamento — opcional)";
-    if(!vencEl.value) vencEl.value = dstr(TODAY);
+    if(!vencEl.value) vencEl.value = dstr(getToday());
   } else {
     vencRow.querySelector("label").textContent = "Vencimento";
   }
@@ -3468,7 +3474,7 @@ function duplicateB(id){
   document.getElementById("fDesc").value = b.desc || "";
   document.getElementById("fGrupo").value = b.grupo || "";
   setMaskedValor(b.valor||0);
-  document.getElementById("fVenc").value = dstr(TODAY);
+  document.getElementById("fVenc").value = dstr(getToday());
   document.getElementById("fCat").value = b.cat || "Mercadoria";
   document.getElementById("fObs").value = b.obs || "";
   document.getElementById("fCasaCat").value = b.casaCat || "Água";
@@ -3625,7 +3631,7 @@ async function toggleNotifications(){
 
 function scheduleNotifications(){
   if(!notifEnabled || Notification.permission !== "granted") return;
-  const hoje = dstr(TODAY);
+  const hoje = dstr(getToday());
   const vencHoje = boletoArr().filter(b=>!b.pago && b.vencimento===hoje);
   const vencidos = boletoArr().filter(b=>!b.pago && b.vencimento < hoje);
   if(vencHoje.length > 0 || vencidos.length > 0){
@@ -4245,7 +4251,7 @@ function _markPagoComBanco(id, banco){
   const gid = b.grupo;
   const valor = Number(b.valor||0);
   const desc = b.desc || 'boleto';
-  const pagoEm = new Date().toISOString().slice(0,10);
+  const pagoEm = dstr(getToday());
 
   // Snapshot do saldo atual do banco para undo
   const saldoAtual = (saldos[gid]||{})[banco];
@@ -4295,7 +4301,7 @@ window.markPago = function(id){
     // Casa/pessoal: marcar pago sem banco
     const snapshot = JSON.parse(JSON.stringify(b));
     const desc = b.desc || 'boleto';
-    const pagoEm = new Date().toISOString().slice(0,10);
+    const pagoEm = dstr(getToday());
     fbSet('boletos/'+id, {...b, pago:true, pagoEm});
     toastUndo(`✓ "${desc}" marcado como pago`, ()=>{
       fbSet('boletos/'+id, snapshot);
@@ -4400,11 +4406,11 @@ function updateDashboard(){
   }
 
   // ── ALERTA URGENTE: vence hoje ou amanhã ─────
-  const todayStr = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}-${p2(TODAY.getDate())}`;
-  const tomorrow = new Date(TODAY); tomorrow.setDate(tomorrow.getDate()+1);
+  const _TD=getToday();const todayStr = `${_TD.getFullYear()}-${p2(_TD.getMonth()+1)}-${p2(_TD.getDate())}`;
+  const tomorrow = new Date(_TD); tomorrow.setDate(tomorrow.getDate()+1);
   const tomStr = `${tomorrow.getFullYear()}-${p2(tomorrow.getMonth()+1)}-${p2(tomorrow.getDate())}`;
   const urgentes = allB.filter(b => !b.pago && b.vencimento && (b.vencimento === todayStr || b.vencimento === tomStr));
-  const vencidosUrgentes = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
+  const vencidosUrgentes = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < getToday());
   const elAV = document.getElementById('dashAlertaVal');
   const elAS = document.getElementById('dashAlertaSub');
   if(elAV){
@@ -4494,7 +4500,7 @@ function updateDashboard(){
     if(abertos.length === 0){
       elTL.innerHTML = '<div class="dash-empty">Nenhum boleto em aberto 🎉</div>';
     } else {
-      const todayD = TODAY.getTime();
+      const todayD = getToday().getTime();
       elTL.innerHTML = abertos.map(b => {
         const d = toDate(b.vencimento);
         const diff = Math.round((d.getTime() - todayD) / 86400000);
@@ -4638,7 +4644,7 @@ function toggleAbertoSel(e){
   const isOpen = drop.style.display !== 'none';
   drop.style.display = isOpen ? 'none' : '';
   if(!isOpen){
-    _abertoPickerYear = TODAY.getFullYear();
+    _abertoPickerYear = getToday().getFullYear();
     document.getElementById('abertoPickerYear').textContent = _abertoPickerYear;
     renderAbertoPickerGrid();
     // mark active option
@@ -4728,7 +4734,7 @@ function setAbertoView(mode){ pickAbertoView(mode); } // legacy compat
 
 function updateAbertoMensal(){
   // Determine which month(s) to show
-  const esteMes = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}`;
+  const _td2=getToday();const esteMes = `${_td2.getFullYear()}-${p2(_td2.getMonth()+1)}`;
   const div = document.getElementById("stAbertoMensal");
   if(!div) return;
 
@@ -4736,7 +4742,7 @@ function updateAbertoMensal(){
     // Single month total
     const abertos = boletoArr().filter(b=>status(b)!=="pago" && b.vencimento && b.vencimento.startsWith(esteMes));
     const total = abertos.reduce((a,b)=>a+Number(b.valor||0),0);
-    div.innerHTML = `<div class="aberto-mes-row"><span>${MESES[TODAY.getMonth()]}/${TODAY.getFullYear()}</span><span>${fmtR(total)}</span></div>`;
+    div.innerHTML = `<div class="aberto-mes-row"><span>${MESES[getToday().getMonth()]}/${getToday().getFullYear()}</span><span>${fmtR(total)}</span></div>`;
   } else if(_abertoView === 'custom' && _abertoMesSel){
     const abertos = boletoArr().filter(b=>status(b)!=="pago" && b.vencimento && b.vencimento.startsWith(_abertoMesSel));
     const total = abertos.reduce((a,b)=>a+Number(b.valor||0),0);

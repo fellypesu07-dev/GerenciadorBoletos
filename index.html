@@ -1411,7 +1411,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     </div>
     <div class="div"></div>
     <div>
-      <div class="sb-collapsible-hd" onclick="toggleSbSection('filtros')" aria-expanded="true">
+      <div class="sb-collapsible-hd" onclick="toggleSbSection('filtros', event)" aria-expanded="true">
         <div class="slbl" style="margin:0">Filtros</div>
         <span class="sb-chevron open" id="sbchev-filtros">▶</span>
       </div>
@@ -1465,7 +1465,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <div class="div"></div>
     <!-- TAGS LIVRES (v5) -->
     <div>
-      <div class="sb-collapsible-hd" onclick="toggleSbSection('tags')" aria-expanded="true">
+      <div class="sb-collapsible-hd" onclick="toggleSbSection('tags', event)" aria-expanded="true">
         <div class="slbl" style="margin:0">Tags</div>
         <span class="sb-chevron open" id="sbchev-tags">▶</span>
       </div>
@@ -1480,7 +1480,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     </div>
     <div class="div"></div>
     <div>
-      <div class="sb-collapsible-hd" onclick="toggleSbSection('7du')" aria-expanded="true">
+      <div class="sb-collapsible-hd" onclick="toggleSbSection('7du', event)" aria-expanded="true">
         <div class="slbl" style="margin:0">7 Dias Úteis</div>
         <span class="sb-chevron open" id="sbchev-7du">▶</span>
       </div>
@@ -2606,6 +2606,7 @@ function filteredList(){
     if(qfAtual==="7du"&&(!d7.has(b.vencimento)||b.pago))return false;
     if(qfAtual==="casa"&&b.grupo!==CASA)return false;
     if(q&&!(b.desc||"").toLowerCase().includes(q)&&!(b.obs||"").toLowerCase().includes(q))return false;
+    if(_tagFilter && !(b.tags||[]).includes(_tagFilter)) return false;
     return true;
   }).sort((a,b)=>{
     const o={vencido:0,hoje:1,pendente:2,pago:3},sa=status(a),sb=status(b);
@@ -2681,7 +2682,7 @@ function renderGroups(){
           else if(du===null)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">atrasado</span>`;
           else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
           else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
-          html+=`<div class="bol-card ${b.pago?"pago-card":""}">
+          html+=`<div class="bol-card ${b.pago?"pago-card":""}" data-bid="${b.id}">
             <div class="bc-desc" title="${escHTML(b.desc||"")}">${escHTML(b.desc||"")}${b.recorrente?` <span class="rec-tag">🔁</span>`:""}${b.modalidade==="pix"?` <span class="pix-badge">⚡</span>`:""}</div>
           ${b.modalidade==="pix"&&(b.pixChave||b.pixPayload)?`<button class="pix-copy-btn" onclick="copyPixKey('${b.id}')">⚡ Copiar chave Pix</button>`:""}
             <div class="bc-val" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}" title="Duplo clique para editar" ondblclick="startInlineEdit('${b.id}', ${b.valor||0}, this)">${fmtR(b.valor)}</div>
@@ -2711,7 +2712,7 @@ function renderGroups(){
           else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
           else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
 
-          html+=`<tr style="${in7?"background:rgba(111,143,255,.04)":""}">
+          html+=`<tr style="${in7?"background:rgba(111,143,255,.04)":""}" data-bid="${b.id}">
             <td>
               <strong style="font-size:12px">${escHTML(b.desc||"")}</strong>
               ${b.recorrente?`<span class="rec-tag">🔁 rec</span>`:""}
@@ -2770,6 +2771,7 @@ function renderAll(){
   renderGroups();
   renderCSVMenu();
   renderMesFiltros();
+  if(typeof updateTagCounts === 'function') updateTagCounts();
 }
 
 // ══════════════════════════════════════════════
@@ -4128,13 +4130,7 @@ function _applyFocoDOM(){
 // Mark pago rows with class for foco mode
 const _origRenderGroups_foco = typeof renderGroups === 'function' ? renderGroups : null;
 // We'll patch after renderGroups runs via MutationObserver
-const _focoObserver = new MutationObserver(()=>{
-  document.querySelectorAll('tbody tr').forEach(tr=>{
-    const cell = tr.querySelector('td:nth-child(5)');
-    if(cell && cell.innerHTML.includes('Pago')) tr.classList.add('row-pago');
-  });
-});
-_focoObserver.observe(document.body, { childList: true, subtree: true });
+// _focoObserver disabled — handled by renderAll setTimeout patch
 
 // ════════════════════════════════════════════
 // v5 — TAGS LIVRES
@@ -4787,7 +4783,12 @@ function updateAbertoMensal(){
 // ════════════════════════════════════════════
 const _sbState = {};
 
-function toggleSbSection(id){
+function toggleSbSection(id, evt){
+  // Ignore if click originated from a child interactive element
+  if(evt && evt.target && evt.target !== evt.currentTarget){
+    const tag = evt.target.tagName;
+    if(tag === 'BUTTON' || tag === 'INPUT' || tag === 'A' || tag === 'SELECT') return;
+  }
   const body = document.getElementById('sbsec-'+id);
   const chev = document.getElementById('sbchev-'+id);
   if(!body) return;
@@ -4845,45 +4846,23 @@ function _injectTagsAndFilter(){
   if(_tagFilter){
     document.querySelectorAll('tbody tr').forEach(tr=>{
       const bId = tr.getAttribute('data-bid');
-      if(!bId){ tr.style.display='none'; return; }
+      if(!bId){ return; } // skip rows without data-bid, don't hide them
       const b = boletos[bId];
       const has = b && (b.tags||[]).includes(_tagFilter);
       tr.style.display = has ? '' : 'none';
     });
     document.querySelectorAll('.bol-card').forEach(card=>{
       const bId = card.getAttribute('data-bid');
-      if(!bId){ card.style.display='none'; return; }
+      if(!bId){ return; } // skip cards without data-bid
       const b = boletos[bId];
       const has = b && (b.tags||[]).includes(_tagFilter);
-      card.style.display = has ? '' : '';
+      card.style.display = has ? '' : 'none';
     });
   }
 }
 
 // We also need data-bid on rows. Patch the HTML output via post-processing:
-const _obs2 = new MutationObserver((muts)=>{
-  muts.forEach(mut=>{
-    mut.addedNodes.forEach(node=>{
-      if(node.nodeType !== 1) return;
-      // Add data-bid attributes to table rows that have action buttons with IDs
-      node.querySelectorAll && node.querySelectorAll('button[onclick*="markPago(\'"]').forEach(btn=>{
-        const m = btn.getAttribute('onclick').match(/markPago\('([^']+)'\)/);
-        if(m){
-          const tr = btn.closest('tr') || btn.closest('.bol-card');
-          if(tr && !tr.getAttribute('data-bid')) tr.setAttribute('data-bid', m[1]);
-        }
-      });
-      node.querySelectorAll && node.querySelectorAll('button[onclick*="editB(\'"]').forEach(btn=>{
-        const m = btn.getAttribute('onclick').match(/editB\('([^']+)'\)/);
-        if(m){
-          const tr = btn.closest('tr') || btn.closest('.bol-card');
-          if(tr && !tr.getAttribute('data-bid')) tr.setAttribute('data-bid', m[1]);
-        }
-      });
-    });
-  });
-});
-_obs2.observe(document.body, {childList:true, subtree:true});
+// _obs2 disabled — data-bid now baked into generated HTML
 
 // Add tag button to action columns via MutationObserver
 const _obs3 = new MutationObserver((muts)=>{
@@ -4894,7 +4873,8 @@ const _obs3 = new MutationObserver((muts)=>{
         if(actDiv.querySelector('.tag-btn')) return; // already added
         const row = actDiv.closest('tr') || actDiv.closest('.bol-card');
         const bId = row && row.getAttribute('data-bid');
-        if(!bId) return;
+        if(!bId){ return; }
+        if(actDiv.querySelector('.tag-btn')) return; // already added (extra guard)
         const tagBtn = document.createElement('button');
         tagBtn.className = 'btn btn-g btn-sm tag-btn';
         tagBtn.title = 'Tags';

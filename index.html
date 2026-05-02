@@ -842,7 +842,7 @@ body.modo-foco .foco-badge { display: inline-flex; align-items: center; gap: 4px
 .toast-undo-btn:hover { background: rgba(255,255,255,.25); }
 
 /* ════════════════════════════════════════════
-   DASHBOARD RESUMO (v5)
+   DASHBOARD RESUMO (Combo D)
 ════════════════════════════════════════════ */
 .dash-panel {
   background: var(--card);
@@ -850,7 +850,7 @@ body.modo-foco .foco-badge { display: inline-flex; align-items: center; gap: 4px
   border-radius: 10px;
   overflow: hidden;
   transition: max-height .3s cubic-bezier(.4,0,.2,1);
-  max-height: 300px;
+  max-height: 600px;
 }
 .dash-panel.collapsed { max-height: 44px; }
 .dash-header {
@@ -880,13 +880,21 @@ body[data-theme="light"] .dash-header:hover { background: #ededea; }
   transition: transform .25s;
 }
 .dash-panel.collapsed .dash-chevron { transform: rotate(-90deg); }
+
+/* Top row: 2 cards side by side */
 .dash-body {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 0;
 }
+.dash-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+}
 .dash-stat {
-  padding: 12px 16px;
+  padding: 12px 14px;
   border-right: 1px solid var(--border);
 }
 .dash-stat:last-child { border-right: none; }
@@ -901,7 +909,7 @@ body[data-theme="light"] .dash-header:hover { background: #ededea; }
 .dash-stat-val {
   font-family: 'Syne', sans-serif;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 15px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -910,6 +918,109 @@ body[data-theme="light"] .dash-header:hover { background: #ededea; }
   font-size: 9px;
   color: var(--muted);
   margin-top: 2px;
+}
+
+/* Company health bars */
+.dash-companies {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dash-co {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.dash-co-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+}
+.dash-co-name {
+  font-size: 11px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.dash-co-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.dash-co-pct {
+  font-size: 9px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.dash-bar-bg {
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+}
+.dash-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width .4s ease;
+}
+
+/* Próximos vencimentos timeline */
+.dash-timeline {
+  border-top: 1px solid var(--border);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dash-tl-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  margin-bottom: 2px;
+}
+.dash-tl-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+.dash-tl-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dash-tl-date {
+  color: var(--muted);
+  width: 52px;
+  flex-shrink: 0;
+  font-size: 10px;
+}
+.dash-tl-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+.dash-tl-val {
+  font-family: 'DM Mono', monospace;
+  font-weight: 700;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.dash-empty {
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+  padding: 6px 0;
 }
 
 /* ════════════════════════════════════════════
@@ -1054,12 +1165,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 
 /* ════════════════════════════════════════════
-   MOBILE DASHBOARD (v5)
+   MOBILE DASHBOARD (Combo D)
 ════════════════════════════════════════════ */
 @media(max-width:480px) {
-  .dash-body { grid-template-columns: 1fr; }
-  .dash-stat { border-right: none; border-bottom: 1px solid var(--border); }
-  .dash-stat:last-child { border-bottom: none; }
+  .dash-top-row { grid-template-columns: 1fr 1fr; }
 }
 </style>
 </head>
@@ -1330,27 +1439,32 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   <!-- MAIN -->
   <div class="main">
     <div class="alertbar" id="alertBar" style="display:none" role="alert">⚠️ <span id="alertMsg"></span></div>
-    <!-- DASHBOARD RESUMO (v5) -->
+    <!-- DASHBOARD RESUMO (Combo D) -->
     <div class="dash-panel" id="dashPanel">
       <div class="dash-header" onclick="toggleDash()" aria-expanded="true" aria-controls="dashBody" role="button" tabindex="0" onkeydown="if(event.key==='Enter')toggleDash()">
         <div class="dash-title">📊 Dashboard Resumo <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
         <span class="dash-chevron" aria-hidden="true">▼</span>
       </div>
       <div class="dash-body" id="dashBody">
-        <div class="dash-stat">
-          <div class="dash-stat-lbl">💸 Maior Gasto do Mês</div>
-          <div class="dash-stat-val" id="dashMaiorGasto">—</div>
-          <div class="dash-stat-sub" id="dashMaiorGastoDesc">—</div>
+        <!-- Row 1: alerta urgente + empresa mais exposta -->
+        <div class="dash-top-row">
+          <div class="dash-stat">
+            <div class="dash-stat-lbl">⚡ Alerta urgente</div>
+            <div class="dash-stat-val" id="dashAlertaVal">—</div>
+            <div class="dash-stat-sub" id="dashAlertaSub">—</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-lbl">🔴 Mais exposta</div>
+            <div class="dash-stat-val" id="dashExpostaVal">—</div>
+            <div class="dash-stat-sub" id="dashExpostaSub">—</div>
+          </div>
         </div>
-        <div class="dash-stat">
-          <div class="dash-stat-lbl">🏆 Fornecedor Frequente</div>
-          <div class="dash-stat-val" id="dashFornFreq">—</div>
-          <div class="dash-stat-sub" id="dashFornFreqQtd">—</div>
-        </div>
-        <div class="dash-stat">
-          <div class="dash-stat-lbl">⏱ Média de Atraso</div>
-          <div class="dash-stat-val" id="dashMedAtraso">—</div>
-          <div class="dash-stat-sub" id="dashMedAtrasoSub">em dias</div>
+        <!-- Row 2: saúde por empresa -->
+        <div class="dash-companies" id="dashCompanies"></div>
+        <!-- Row 3: próximos vencimentos -->
+        <div class="dash-timeline" id="dashTimeline">
+          <div class="dash-tl-lbl">Próximos vencimentos</div>
+          <div id="dashTlItems"><div class="dash-empty">—</div></div>
         </div>
       </div>
     </div>
@@ -3957,38 +4071,127 @@ function _applySaldoDashCollapse(){
 
 function updateDashboard(){
   const now = new Date();
-  const currentMonthStr = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
   const allB = boletoArr();
-  
-  // Maior gasto do mês (pagos no mês corrente)
-  const pagosMes = allB.filter(b => b.pago && b.vencimento && b.vencimento.startsWith(currentMonthStr));
-  let maiorGasto = 0, maiorDesc = '—';
-  pagosMes.forEach(b=>{ if((b.valor||0) > maiorGasto){ maiorGasto=(b.valor||0); maiorDesc=b.desc||'—'; } });
-  const elMG = document.getElementById('dashMaiorGasto');
-  const elMGD = document.getElementById('dashMaiorGastoDesc');
-  if(elMG) elMG.textContent = maiorGasto > 0 ? fmtR(maiorGasto) : '—';
-  if(elMGD) elMGD.textContent = maiorDesc.length > 22 ? maiorDesc.slice(0,22)+'…' : maiorDesc;
+  const groups = getGroups().filter(g => !g.isCasa);
 
-  // Fornecedor mais frequente (todos os boletos pendentes/vencidos)
-  const freq = {};
-  allB.filter(b => !b.pago).forEach(b=>{ const k = (b.desc||'').trim(); if(k) freq[k] = (freq[k]||0) + 1; });
-  let topForn = '—', topQtd = 0;
-  Object.entries(freq).forEach(([k,v])=>{ if(v>topQtd){ topForn=k; topQtd=v; } });
-  const elFF = document.getElementById('dashFornFreq');
-  const elFFQ = document.getElementById('dashFornFreqQtd');
-  if(elFF) elFF.textContent = topForn.length > 20 ? topForn.slice(0,20)+'…' : topForn;
-  if(elFFQ) elFFQ.textContent = topQtd > 1 ? `${topQtd}× no histórico` : topForn !== '—' ? '1× no histórico' : '—';
+  // ── helpers ──────────────────────────────────
+  function fmtShort(v){
+    if(v >= 1000) return 'R$ ' + (v/1000).toFixed(1).replace('.',',') + 'k';
+    return fmtR(v);
+  }
 
-  // Média de atraso (vencidos, diferença em dias)
-  const vencidos = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
-  let somaAtraso = 0;
-  vencidos.forEach(b=>{ somaAtraso += Math.round((TODAY - toDate(b.vencimento)) / 86400000); });
-  const medAtraso = vencidos.length ? Math.round(somaAtraso / vencidos.length) : 0;
-  const elMA = document.getElementById('dashMedAtraso');
-  const elMAS = document.getElementById('dashMedAtrasoSub');
-  if(elMA) elMA.textContent = vencidos.length ? medAtraso + ' dias' : '0 dias';
-  if(elMAS) elMAS.textContent = vencidos.length ? `${vencidos.length} vencido${vencidos.length > 1 ? 's' : ''}` : 'sem atrasos';
-  if(elMA) elMA.style.color = medAtraso > 7 ? 'var(--danger)' : medAtraso > 0 ? 'var(--warn)' : 'var(--ok)';
+  // ── ALERTA URGENTE: vence hoje ou amanhã ─────
+  const todayStr = `${TODAY.getFullYear()}-${p2(TODAY.getMonth()+1)}-${p2(TODAY.getDate())}`;
+  const tomorrow = new Date(TODAY); tomorrow.setDate(tomorrow.getDate()+1);
+  const tomStr = `${tomorrow.getFullYear()}-${p2(tomorrow.getMonth()+1)}-${p2(tomorrow.getDate())}`;
+  const urgentes = allB.filter(b => !b.pago && b.vencimento && (b.vencimento === todayStr || b.vencimento === tomStr));
+  const vencidosUrgentes = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
+  const elAV = document.getElementById('dashAlertaVal');
+  const elAS = document.getElementById('dashAlertaSub');
+  if(elAV){
+    const totalUrgente = urgentes.reduce((s,b) => s+(b.valor||0), 0);
+    const vencHoje = urgentes.filter(b => b.vencimento === todayStr);
+    if(vencidosUrgentes.length > 0){
+      elAV.textContent = vencidosUrgentes.length + ' vencido' + (vencidosUrgentes.length>1?'s':'');
+      elAV.style.color = 'var(--danger)';
+      const totalVenc = vencidosUrgentes.reduce((s,b) => s+(b.valor||0), 0);
+      elAS.textContent = fmtShort(totalVenc) + ' em atraso';
+    } else if(urgentes.length > 0){
+      const label = vencHoje.length > 0 ? vencHoje.length + ' vencem hoje' : urgentes.length + ' vencem amanhã';
+      elAV.textContent = label;
+      elAV.style.color = 'var(--warn)';
+      elAS.textContent = fmtShort(totalUrgente);
+    } else {
+      elAV.textContent = 'Nenhum';
+      elAV.style.color = 'var(--ok)';
+      elAS.textContent = 'sem vencimentos próximos';
+    }
+  }
+
+  // ── EMPRESA MAIS EXPOSTA ──────────────────────
+  const elEV = document.getElementById('dashExpostaVal');
+  const elES = document.getElementById('dashExpostaSub');
+  if(elEV && groups.length > 0){
+    let worstName = '—', worstPct = -1, worstColor = 'var(--muted)';
+    groups.forEach(g => {
+      const gs = saldos[g.id] || {};
+      const totalCaixa = Object.values(gs).reduce((s,v) => s+(parseFloat(v)||0), 0);
+      const totalAberto = allB.filter(b => !b.pago && b.grupo === g.id).reduce((s,b) => s+(b.valor||0), 0);
+      if(totalCaixa <= 0 && totalAberto <= 0) return;
+      const pct = totalCaixa > 0 ? (totalAberto / totalCaixa) * 100 : (totalAberto > 0 ? 999 : 0);
+      if(pct > worstPct){ worstPct = pct; worstName = g.name; }
+    });
+    if(worstName !== '—'){
+      const displayName = worstName.length > 14 ? worstName.slice(0,14)+'…' : worstName;
+      elEV.textContent = displayName;
+      if(worstPct > 100){ elEV.style.color='var(--danger)'; worstColor='var(--danger)'; }
+      else if(worstPct > 70){ elEV.style.color='var(--warn)'; worstColor='var(--warn)'; }
+      else { elEV.style.color='var(--text)'; }
+      elES.textContent = worstPct >= 999 ? 'sem caixa registrado' : Math.round(Math.min(worstPct,999)) + '% comprometido';
+    } else {
+      elEV.textContent = '—'; elES.textContent = 'atualize os saldos';
+    }
+  }
+
+  // ── SAÚDE POR EMPRESA (barras) ────────────────
+  const elCo = document.getElementById('dashCompanies');
+  if(elCo && groups.length > 0){
+    let html = '';
+    groups.forEach(g => {
+      const gs = saldos[g.id] || {};
+      const totalCaixa = Object.values(gs).reduce((s,v) => s+(parseFloat(v)||0), 0);
+      const previsao = parseFloat(previsoes[g.id]||0);
+      const totalAberto = allB.filter(b => !b.pago && b.grupo === g.id).reduce((s,b) => s+(b.valor||0), 0);
+      const liquido = totalCaixa + previsao - totalAberto;
+      const pct = totalCaixa > 0 ? Math.min((totalAberto/totalCaixa)*100, 100) : (totalAberto>0?100:0);
+      const barColor = pct >= 100 ? 'var(--danger)' : pct >= 70 ? 'var(--warn)' : 'var(--ok)';
+      const valColor = liquido < 0 ? 'var(--danger)' : liquido < 500 ? 'var(--warn)' : 'var(--ok)';
+      const shortName = g.name.length > 18 ? g.name.slice(0,18)+'…' : g.name;
+      const pctLabel = totalCaixa > 0 ? Math.round(pct)+'% comprometido' : 'sem saldo';
+      html += `<div class="dash-co">
+        <div class="dash-co-row">
+          <span class="dash-co-name" style="color:${g.color||'var(--accent)'}">${escHTML(shortName)}</span>
+          <span class="dash-co-val" style="color:${valColor}">${liquido<0?'-':''}${fmtShort(Math.abs(liquido))}</span>
+        </div>
+        <div class="dash-co-row">
+          <span class="dash-co-pct">${pctLabel}</span>
+        </div>
+        <div class="dash-bar-bg"><div class="dash-bar-fill" style="width:${Math.round(pct)}%;background:${barColor}"></div></div>
+      </div>`;
+    });
+    elCo.innerHTML = html || '<div class="dash-empty">Nenhuma empresa cadastrada</div>';
+  }
+
+  // ── PRÓXIMOS VENCIMENTOS (timeline 5 itens) ───
+  const elTL = document.getElementById('dashTlItems');
+  if(elTL){
+    const abertos = allB
+      .filter(b => !b.pago && b.vencimento)
+      .sort((a,b) => a.vencimento.localeCompare(b.vencimento))
+      .slice(0, 5);
+    if(abertos.length === 0){
+      elTL.innerHTML = '<div class="dash-empty">Nenhum boleto em aberto 🎉</div>';
+    } else {
+      const todayD = TODAY.getTime();
+      elTL.innerHTML = abertos.map(b => {
+        const d = toDate(b.vencimento);
+        const diff = Math.round((d.getTime() - todayD) / 86400000);
+        let dateLabel, dotColor;
+        if(diff < 0){ dateLabel = Math.abs(diff)+'d atraso'; dotColor = 'var(--danger)'; }
+        else if(diff === 0){ dateLabel = 'Hoje'; dotColor = 'var(--danger)'; }
+        else if(diff === 1){ dateLabel = 'Amanhã'; dotColor = 'var(--warn)'; }
+        else { dateLabel = diff+'d'; dotColor = 'var(--muted)'; }
+        const valColor = diff < 0 ? 'var(--danger)' : diff <= 1 ? 'var(--warn)' : 'var(--text)';
+        const shortDesc = (b.desc||'—').length > 20 ? (b.desc||'—').slice(0,20)+'…' : (b.desc||'—');
+        return `<div class="dash-tl-item">
+          <div class="dash-tl-dot" style="background:${dotColor}"></div>
+          <span class="dash-tl-date">${dateLabel}</span>
+          <span class="dash-tl-name">${escHTML(shortDesc)}</span>
+          <span class="dash-tl-val" style="color:${valColor}">${fmtShort(b.valor||0)}</span>
+        </div>`;
+      }).join('');
+    }
+  }
 
   // Update tag counts
   updateTagCounts();

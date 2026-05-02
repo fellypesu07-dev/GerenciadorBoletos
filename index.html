@@ -2992,6 +2992,11 @@ function saveB(){
     fbSet("boletos/"+editId,{...cur,...baseObj});
     toast("Boleto atualizado com sucesso!","ok");
     closeModal();
+    // Garante que o boleto editado seja visível: navega para o mês do vencimento
+    if(baseObj.vencimento){
+      const mesBoleto = baseObj.vencimento.slice(0,7);
+      if(_mesFil && _mesFil !== mesBoleto) setMesFil(mesBoleto);
+    }
     return;
   }
 
@@ -3024,6 +3029,8 @@ function saveB(){
     Promise.all(promises).then(()=>{
       toast(`${recMeses} boletos recorrentes criados!`, "ok");
     });
+    // Limpa filtro de mês para mostrar todos os boletos da série
+    if(_mesFil) setMesFil(null);
   } else if(parcelado && parcelas >= 2){
     // Gera parcelas (mesmo valor a cada parcelaDias dias)
     const serieId = "p"+Date.now();
@@ -3049,12 +3056,19 @@ function saveB(){
     Promise.all(promises).then(()=>{
       toast(`${parcelas} parcelas criadas!`, "ok");
     });
+    // Limpa filtro de mês para mostrar todas as parcelas
+    if(_mesFil) setMesFil(null);
   } else {
     // Avulso normal
     const newId = "b"+Date.now();
     const vencFinal = venc || dstr(getToday());
     fbSet("boletos/"+newId, {...baseObj, vencimento:vencFinal, pago:false, checks:{}, recorrente:false});
     toast(modalidade==="pix"?"Pix salvo! ⚡":"Boleto salvo!","ok");
+    // Garante que o boleto novo seja visível: navega para o mês do vencimento
+    const mesBoleto = vencFinal.slice(0,7);
+    if(_mesFil && _mesFil !== mesBoleto) setMesFil(mesBoleto);
+    // Se havia filtro de CNPJ diferente do grupo do boleto, limpa o filtro
+    if(cnpjFil !== "todos" && cnpjFil !== grupo) setCNPJFil("todos");
   }
 
   closeModal();

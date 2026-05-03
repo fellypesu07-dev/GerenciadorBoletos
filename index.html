@@ -43,8 +43,12 @@ body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;fon
 .auth-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:26px;color:var(--accent);}
 .auth-logo span{color:var(--text);}
 .auth-sub{color:var(--muted);font-size:13px;text-align:center;}
-.google-btn{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--border);border-radius:10px;padding:13px 22px;cursor:pointer;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;transition:.18s;}
-.google-btn:hover{border-color:var(--accent);color:var(--accent);}
+.email-login-box{display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px;}
+.email-login-box input{background:var(--surf);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;padding:11px 14px;outline:none;width:100%;transition:.15s;}
+.email-login-box input:focus{border-color:var(--accent);}
+.email-login-btn{background:var(--accent);color:#111;border:none;border-radius:8px;padding:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:.15s;width:100%;}
+.email-login-btn:hover{opacity:.88;}
+.email-login-err{color:#e05c3a;font-size:12px;text-align:center;min-height:18px;}
 .pin-dots{display:flex;gap:14px;margin:4px 0;}
 .pin-dot{width:14px;height:14px;border-radius:50%;background:var(--card);border:2px solid var(--border);transition:.15s;}
 .pin-dot.filled{background:var(--accent);border-color:var(--accent);}
@@ -498,6 +502,56 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
     padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
     border-top: 1px solid var(--border);
     background: var(--surf);
+  }
+  /* confirm-box and moPagar box: full bottom-sheet on mobile too */
+  .mo > .confirm-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 16px 16px 0 0;
+    max-height: 88dvh;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .mo > .confirm-box::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 14px auto 6px;
+    flex-shrink: 0;
+  }
+  .mo > .confirm-box > .mtit {
+    padding: 8px 16px 8px;
+    flex-shrink: 0;
+  }
+  .mo > .confirm-box > div:not(.mtit):not(.mact) {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .mo > .confirm-box > .confirm-msg {
+    flex: 0 0 auto;
+    padding: 0 16px;
+    margin-bottom: 0;
+  }
+  .mo > .confirm-box > .mscroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  .mo > .confirm-box > .mact {
+    flex-shrink: 0;
+    flex-direction: row;
+    padding: 10px 16px;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+    border-top: 1px solid var(--border);
+    background: var(--surf);
+    margin-top: 0;
   }
   .fg{ grid-template-columns: 1fr; }
   .fg .full{ grid-column: 1; }
@@ -1074,14 +1128,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 </head>
 <body>
 
-<!-- ══ AUTH SCREEN (Google Login) ══ -->
+<!-- ══ AUTH SCREEN (Email/Senha) ══ -->
 <div id="authScreen">
   <div class="auth-logo">Gere<span>Boleto</span></div>
   <div class="auth-sub">Acesso restrito — faça login para continuar</div>
-  <button class="google-btn" onclick="signInGoogle()">
-    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-    Entrar com Google
-  </button>
+  <div class="email-login-box">
+    <input type="email"    id="authEmail"    placeholder="E-mail" autocomplete="username">
+    <input type="password" id="authPassword" placeholder="Senha"  autocomplete="current-password">
+    <div class="email-login-err" id="authErr"></div>
+    <button class="email-login-btn" onclick="signInEmail()">Entrar</button>
+  </div>
 </div>
 
 <!-- ══ PIN SCREEN ══ -->
@@ -1123,7 +1179,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     </div>
     <div id="pinLockMsg" class="pin-lock-msg" style="display:none;">
       🔒 Muitas tentativas erradas.<br>
-      <button class="auth-link" style="margin-top:8px;" onclick="pinForcedLogout()">Entrar com Google novamente</button>
+      <button class="auth-link" style="margin-top:8px;" onclick="pinForcedLogout()">Voltar ao login</button>
     </div>
     <div id="pinUserEnter" class="pin-user"></div>
     <button class="auth-link" onclick="pinForcedLogout()">Trocar conta / Sair</button>
@@ -1146,19 +1202,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <span class="bnav-icon">🔍</span>
     <span>Buscar</span>
   </button>
-  <button class="bnav-add" onclick="openModal()">
+  <button class="bnav-add" onclick="if(document.querySelector('.mo.open')){closeAllModals();}else{openModal();}">
     <div class="bnav-add-circle">＋</div>
   </button>
-  <button class="bnav-btn" id="bnavSaldo" onclick="openSaldoModal()">
+  <button class="bnav-btn" id="bnavSaldo" onclick="if(document.querySelector('.mo.open')){closeAllModals();}else{openSaldoModal();}">
     <span class="bnav-icon">💰</span>
     <span>Saldo</span>
   </button>
-  <button class="bnav-btn notif-btn" id="bnavNotif" onclick="toggleNotifications()" title="Notificações de vencimento" aria-label="Notificações de vencimento">
+  <button class="bnav-btn notif-btn" id="bnavNotif" onclick="if(document.querySelector('.mo.open')){closeAllModals();}else{toggleNotifications();}" title="Notificações de vencimento" aria-label="Notificações de vencimento">
     <span class="bnav-icon">🔔</span>
     <span>Alertas</span>
     <span class="notif-dot" id="notifDotMob" aria-hidden="true"></span>
   </button>
-  <button class="bnav-btn" id="bnavPix" onclick="openModal();setTimeout(()=>setModalidade('pix'),50)">
+  <button class="bnav-btn" id="bnavPix" onclick="if(document.querySelector('.mo.open')){closeAllModals();}else{openModal();setTimeout(()=>setModalidade('pix'),50);}">
     <span class="bnav-icon">⚡</span>
     <span>Pix</span>
   </button>
@@ -1192,6 +1248,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     </div>
     <button class="btn btn-g btn-sm" onclick="openChartModal()" title="Resumo mensal" aria-label="Resumo mensal">📊</button>
     <button class="btn btn-g btn-sm notif-btn" id="notifBtn" onclick="toggleNotifications()" title="Notificações de vencimento" aria-label="Notificações de vencimento"><span>🔔</span><span class="notif-dot" id="notifDot" aria-hidden="true"></span></button>
+    <button class="btn btn-g btn-sm" onclick="openSaldoModal()" title="Atualizar saldos bancários" aria-label="Saldo bancário">💰 Saldo</button>
     <button class="btn btn-g btn-sm" onclick="openLD()" aria-label="Decodificar linha digitável">🔢 Linha Digitável</button>
     <button class="btn btn-g btn-sm" onclick="openCNPJModal()" aria-label="Gerenciar CNPJs">⚙ CNPJs</button>
     <button class="btn btn-p" onclick="openModal()" aria-label="Adicionar novo boleto">＋ Boleto</button>
@@ -1638,10 +1695,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 <div class="mo" id="moPagar">
 <div class="confirm-box" style="max-width:340px">
   <div class="mtit">✅ Marcar como Pago</div>
-  <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="pagarDesc"></div>
-  <div style="margin-bottom:14px">
-    <label style="display:block;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Banco utilizado para pagamento</label>
-    <div id="pagarBancoList" style="display:flex;flex-direction:column;gap:6px"></div>
+  <div class="mscroll">
+    <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="pagarDesc"></div>
+    <div style="margin-bottom:14px">
+      <label style="display:block;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Banco utilizado para pagamento</label>
+      <div id="pagarBancoList" style="display:flex;flex-direction:column;gap:6px"></div>
+    </div>
   </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closePagar()">Cancelar</button>
@@ -3064,8 +3123,10 @@ document.addEventListener("click",()=>{
 // ══════════════════════════════════════════════
 // CLOSE MODALS ON BACKDROP
 // ══════════════════════════════════════════════
-["moB","moC","moS","moLD","moConfirm","moChart"].forEach(id=>{
-  document.getElementById(id).addEventListener("click",e=>{
+["moB","moC","moS","moLD","moConfirm","moChart","moPagar"].forEach(id=>{
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.addEventListener("click",e=>{
     if(e.target===e.currentTarget){
       if(id==="moB")closeModal();
       if(id==="moC")closeCNPJ();
@@ -3073,6 +3134,7 @@ document.addEventListener("click",()=>{
       if(id==="moLD")closeLD();
       if(id==="moConfirm")closeConfirm();
       if(id==="moChart")closeChart();
+      if(id==="moPagar")closePagar();
     }
   });
 });
@@ -3457,6 +3519,9 @@ document.addEventListener("keydown", e=>{
 const isMobile = () => window.innerWidth <= 480;
 
 function toggleMobSidebar(){
+  // If any modal is open, close it first and return
+  const anyOpen = document.querySelector(".mo.open");
+  if(anyOpen){ closeAllModals(); return; }
   const sb = document.getElementById("sidebar") || document.querySelector(".sidebar");
   const ov = document.getElementById("sideOverlay");
   if(!sb) return;
@@ -3476,7 +3541,17 @@ function closeMobSidebar(){
   document.body.style.overflow="";
 }
 
+function closeAllModals(){
+  document.querySelectorAll(".mo.open").forEach(m=>m.classList.remove("open"));
+  editId = null;
+  _scrollLockCount = 0;
+  unlockBodyScroll();
+}
+
 function toggleMobSearch(){
+  // Close any open modal first
+  const anyOpen = document.querySelector(".mo.open");
+  if(anyOpen){ closeAllModals(); return; }
   const bar = document.getElementById("mobSearchBar");
   const inp = document.getElementById("mobSearchInput");
   const btn = document.getElementById("bnavSearch");
@@ -3542,45 +3617,20 @@ let _pinMode = "enter"; // "enter" | "setup"
 function startApp(){
   // Show auth screen while Firebase checks session
   document.getElementById("authScreen").style.display = "flex";
-  // Retorno do Google após signInWithRedirect (mobile-friendly)
-  auth.getRedirectResult()
-    .then(function(result){
-      if(result.user){
-        // Sessão já ativa; onAuthStateChanged abaixo tratará email/PIN
-      }
-    })
-    .catch(function(err){
-      var ign = ["auth/popup-closed-by-user","auth/cancelled-popup-request","auth/redirect-cancelled-by-user"];
-      if(err && err.code && ign.indexOf(err.code) === -1){
-        toast("Erro ao entrar: " + (err.message || err.code), "err");
-      }
-    })
-    .finally(function(){
-      attachAuthStateListener();
-    });
+  // Allow Enter key on password field
+  const pwEl = document.getElementById("authPassword");
+  if(pwEl) pwEl.addEventListener("keydown", function(e){ if(e.key==="Enter") signInEmail(); });
+  const emEl = document.getElementById("authEmail");
+  if(emEl) emEl.addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("authPassword").focus(); });
+  attachAuthStateListener();
 }
 
 function attachAuthStateListener(){
   auth.onAuthStateChanged(function(user){
     if(user){
-      // ── EMAILS AUTORIZADOS ──
-      const EMAILS_OK = [
-        "real14173@gmail.com",
-        "fellypesu07@gmail.com",
-        "restaurantereal101@gmail.com",
-        "victorsu00@gmail.com"
-      ];
-      if(!EMAILS_OK.includes(user.email.toLowerCase())){
-        auth.signOut();
-        document.getElementById("authScreen").style.display = "flex";
-        document.getElementById("authScreen").innerHTML += `<div style="background:#e05c3a18;border:1px solid #e05c3a44;border-radius:10px;padding:14px 20px;color:#e05c3a;font-size:13px;text-align:center;max-width:280px;">❌ Acesso negado para<br><strong>${user.email}</strong><br><span style="color:var(--muted);font-size:11px;margin-top:4px;display:block">Entre em contato com o administrador.</span></div>`;
-        return;
-      }
-      // ────────────────────────
       document.getElementById("authScreen").style.display = "none";
       const pin = localStorage.getItem(_PIN_KEY);
-      // Show user info
-      const info = (user.displayName||user.email||"Usuário");
+      const info = user.email || "Usuário";
       document.getElementById("pinUserSetup").textContent = "👤 " + info;
       document.getElementById("pinUserEnter").textContent = "👤 " + info;
       if(!pin){
@@ -3700,10 +3750,21 @@ function changePin(){
   showPinSetup();
 }
 
-function signInGoogle(){
-  var provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithRedirect(provider).catch(function(err){
-    toast("Erro ao iniciar login: " + (err.message || err.code), "err");
+function signInEmail(){
+  const email = (document.getElementById("authEmail").value||"").trim();
+  const pass  = (document.getElementById("authPassword").value||"");
+  const errEl = document.getElementById("authErr");
+  if(!email || !pass){ errEl.textContent = "Preencha e-mail e senha."; return; }
+  errEl.textContent = "";
+  auth.signInWithEmailAndPassword(email, pass).catch(function(err){
+    const msgs = {
+      "auth/user-not-found": "E-mail não encontrado.",
+      "auth/wrong-password": "Senha incorreta.",
+      "auth/invalid-email": "E-mail inválido.",
+      "auth/too-many-requests": "Muitas tentativas. Tente mais tarde.",
+      "auth/invalid-credential": "E-mail ou senha incorretos."
+    };
+    errEl.textContent = msgs[err.code] || ("Erro: " + (err.message || err.code));
   });
 }
 

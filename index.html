@@ -2085,6 +2085,39 @@ let _casaAbertoView = localStorage.getItem("gbCasaAbertoView") || "total";
 let _scrollLockCount = 0;
 let _scrollLockY = 0;
 
+// ── SCROLL POSITION TRACKER ──────────────────────────────────────────────────
+// Rastreia a posição de scroll continuamente.
+// renderAll() restaura a partir daqui — funciona mesmo com monkey-patches.
+let _lastScrollY = 0;
+let _scrollRestorePending = false;
+
+window.addEventListener('scroll', function(){
+  // Só atualiza quando body não está fixo (modal fechado)
+  if(document.body.style.position !== 'fixed'){
+    _lastScrollY = window.scrollY;
+    _scrollRestorePending = false; // usuário scrollou por conta própria — cancela restore pendente
+  }
+}, {passive: true});
+
+// Restaura scroll de forma confiável após re-render
+function _restoreScroll(y){
+  if(!y || y <= 0) return;
+  _scrollRestorePending = true;
+  // Tenta imediatamente
+  window.scrollTo(0, y);
+  // Tenta depois de cada frame até confirmar ou desistir (máx 10 tentativas)
+  let attempts = 0;
+  function tryRestore(){
+    if(!_scrollRestorePending) return; // usuário scrollou — desiste
+    if(Math.abs(window.scrollY - y) < 2){ _scrollRestorePending = false; return; } // chegou
+    if(++attempts > 10){ _scrollRestorePending = false; return; } // desiste
+    window.scrollTo(0, y);
+    requestAnimationFrame(tryRestore);
+  }
+  requestAnimationFrame(tryRestore);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function lockBodyScroll(){
   if(window.innerWidth > 480) return;
   _scrollLockCount++;
@@ -2108,10 +2141,7 @@ function unlockBodyScroll(){
     document.body.style.left = "";
     document.body.style.right = "";
     document.body.style.overflow = "";
-    // Duplo rAF: garante que o iOS/Safari recalcula o layout antes de restaurar
-    // o scroll. Um unico rAF nao e suficiente — o layout ainda fica em transicao
-    // e scrollTo(0, y) e ignorado ou sobrescrito pelo proximo renderAll.
-    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.scrollTo(0, savedY); }); });
+    _restoreScroll(savedY);
   }
 }
 
@@ -2144,10 +2174,16 @@ function toast(msg, type="ok", dur=3000){
 // FORÇAR ATUALIZAÇÃO / LIMPAR CACHE
 // ══════════════════════════════════════════════
 function forcarUpdate(){
-  toast("🔄 Buscando atualizações…", "info", 2000);
+  // Confirmacao para evitar reload acidental
+  const ok = confirm("Forçar atualização limpa o cache e recarrega o app.
+Use após um push no servidor.
+Continuar?");
+  if(!ok) return;
+
+  toast("🔄 Limpando cache e recarregando…", "info", 2000);
 
   // 1. Limpa todos os caches do Service Worker (se existir)
-  if('caches' in window){
+  if("caches" in window){
     caches.keys().then(names => {
       names.forEach(name => caches.delete(name));
     });
@@ -2166,8 +2202,7 @@ function initFirebase(){
   setSyncBadge("saving","Conectando…");
 
   // Debounce: agrupa todos os listeners num unico renderAll() por ciclo.
-  // Sem isso, os 7 listeners disparam renderAll quase ao mesmo tempo,
-  // causando leituras de scrollY=0 no meio do rAF anterior e pulando pro topo.
+  // _lastScrollY é rastreado continuamente — renderAll() não precisa de parâmetro.
   let _fbRafId = null;
   let _needsNotifCheck = false;
   function _fbRenderDebounced(needsNotif){
@@ -2180,13 +2215,41 @@ function initFirebase(){
     });
   }
 
+  // Usa .on() apenas para "boletos" (dados críticos que mudam com frequência).
+  // Os demais nós usam .once() para evitar re-renders contínuos que causam
+  // scroll pro topo. Um sync periódico a cada 30s mantém tudo atualizado.
   db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};_fbRenderDebounced(true);});
-  db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};_fbRenderDebounced(false);});
-  db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};_fbRenderDebounced(false);});
-  db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};_fbRenderDebounced(false);});
-  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};_fbRenderDebounced(false);});
-  db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};_fbRenderDebounced(false);});
-  db.ref("depositosPrev").on("value",snap=>{depositosPrev=snap.val()||{};_fbRenderDebounced(false);});
+
+  // Carga inicial dos nós secundários via .once()
+  function _loadSecondary(){
+    return Promise.all([
+      db.ref("cnpjs").once("value").then(s=>{cnpjs=s.val()||{};}),
+      db.ref("saldos").once("value").then(s=>{saldos=s.val()||{};}),
+      db.ref("gcoll").once("value").then(s=>{gcoll=s.val()||{};}),
+      db.ref("previsoes").once("value").then(s=>{previsoes=s.val()||{};}),
+      db.ref("saldosAnt").once("value").then(s=>{saldosAnt=s.val()||{};}),
+      db.ref("depositosPrev").once("value").then(s=>{depositosPrev=s.val()||{};})
+    ]);
+  }
+  _loadSecondary().then(()=>_fbRenderDebounced(false));
+
+  // Sync periódico a cada 30s para manter dados secundários atualizados
+  // sem re-renderizar a cada micro-mudança
+  setInterval(()=>{
+    _loadSecondary().then(()=>renderAll());
+  }, 30000);
+
+  // Também escuta gcoll em tempo real (colapso de grupos — ação local frequente)
+  // mas sem disparar renderAll, só atualiza o estado local
+  db.ref("gcoll").on("value",snap=>{
+    const newGcoll = snap.val()||{};
+    // Só re-renderiza se gcoll realmente mudou (evita loop)
+    if(JSON.stringify(newGcoll) !== JSON.stringify(gcoll)){
+      gcoll = newGcoll;
+      // Não chama renderAll — só atualiza as setas de colapso visualmente
+      _applyGcollVisual();
+    }
+  });
   _snapshotSaldoAnterior();
   db.ref(".info/connected").on("value",snap=>{
     setSyncBadge(snap.val()?"ok":"err",snap.val()?"✓ Online":"⚠ Offline");
@@ -2858,12 +2921,34 @@ function filteredList(){
 // GROUP TOGGLE
 // ══════════════════════════════════════════════
 function toggleGrp(gid){
-  const ng={...gcoll,[gid]:!gcoll[gid]};
-  fbSet("gcoll",ng);
+  // Atualiza localmente e visualmente SEM esperar Firebase
+  gcoll = {...gcoll, [gid]: !gcoll[gid]};
+  _applyGcollVisual();
+  // Salva no Firebase em background (não dispara re-render graças ao listener gcoll)
+  fbSet("gcoll", gcoll);
 }
 function toggleAll(expand){
   const ng={};getGroups().forEach(g=>ng[g.id]=!expand);
-  fbSet("gcoll",ng);
+  gcoll = ng;
+  _applyGcollVisual();
+  fbSet("gcoll", ng);
+}
+
+// Aplica estado de colapso dos grupos VISUALMENTE sem re-renderizar o DOM inteiro
+function _applyGcollVisual(){
+  document.querySelectorAll('.gb').forEach(gb=>{
+    // Tenta encontrar o gid pelo onclick do cabeçalho
+    const head = gb.querySelector('.gb-head');
+    if(!head) return;
+    const match = (head.getAttribute('onclick')||'').match(/toggleGrp\('([^']+)'\)/);
+    if(!match) return;
+    const gid = match[1];
+    const collapsed = !!gcoll[gid];
+    const body = gb.querySelector('.gb-body');
+    const arr = head.querySelector('.gb-arr');
+    if(body) body.classList.toggle('collapsed', collapsed);
+    if(arr) arr.classList.toggle('cl', collapsed);
+  });
 }
 
 // ══════════════════════════════════════════════
@@ -2909,7 +2994,10 @@ function renderGroups(){
         </div>
       </div>`;
 
-    if(!coll){
+    // Sempre renderiza o corpo — colapso é via CSS (max-height transition)
+    // Isso permite _applyGcollVisual() colapsar sem re-render completo
+    html+=`<div class="gb-body${coll?" collapsed":""}">`;
+    {
       if(glist.length===0){
         html+=`<div class="gb-empty">Nenhum boleto neste grupo.</div>`;
       } else if(viewMode==="card" || isMobile()){
@@ -2990,9 +3078,11 @@ function renderGroups(){
         html+=`</tbody></table></div>`;
       }
     }
-    html+=`</div>`;
+    html+=`</div>`; // fecha .gb-body
+    html+=`</div>`; // fecha .gb
   });
 
+  // Remove o .gb extra que estava sendo adicionado depois
   document.getElementById("groupsWrap").innerHTML=html||`<div style="text-align:center;padding:48px 24px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px;">
     <div style="font-size:36px;line-height:1;">🎉</div>
     <div style="font-size:14px;font-weight:700;color:var(--text)">Tudo em dia!</div>
@@ -3007,10 +3097,7 @@ function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").
 // RENDER ALL
 // ══════════════════════════════════════════════
 function renderAll(){
-  // Captura posicao antes de re-renderizar o DOM.
-  // Quando body esta fixo (modal iOS) scrollY retorna 0 — usa _scrollLockY.
-  const _bodyFixed = document.body.style.position === "fixed";
-  const _sy = _bodyFixed ? _scrollLockY : window.scrollY;
+  const _sy = _lastScrollY;
   updateQFBtns();
   renderCNPJPills();
   renderDUStrip();
@@ -3020,9 +3107,7 @@ function renderAll(){
   renderGroups();
   renderCSVMenu();
   renderMesFiltros();
-  // Restaura scroll imediatamente — sem rAF extra que conflita com o
-  // debounce do Firebase e com o patch de updateDashboard abaixo.
-  if(_sy > 0) window.scrollTo(0, _sy);
+  _restoreScroll(_sy);
 }
 
 // ══════════════════════════════════════════════
@@ -4036,21 +4121,24 @@ function closeMobSidebar(){
 let _sbScrollY = 0;
 function _lockBodyForSidebar(){
   _sbScrollY = window.scrollY;
+  _sbLocked = true;
   document.body.style.position = "fixed";
   document.body.style.top = "-" + _sbScrollY + "px";
   document.body.style.left = "0";
   document.body.style.right = "0";
   document.body.style.overflow = "hidden";
 }
+let _sbLocked = false;
 function _unlockBodyForSidebar(){
+  if(!_sbLocked) return; // nada a desfazer se nao travou
+  _sbLocked = false;
   const savedY = _sbScrollY;
   document.body.style.position = "";
   document.body.style.top = "";
   document.body.style.left = "";
   document.body.style.right = "";
   document.body.style.overflow = "";
-  // Duplo rAF igual ao unlockBodyScroll — necessario no iOS/Safari
-  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.scrollTo(0, savedY); }); });
+  _restoreScroll(savedY);
 }
 
 function closeAllModals(){
@@ -4327,9 +4415,12 @@ function updateMobileClass(){
 updateMobileClass();
 window.addEventListener("resize", updateMobileClass);
 
-// On mobile, close sidebar when scrolling main
+// On mobile, close sidebar ONLY when it is actually open
 document.querySelector(".main") && document.querySelector(".main").addEventListener("touchstart", ()=>{
-  if(window.innerWidth <= 480) closeMobSidebar();
+  if(window.innerWidth <= 480){
+    const sb = document.querySelector(".sidebar");
+    if(sb && sb.classList.contains("mob-open")) closeMobSidebar();
+  }
 }, {passive:true});
 
 
@@ -5130,8 +5221,8 @@ function toggleSbSection(id){
 // v5 — PATCH renderAll to call updateDashboard
 // ════════════════════════════════════════════
 const _origRenderAll = renderAll;
-window.renderAll = function(){
-  _origRenderAll();
+window.renderAll = function(...args){
+  _origRenderAll(...args);
   updateDashboard();
   // Aplica classes de foco sincrono — sem setTimeout que jogava pro topo
   document.querySelectorAll('tbody tr').forEach(tr=>{

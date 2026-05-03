@@ -2983,8 +2983,8 @@ function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").
 // RENDER ALL
 // ══════════════════════════════════════════════
 function renderAll(){
-  // Quando o body esta fixo (modal aberto no iOS), window.scrollY retorna 0.
-  // Usa _scrollLockY que guarda a posicao real antes do lock.
+  // Captura posicao antes de re-renderizar o DOM.
+  // Quando body esta fixo (modal iOS) scrollY retorna 0 — usa _scrollLockY.
   const _bodyFixed = document.body.style.position === "fixed";
   const _sy = _bodyFixed ? _scrollLockY : window.scrollY;
   updateQFBtns();
@@ -2996,7 +2996,9 @@ function renderAll(){
   renderGroups();
   renderCSVMenu();
   renderMesFiltros();
-  if(_sy > 0) requestAnimationFrame(() => window.scrollTo(0, _sy));
+  // Restaura scroll imediatamente — sem rAF extra que conflita com o
+  // debounce do Firebase e com o patch de updateDashboard abaixo.
+  if(_sy > 0) window.scrollTo(0, _sy);
 }
 
 // ══════════════════════════════════════════════
@@ -5107,13 +5109,11 @@ const _origRenderAll = renderAll;
 window.renderAll = function(){
   _origRenderAll();
   updateDashboard();
-  // Apply foco classes to rows after render
-  setTimeout(()=>{
-    document.querySelectorAll('tbody tr').forEach(tr=>{
-      const stCell = tr.querySelector('td:nth-child(5)');
-      if(stCell && stCell.textContent.includes('Pago')) tr.classList.add('row-pago');
-    });
-  }, 50);
+  // Aplica classes de foco sincrono — sem setTimeout que jogava pro topo
+  document.querySelectorAll('tbody tr').forEach(tr=>{
+    const stCell = tr.querySelector('td:nth-child(5)');
+    if(stCell && stCell.textContent.includes('Pago')) tr.classList.add('row-pago');
+  });
 };
 
 // ════════════════════════════════════════════

@@ -1446,6 +1446,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <span class="bnav-icon">🔍</span>
     <span>Buscar</span>
   </button>
+  <button class="bnav-btn" id="bnavRefresh" onclick="forcarUpdate()" title="Forçar atualização / limpar cache">
+    <span class="bnav-icon">🔄</span>
+    <span>Atualizar</span>
+  </button>
   <button class="bnav-add" onclick="if(document.querySelector('.mo.open')){closeAllModals();}else{openModal();}">
     <div class="bnav-add-circle">＋</div>
   </button>
@@ -1648,6 +1652,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <button class="btn btn-g btn-sm" style="width:100%" id="focoBtnSidebar" onclick="toggleFoco()" aria-pressed="false" title="Ocultar boletos pagos">👁 Modo Foco</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()" aria-label="Atualizar saldos">💰 Atualizar Saldos</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="loadData()">🔄 Atualizar</button>
+      <button class="btn btn-g btn-sm" style="width:100%" onclick="forcarUpdate()" title="Força limpeza de cache e recarregamento completo">⚡ Forçar Atualização</button>
       <!-- CSV DROPDOWN -->
       <div class="csv-wrap" style="width:100%">
         <button class="btn btn-g btn-sm" style="width:100%" onclick="toggleCSVMenu(event)">⬇ Exportar CSV ▾</button>
@@ -2133,6 +2138,25 @@ function toast(msg, type="ok", dur=3000){
   el.innerHTML=`${type==="ok"?"✓":type==="err"?"✕":"ℹ"} ${msg}`;
   c.appendChild(el);
   setTimeout(()=>{el.style.opacity="0";el.style.transform="translateX(20px)";el.style.transition=".3s";setTimeout(()=>el.remove(),300);},dur);
+}
+
+// ══════════════════════════════════════════════
+// FORÇAR ATUALIZAÇÃO / LIMPAR CACHE
+// ══════════════════════════════════════════════
+function forcarUpdate(){
+  toast("🔄 Buscando atualizações…", "info", 2000);
+
+  // 1. Limpa todos os caches do Service Worker (se existir)
+  if('caches' in window){
+    caches.keys().then(names => {
+      names.forEach(name => caches.delete(name));
+    });
+  }
+
+  // 2. Força recarregamento ignorando cache do navegador
+  setTimeout(() => {
+    window.location.reload(true);
+  }, 1200);
 }
 
 // ══════════════════════════════════════════════

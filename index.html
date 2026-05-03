@@ -2954,14 +2954,12 @@ function renderGroups(){
     html+=`</div>`;
   });
 
-  const _sy = window.scrollY;
   document.getElementById("groupsWrap").innerHTML=html||`<div style="text-align:center;padding:48px 24px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px;">
     <div style="font-size:36px;line-height:1;">🎉</div>
     <div style="font-size:14px;font-weight:700;color:var(--text)">Tudo em dia!</div>
     <div style="font-size:12px;max-width:200px;line-height:1.5;">Nenhum boleto encontrado para este filtro.</div>
     <button class="btn btn-p" style="margin-top:4px;font-size:12px;padding:7px 16px;" onclick="openModal()">＋ Adicionar boleto</button>
   </div>`;
-  if(_sy > 0) requestAnimationFrame(() => window.scrollTo(0, _sy));
 }
 
 function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -2970,6 +2968,7 @@ function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").
 // RENDER ALL
 // ══════════════════════════════════════════════
 function renderAll(){
+  const _sy = window.scrollY;
   updateQFBtns();
   renderCNPJPills();
   renderDUStrip();
@@ -2979,6 +2978,7 @@ function renderAll(){
   renderGroups();
   renderCSVMenu();
   renderMesFiltros();
+  if(_sy > 0) requestAnimationFrame(() => window.scrollTo(0, _sy));
 }
 
 // ══════════════════════════════════════════════

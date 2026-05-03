@@ -2097,12 +2097,17 @@ function unlockBodyScroll(){
   if(window.innerWidth > 480) return;
   _scrollLockCount = Math.max(0, _scrollLockCount - 1);
   if(_scrollLockCount === 0){
+    const savedY = _scrollLockY;
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.left = '';
     document.body.style.right = '';
     document.body.style.overflow = '';
-    window.scrollTo(0, _scrollLockY);
+    // Aguarda o browser recalcular o layout antes de restaurar o scroll
+    // Sem isso, iOS/Safari salta para o topo da página ao fechar modais
+    requestAnimationFrame(() => {
+      window.scrollTo(0, savedY);
+    });
   }
 }
 
@@ -5229,12 +5234,37 @@ if(_saldoDashCollapsed) _applySaldoDashCollapse();
   });
 })();
 function gbForceReload(){
+  const doReload = () => {
+    // Limpa todos os caches da Cache API antes de recarregar
+    if('caches' in window){
+      caches.keys().then(keys => {
+        Promise.all(keys.map(k => caches.delete(k))).then(() => {
+          window.location.reload();
+        });
+      }).catch(() => window.location.reload());
+    } else {
+      window.location.reload();
+    }
+  };
+
   if('serviceWorker' in navigator){
     navigator.serviceWorker.getRegistration().then(reg=>{
-      if(reg&&reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
-      window.location.reload(true);
-    });
-  } else { window.location.reload(true); }
+      if(reg && reg.waiting){
+        // Aguarda o novo SW tomar controle antes de recarregar
+        navigator.serviceWorker.addEventListener('controllerchange', doReload, { once: true });
+        reg.waiting.postMessage({type:'SKIP_WAITING'});
+        // Timeout de segurança caso o controllerchange não dispare
+        setTimeout(doReload, 2000);
+      } else if(reg){
+        // Força update do SW e recarrega
+        reg.update().then(doReload).catch(doReload);
+      } else {
+        doReload();
+      }
+    }).catch(doReload);
+  } else {
+    doReload();
+  }
 }
 
 // ══ SWIPE TO ACTION (mobile) ══

@@ -13,8 +13,18 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE))
   );
-  /* Ativa imediatamente sem esperar fechar abas antigas */
-  self.skipWaiting();
+  /* NÃO chama skipWaiting() aqui.
+     O app (index.html) controla quando o novo SW assume,
+     via postMessage({type:'SKIP_WAITING'}) após o usuário
+     confirmar o update. Sem isso o SW ativaria sozinho,
+     quebrando o fluxo de "Nova versão disponível". */
+});
+
+/* ── Mensagens do app: recebe SKIP_WAITING do index.html ── */
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 /* ── Ativação: remove caches antigos ── */

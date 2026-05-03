@@ -1414,6 +1414,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
           <div class="saldo-toggle" role="group" aria-label="Período do saldo">
             <button class="saldo-tbtn active" id="stbTodos"  onclick="event.stopPropagation();setSaldoModo('todos')"  title="Todos os boletos em aberto">Todos</button>
             <button class="saldo-tbtn"        id="stbMes"    onclick="event.stopPropagation();setSaldoModo('mes')"    title="Somente boletos do mês atual">Este mês</button>
+            <button class="saldo-tbtn"        id="stbDia"    onclick="event.stopPropagation();setSaldoModo('dia')"    title="Somente boletos de hoje">Este dia</button>
           </div>
         </div>
         <div class="saldo-panel" id="saldoPanel"></div>
@@ -1632,6 +1633,25 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 
 <!-- ═══════════════════════════════════════════ -->
+<!-- MODAL PAGAR — SELECIONAR BANCO -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="mo" id="moPagar">
+<div class="confirm-box" style="max-width:340px">
+  <div class="mtit">✅ Marcar como Pago</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:12px" id="pagarDesc"></div>
+  <div style="margin-bottom:14px">
+    <label style="display:block;font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Banco utilizado para pagamento</label>
+    <div id="pagarBancoList" style="display:flex;flex-direction:column;gap:6px"></div>
+  </div>
+  <div class="mact">
+    <button class="btn btn-g" onclick="closePagar()">Cancelar</button>
+    <button class="btn btn-p" id="pagarOkBtn">Confirmar</button>
+  </div>
+</div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════ -->
 <!-- MODAL CONFIRMAR EXCLUSÃO -->
 <!-- ═══════════════════════════════════════════ -->
 <div class="mo" id="moConfirm">
@@ -1689,7 +1709,7 @@ const CASACOL="#ff9fdf";
 const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const DIAS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
-let boletos={}, cnpjs={}, saldos={}, gcoll={}, saldosAnt={}, previsoes={};
+let boletos={}, cnpjs={}, saldos={}, gcoll={}, saldosAnt={}, previsoes={}, depositosPrev={};
 let qfAtual="todos", cnpjFil="todos";
 let calSel=null, duSel=null;
 let calY, calM;
@@ -1765,6 +1785,7 @@ function initFirebase(){
   db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};renderAll();});
   db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};renderAll();});
   db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};renderAll();});
+  db.ref("depositosPrev").on("value",snap=>{depositosPrev=snap.val()||{};renderAll();});
   _snapshotSaldoAnterior();
   db.ref(".info/connected").on("value",snap=>{
     setSyncBadge(snap.val()?"ok":"err",snap.val()?"✓ Online":"⚠ Offline");
@@ -2308,6 +2329,8 @@ function setSaldoModo(modo){
   localStorage.setItem('gbSaldoModo', modo);
   document.getElementById('stbTodos').classList.toggle('active', modo==='todos');
   document.getElementById('stbMes').classList.toggle('active', modo==='mes');
+  const stbDia = document.getElementById('stbDia');
+  if(stbDia) stbDia.classList.toggle('active', modo==='dia');
   renderSaldoPanel();
 }
 
@@ -2316,14 +2339,16 @@ function renderSaldoPanel(){
   const el = document.getElementById("saldoPanel");
   if(!groups.length){el.innerHTML=`<div style="color:var(--muted);font-size:12px">Cadastre os CNPJs para ver os saldos.</div>`;return;}
 
-  // Determine which month to use for "mes" mode
+  // Determine which month/day to use for "mes"/"dia" mode
   const now = new Date();
   const mesAtual = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
   const mesLabel = MESES[now.getMonth()] + '/' + now.getFullYear();
+  const hoje = now.toISOString().slice(0,10);
+  const diaLabel = `${p2(now.getDate())}/${p2(now.getMonth()+1)}/${now.getFullYear()}`;
 
   // Update label
   const lblEl = document.getElementById('saldoMesLabel');
-  if(lblEl) lblEl.textContent = _saldoModo==='mes' ? mesLabel : '';
+  if(lblEl) lblEl.textContent = _saldoModo==='mes' ? mesLabel : _saldoModo==='dia' ? diaLabel : '';
 
   let h="";
   groups.forEach(g=>{
@@ -2339,18 +2364,27 @@ function renderSaldoPanel(){
     let abertos = boletoArr().filter(b=>b.grupo===g.id&&status(b)!=="pago");
     if(_saldoModo==='mes'){
       abertos = abertos.filter(b=> b.vencimento && b.vencimento.startsWith(mesAtual));
+    } else if(_saldoModo==='dia'){
+      abertos = abertos.filter(b=> b.vencimento && b.vencimento===hoje);
     }
     const ab=abertos.reduce((a,b)=>a+Number(b.valor||0),0);
     const s=tot+prev-ab;
     const modeTag = _saldoModo==='mes'
       ? `<span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--accent);background:var(--accent)18;border:1px solid var(--accent)33;border-radius:3px;padding:1px 4px;margin-left:4px">mês</span>`
+      : _saldoModo==='dia'
+      ? `<span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--blue);background:var(--blue)18;border:1px solid var(--blue)33;border-radius:3px;padding:1px 4px;margin-left:4px">hoje</span>`
       : '';
     const prevTag=prev>0?`<span style="font-size:9px;color:var(--ok);font-family:'DM Mono',monospace;margin-left:4px">(+${fmtR(prev)} prev.)</span>`:'';
+    const modeFootLabel = _saldoModo==='mes' ? ' (mês)' : _saldoModo==='dia' ? ' (hoje)' : '';
+    const gd = depositosPrev[g.id]||{};
     h+=`<div class="sg">
       <div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}${modeTag}</div></div>
-      <div class="sg-body">${bancos.map(b=>`<div class="banco-row"><span class="banco-nm">${b}</span><div class="sg-banco-valwrap"><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span>${prev>0?`<span class="sg-previa">(+ ${fmtR(prev)})</span>`:''}</div></div>`).join("")}
+      <div class="sg-body">${bancos.map(b=>{
+        const dep=Number(gd[b]||0);
+        return `<div class="banco-row"><span class="banco-nm">${b}</span><div class="sg-banco-valwrap"><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span>${dep>0?`<span class="sg-previa" style="color:var(--ok)">(+dep. ${fmtR(dep)})</span>`:''}</div></div>`;
+      }).join("")}
       <div class="sg-dia-ant">Saldo ontem: <strong>${saldoAntStr}</strong></div></div>
-      <div class="sg-foot"><span class="sg-bol">Boletos${_saldoModo==='mes'?' (mês)':''}: ${fmtR(ab)}${prevTag}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
+      <div class="sg-foot"><span class="sg-bol">Boletos${modeFootLabel}: ${fmtR(ab)}${prevTag}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
     </div>`;
   });
   el.innerHTML=h;
@@ -2896,21 +2930,30 @@ function openSaldoModal(){
   let h="";
   groups.forEach(g=>{
     const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
+    const gd=depositosPrev[g.id]||{};
     h+=`<div>
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
         <div style="width:4px;height:16px;border-radius:2px;background:${g.color};flex-shrink:0"></div>
         <strong style="font-size:13px">${escHTML(g.name)}</strong>
         ${g.num?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${escHTML(g.num)}</span>`:""}
       </div>
-      <div style="display:flex;flex-direction:column;gap:7px;padding-left:11px">
-        ${bancos.map(b=>`<div style="display:flex;align-items:center;gap:10px">
-          <div style="width:110px;font-size:12px;color:var(--muted)">${b}</div>
+      <div style="display:flex;flex-direction:column;gap:4px;padding-left:11px">
+        <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:6px;margin-bottom:4px">
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Banco</div>
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Saldo Atual</div>
+          <div style="font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.5px">Depósito Previsto</div>
+        </div>
+        ${bancos.map(b=>`<div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:6px;align-items:center">
+          <div style="font-size:12px;color:var(--muted)">${b}</div>
           <input type="number" data-gid="${g.id}" data-banco="${b}" value="${gs[b]||""}" placeholder="0,00" step="0.01" min="0"
-            style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right"
+            style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;outline:none;text-align:right"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+          <input type="number" data-gid="${g.id}" data-deposito="${b}" value="${gd[b]||""}" placeholder="0,00" step="0.01" min="0"
+            style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;outline:none;text-align:right"
+            onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
         </div>`).join("")}
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
-          <label style="display:block;font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia</label>
+          <label style="display:block;font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia (Total)</label>
           <input type="number" data-gid="${g.id}" data-previsao="1" value="${previsoes[g.id]||''}" placeholder="0,00" step="0.01" min="0" aria-label="Previsão de entradas"
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right;"
             onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
@@ -2928,11 +2971,18 @@ function closeSaldo(){document.getElementById("moS").classList.remove("open");un
 function saveSaldos(){
   const ns={...saldos};
   const np={...previsoes};
+  const nd={...depositosPrev};
   document.querySelectorAll("#saldoForm input[data-banco]").forEach(inp=>{
     const gid=inp.dataset.gid,banco=inp.dataset.banco;
     if(!gid||!banco)return;
     if(!ns[gid])ns[gid]={};
     ns[gid][banco]=parseFloat(inp.value)||0;
+  });
+  document.querySelectorAll("#saldoForm input[data-deposito]").forEach(inp=>{
+    const gid=inp.dataset.gid,banco=inp.dataset.deposito;
+    if(!gid||!banco)return;
+    if(!nd[gid])nd[gid]={};
+    nd[gid][banco]=parseFloat(inp.value)||0;
   });
   document.querySelectorAll("#saldoForm input[data-previsao]").forEach(inp=>{
     const gid=inp.dataset.gid;
@@ -2941,6 +2991,7 @@ function saveSaldos(){
   });
   fbSet("saldos",ns);
   fbSet("previsoes",np);
+  fbSet("depositosPrev",nd);
   closeSaldo();
 }
 
@@ -3898,22 +3949,80 @@ function toastUndo(msg, undoFn, dur=5000){
   });
 }
 
-// Patch markPago to support undo
-const _origMarkPago = markPago;
-window.markPago = function(id){
+// Modal de pagamento com seleção de banco
+let _pagarId = null;
+function openPagar(id){
   const b = boletos[id];
   if(!b) return;
+  _pagarId = id;
+  const desc = b.desc || 'boleto';
+  const grupo = b.grupo;
+  document.getElementById('pagarDesc').textContent = `Boleto: "${desc}" — ${fmtR(Number(b.valor||0))}`;
+  // build bank list for this grupo
+  const g = getGroups().find(x=>x.id===grupo);
+  const bancos = g ? bancosDoGrupo(g.name) : [];
+  const gs = saldos[grupo]||{};
+  let listH = bancos.length
+    ? bancos.map(banco=>`
+        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 10px;border-radius:5px;border:1px solid var(--border);background:var(--card2)">
+          <input type="radio" name="pagarBanco" value="${escHTML(banco)}" style="accent-color:var(--accent)">
+          <span style="font-size:12px;flex:1">${escHTML(banco)}</span>
+          <span style="font-size:11px;font-family:'DM Mono',monospace;color:${Number(gs[banco]||0)>0?'var(--ok)':'var(--muted)'}">${fmtR(gs[banco]||0)}</span>
+        </label>`).join('')
+    : `<div style="font-size:12px;color:var(--muted)">Nenhum banco cadastrado nesta empresa.</div>`;
+  listH += `<label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 10px;border-radius:5px;border:1px solid var(--border);background:var(--card2)">
+    <input type="radio" name="pagarBanco" value="__nenhum__" style="accent-color:var(--accent)">
+    <span style="font-size:12px;color:var(--muted)">Não subtrair de nenhum banco</span>
+  </label>`;
+  document.getElementById('pagarBancoList').innerHTML = listH;
+  // pre-select first bank
+  const firstRadio = document.querySelector('input[name="pagarBanco"]');
+  if(firstRadio) firstRadio.checked = true;
+  document.getElementById('pagarOkBtn').onclick = confirmPagar;
+  document.getElementById('moPagar').classList.add('open');
+  lockBodyScroll();
+}
+function closePagar(){ document.getElementById('moPagar').classList.remove('open'); unlockBodyScroll(); _pagarId=null; }
+
+function confirmPagar(){
+  const id = _pagarId;
+  if(!id) return;
+  const b = boletos[id];
+  if(!b){ closePagar(); return; }
+  const sel = document.querySelector('input[name="pagarBanco"]:checked');
+  const bancoPago = sel ? sel.value : '__nenhum__';
   const snapshot = JSON.parse(JSON.stringify(b));
   const desc = b.desc || 'boleto';
   const pagoEm = new Date().toISOString().slice(0,10);
-  fbSet('boletos/'+id, {...b, pago:true, pagoEm});
+  // Mark boleto as paid
+  fbSet('boletos/'+id, {...b, pago:true, pagoEm, bancoPago: bancoPago==='__nenhum__'?null:bancoPago});
+  // Subtract from bank balance if applicable
+  if(bancoPago !== '__nenhum__' && b.grupo){
+    const gs = JSON.parse(JSON.stringify(saldos[b.grupo]||{}));
+    const saldoAtual = Number(gs[bancoPago]||0);
+    const valor = Number(b.valor||0);
+    gs[bancoPago] = Math.max(0, saldoAtual - valor);
+    const nsSaldos = {...saldos, [b.grupo]: gs};
+    fbSet('saldos', nsSaldos);
+  }
   if(b.modalidade==='pix' && (b.pixChave||b.pixPayload)){
     const text = b.pixPayload || b.pixChave;
     navigator.clipboard.writeText(text).catch(()=>{});
   }
-  toastUndo(`✓ "${desc}" marcado como pago`, ()=>{
+  closePagar();
+  const bancoLabel = bancoPago !== '__nenhum__' ? ` via ${bancoPago}` : '';
+  toastUndo(`✓ "${desc}" marcado como pago${bancoLabel}`, ()=>{
     fbSet('boletos/'+id, snapshot);
+    if(bancoPago !== '__nenhum__' && b.grupo){
+      fbSet('saldos', saldos);
+    }
   });
+}
+
+// Patch markPago to open bank selection modal
+const _origMarkPago = markPago;
+window.markPago = function(id){
+  openPagar(id);
 };
 
 // Patch confirmDel to support undo
@@ -4419,8 +4528,10 @@ if(_saldoDashCollapsed) _applySaldoDashCollapse();
   const modo = localStorage.getItem('gbSaldoModo')||'todos';
   const t = document.getElementById('stbTodos');
   const m = document.getElementById('stbMes');
+  const d = document.getElementById('stbDia');
   if(t) t.classList.toggle('active', modo==='todos');
   if(m) m.classList.toggle('active', modo==='mes');
+  if(d) d.classList.toggle('active', modo==='dia');
 })();
 
 </script>

@@ -623,6 +623,15 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   }
   .bnav-btn:active{ opacity: .7; }
   .bnav-btn.bnav-active{ color: var(--accent); }
+
+  /* ── Active states agressivos (feedback tátil visual) ── */
+  .mfc:active                    { transform: scale(.93); opacity: .85; transition: transform .08s, opacity .08s; }
+  .bnav-btn:active               { transform: scale(.88); background: var(--card) !important; }
+  .bnav-add:active .bnav-add-circle { transform: scale(.88); }
+  .qf:active, .mes-btn:active    { transform: scale(.97); opacity: .8; }
+  .btn:active                    { transform: scale(.95); opacity: .8; }
+  .gb-head:active                { background: var(--card2) !important; }
+  .duc:active                    { transform: scale(.93); }
   .bnav-icon{ font-size: 20px; line-height: 1; }
   .bnav-add{
     flex: 1;
@@ -686,6 +695,16 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
     padding: 8px 12px;
     background: var(--surf);
     border-bottom: 1px solid var(--border);
+    overflow: hidden;
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    transition: max-height .22s cubic-bezier(.4,0,.2,1), padding .22s;
+  }
+  #mobSearchBar.open{
+    max-height: 60px;
+    padding-top: 8px;
+    padding-bottom: 8px;
   }
   #mobSearchBar input{
     width: 100%;
@@ -832,6 +851,7 @@ body[data-theme="oled"] #bottomNav { background: rgba(0,0,0,.95); }
 .bol-card, tbody tr {
   animation: cardIn .32s cubic-bezier(.22,1,.36,1) both;
   transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+  will-change: transform, opacity;
 }
 .bol-card:hover {
   transform: translateY(-2px);
@@ -882,6 +902,7 @@ body[data-theme="oled"] #bottomNav { background: rgba(0,0,0,.95); }
   overflow: hidden;
   transition: max-height .25s cubic-bezier(.4,0,.2,1);
   max-height: 9999px;
+  will-change: max-height;
 }
 .gb-body.collapsed { max-height: 0 !important; }
 
@@ -986,6 +1007,7 @@ body.modo-foco .foco-badge { display: inline-flex; align-items: center; gap: 4px
   transition: max-height .3s cubic-bezier(.4,0,.2,1);
   max-height: 300px;
   box-shadow: 0 4px 24px rgba(0,0,0,.3);
+  will-change: max-height;
 }
 .dash-panel.collapsed { max-height: 44px; }
 .dash-header {
@@ -1047,9 +1069,14 @@ body[data-theme="light"] .dash-header:hover { background: #ededea; }
   margin-top: 2px;
 }
 
-/* ════════════════════════════════════════════
-   ACESSIBILIDADE — FOCO (v5)
-════════════════════════════════════════════ */
+/* ── Touch: elimina delay de 300ms em dispositivos que ainda o têm ── */
+button, .qf, .cprow, .duc, .gb-head, .mfc, .cal-nav, .cc,
+.chip, .vt-btn, .mod-btn, .theme-dot, .mes-btn, .tag-menu-item,
+.csv-item, .aberto-opt, .sb-collapsible-hd, .pix-copy-btn {
+  touch-action: manipulation;
+}
+
+/* ACESSIBILIDADE — FOCO (v5) */
 :focus-visible {
   outline: 2px solid var(--accent) !important;
   outline-offset: 2px !important;
@@ -1166,6 +1193,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   transition: max-height .25s cubic-bezier(.4,0,.2,1), opacity .2s;
   max-height: 400px;
   opacity: 1;
+  will-change: max-height, opacity;
 }
 .sb-collapsible-body.collapsed {
   max-height: 0 !important;
@@ -1472,7 +1500,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 <header>
   <div class="logo" id="logoArea" title="Clique duplo para personalizar o nome" ondblclick="editLogoName()">Real<span>Financeiro</span></div>
   <div class="hright">
-    <span class="sync ok" id="syncBadge" aria-live="polite">✓ Online</span>
+    <span class="sync ok" id="syncBadge" aria-live="polite" onclick="loadData()" title="Clique para atualizar" style="cursor:pointer">✓ Online</span>
     <!-- Temas de cor -->
     <div class="theme-picker" title="Tema de cor" aria-label="Selecionar tema de cor">
       <div class="theme-dot active" id="td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#22c55e)" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"  onkeydown="if(event.key==='Enter')setTheme('dark-gold')"></div>
@@ -1483,7 +1511,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     </div>
     <!-- Modo foco -->
     <button class="btn btn-g btn-sm foco-badge" id="focoBtn" onclick="toggleFoco()" aria-pressed="false" title="Modo Foco: oculta pagos">👁 Foco</button>
-    <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="renderAll()" aria-label="Buscar boletos">
+    <input class="sinp" type="text" id="searchInput" placeholder="🔍 Buscar..." oninput="debouncedSearch()" aria-label="Buscar boletos">
     <div class="view-toggle" role="group" aria-label="Modo de visualização">
       <button class="vt-btn active" id="vtDense" onclick="setView('dense')" title="Modo tabela (denso)" aria-pressed="true">☰</button>
       <button class="vt-btn" id="vtCard" onclick="setView('card')" title="Modo cartão" aria-pressed="false">⊞</button>
@@ -1508,8 +1536,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   <button class="mfc" id="mfc-casa"     onclick="setQF('casa');setMobFC(this)">🏠 Casa</button>
 </div>
 
-<!-- MOBILE SEARCH BAR (hidden by default) -->
-<div id="mobSearchBar" style="display:none">
+<!-- MOBILE SEARCH BAR (hidden by default via CSS) -->
+<div id="mobSearchBar">
   <input type="text" id="mobSearchInput" placeholder="🔍 Buscar por descrição, valor, fornecedor…" oninput="syncMobSearch(this.value)">
 </div>
 
@@ -2237,8 +2265,10 @@ function loadData(){
     boletos=d.boletos||{}; cnpjs=d.cnpjs||{};
     saldos=d.saldos||{}; gcoll=d.gcoll||{};
     previsoes=d.previsoes||{}; saldosAnt=d.saldosAnt||{};
+    depositosPrev=d.depositosPrev||{};
     setSyncBadge("ok","✓ Online");
     renderAll();
+    toast("🔄 Dados atualizados!","ok",2000);
   }).catch(()=>setSyncBadge("err","⚠ Erro"));
 }
 
@@ -2747,8 +2777,9 @@ function renderChip(){
 // ══════════════════════════════════════════════
 // FILTER LIST
 // ══════════════════════════════════════════════
+function _norm(s){ return String(s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,""); }
 function filteredList(){
-  const q=document.getElementById("searchInput").value.toLowerCase();
+  const q=_norm(document.getElementById("searchInput").value);
   const d7=new Set(next7DU());
   return boletoArr().filter(b=>{
     if(cnpjFil!=="todos"&&b.grupo!==cnpjFil)return false;
@@ -2762,7 +2793,7 @@ function filteredList(){
     if(qfAtual==="pago"&&s!=="pago")return false;
     if(qfAtual==="7du"&&(!d7.has(b.vencimento)||b.pago))return false;
     if(qfAtual==="casa"&&b.grupo!==CASA)return false;
-    if(q&&!(b.desc||"").toLowerCase().includes(q)&&!(b.obs||"").toLowerCase().includes(q))return false;
+    if(q&&!_norm(b.desc).includes(q)&&!_norm(b.obs).includes(q))return false;
     return true;
   }).sort((a,b)=>{
     const o={vencido:0,hoje:1,pendente:2,pago:3},sa=status(a),sb=status(b);
@@ -3829,7 +3860,6 @@ document.addEventListener("keydown", e=>{
   const anyModalOpen = document.querySelector(".mo.open");
 
   if(e.key==="Escape" && anyModalOpen){
-    // close all modals
     document.querySelectorAll(".mo.open").forEach(m=>m.classList.remove("open"));
     editId = null;
     _scrollLockCount = 0;
@@ -3838,21 +3868,76 @@ document.addEventListener("keydown", e=>{
     return;
   }
 
-  if(anyModalOpen) return; // don't trigger shortcuts when modal open
+  if(anyModalOpen) return;
 
-  if(e.key==="n" || e.key==="N"){
-    openModal();
-    e.preventDefault();
-  } else if(e.key==="p" || e.key==="P"){
-    openModal();
-    setTimeout(()=>setModalidade("pix"), 50);
-    e.preventDefault();
-  } else if(e.key==="/"){
-    const si = document.getElementById("searchInput");
-    if(si){ si.focus(); si.select(); }
-    e.preventDefault();
+  switch(e.key){
+    // ── Modais ──
+    case "n": case "N": openModal(); e.preventDefault(); break;
+    case "p": case "P": openModal(); setTimeout(()=>setModalidade("pix"),50); e.preventDefault(); break;
+
+    // ── Busca ──
+    case "/": {
+      const si=document.getElementById("searchInput");
+      if(si){ si.focus(); si.select(); }
+      e.preventDefault();
+      break;
+    }
+
+    // ── Ações rápidas ──
+    case "r": case "R": loadData(); e.preventDefault(); break;
+    case "f": case "F": toggleFoco(); e.preventDefault(); break;
+
+    // ── Filtros rápidos (1–7) ──
+    case "1": setQF("todos");    e.preventDefault(); break;
+    case "2": setQF("7du");      e.preventDefault(); break;
+    case "3": setQF("hoje");     e.preventDefault(); break;
+    case "4": setQF("vencido");  e.preventDefault(); break;
+    case "5": setQF("pendente"); e.preventDefault(); break;
+    case "6": setQF("pago");     e.preventDefault(); break;
+    case "7": setQF("casa");     e.preventDefault(); break;
+
+    // ── Navegação do calendário ──
+    case "ArrowLeft":  calNav(-1); e.preventDefault(); break;
+    case "ArrowRight": calNav(1);  e.preventDefault(); break;
+
+    // ── Ajuda ──
+    case "?": _toggleShortcutsHelp(); e.preventDefault(); break;
   }
 });
+
+// ── Painel de ajuda dos atalhos ──
+function _toggleShortcutsHelp(){
+  let el = document.getElementById("kbHelp");
+  if(el){ el.remove(); return; }
+  el = document.createElement("div");
+  el.id = "kbHelp";
+  el.style.cssText = `position:fixed;bottom:80px;right:18px;z-index:9998;
+    background:var(--surf);border:1px solid var(--border);border-radius:10px;
+    padding:14px 18px;font-size:11px;font-family:'DM Mono',monospace;
+    box-shadow:0 8px 32px rgba(0,0,0,.5);line-height:2;min-width:220px;`;
+  el.innerHTML = `
+    <div style="font-family:'DM Sans',sans-serif;font-weight:700;font-size:12px;
+      color:var(--accent);margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+      ⌨ Atalhos
+      <button onclick="this.parentElement.parentElement.remove()"
+        style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:0">×</button>
+    </div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 12px;color:var(--text)">
+      <kbd style="color:var(--accent)">N</kbd><span>Novo boleto</span>
+      <kbd style="color:var(--accent)">P</kbd><span>Novo Pix</span>
+      <kbd style="color:var(--accent)">/</kbd><span>Buscar</span>
+      <kbd style="color:var(--accent)">R</kbd><span>Atualizar dados</span>
+      <kbd style="color:var(--accent)">F</kbd><span>Modo Foco</span>
+      <kbd style="color:var(--accent)">1–7</kbd><span>Filtros rápidos</span>
+      <kbd style="color:var(--accent)">← →</kbd><span>Navegar calendário</span>
+      <kbd style="color:var(--accent)">Esc</kbd><span>Fechar modal</span>
+      <kbd style="color:var(--accent)">?</kbd><span>Esta ajuda</span>
+    </div>`;
+  document.body.appendChild(el);
+  setTimeout(()=>document.addEventListener("click", e=>{
+    if(!el.contains(e.target)) el.remove();
+  }, {once:true}), 100);
+}
 
 
 // ══════════════════════════════════════════════
@@ -3914,16 +3999,26 @@ function toggleMobSearch(){
   const bar = document.getElementById("mobSearchBar");
   const inp = document.getElementById("mobSearchInput");
   const btn = document.getElementById("bnavSearch");
-  const isHidden = bar.style.display==="none";
-  bar.style.display = isHidden ? "flex" : "none";
-  btn.classList.toggle("bnav-active", isHidden);
-  if(isHidden){ inp.focus(); }
+  const isOpen = bar.classList.contains("open");
+  bar.classList.toggle("open", !isOpen);
+  btn.classList.toggle("bnav-active", !isOpen);
+  if(!isOpen){ setTimeout(()=>inp.focus(), 230); }
+  else { if(_searchRaf) cancelAnimationFrame(_searchRaf); document.getElementById("searchInput").value=""; renderAll(); }
+}
+
+// ══════════════════════════════════════════════
+// BUSCA — agenda o filtro no próximo frame (≈16ms, imperceptível)
+// ══════════════════════════════════════════════
+let _searchRaf = null;
+function debouncedSearch(){
+  if(_searchRaf) cancelAnimationFrame(_searchRaf);
+  _searchRaf = requestAnimationFrame(() => { _searchRaf = null; renderAll(); });
 }
 
 function syncMobSearch(val){
   // Sync mobile search to desktop search input
   document.getElementById("searchInput").value = val;
-  renderAll();
+  debouncedSearch();
 }
 
 function setMobFC(el){

@@ -2215,41 +2215,14 @@ function initFirebase(){
     });
   }
 
-  // Usa .on() apenas para "boletos" (dados críticos que mudam com frequência).
-  // Os demais nós usam .once() para evitar re-renders contínuos que causam
-  // scroll pro topo. Um sync periódico a cada 30s mantém tudo atualizado.
+  // Listeners em tempo real — original restaurado
   db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};_fbRenderDebounced(true);});
-
-  // Carga inicial dos nós secundários via .once()
-  function _loadSecondary(){
-    return Promise.all([
-      db.ref("cnpjs").once("value").then(s=>{cnpjs=s.val()||{};}),
-      db.ref("saldos").once("value").then(s=>{saldos=s.val()||{};}),
-      db.ref("gcoll").once("value").then(s=>{gcoll=s.val()||{};}),
-      db.ref("previsoes").once("value").then(s=>{previsoes=s.val()||{};}),
-      db.ref("saldosAnt").once("value").then(s=>{saldosAnt=s.val()||{};}),
-      db.ref("depositosPrev").once("value").then(s=>{depositosPrev=s.val()||{};})
-    ]);
-  }
-  _loadSecondary().then(()=>_fbRenderDebounced(false));
-
-  // Sync periódico a cada 30s para manter dados secundários atualizados
-  // sem re-renderizar a cada micro-mudança
-  setInterval(()=>{
-    _loadSecondary().then(()=>renderAll());
-  }, 30000);
-
-  // Também escuta gcoll em tempo real (colapso de grupos — ação local frequente)
-  // mas sem disparar renderAll, só atualiza o estado local
-  db.ref("gcoll").on("value",snap=>{
-    const newGcoll = snap.val()||{};
-    // Só re-renderiza se gcoll realmente mudou (evita loop)
-    if(JSON.stringify(newGcoll) !== JSON.stringify(gcoll)){
-      gcoll = newGcoll;
-      // Não chama renderAll — só atualiza as setas de colapso visualmente
-      _applyGcollVisual();
-    }
-  });
+  db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("depositosPrev").on("value",snap=>{depositosPrev=snap.val()||{};_fbRenderDebounced(false);});
   _snapshotSaldoAnterior();
   db.ref(".info/connected").on("value",snap=>{
     setSyncBadge(snap.val()?"ok":"err",snap.val()?"✓ Online":"⚠ Offline");
@@ -2921,17 +2894,12 @@ function filteredList(){
 // GROUP TOGGLE
 // ══════════════════════════════════════════════
 function toggleGrp(gid){
-  // Atualiza localmente e visualmente SEM esperar Firebase
-  gcoll = {...gcoll, [gid]: !gcoll[gid]};
-  _applyGcollVisual();
-  // Salva no Firebase em background (não dispara re-render graças ao listener gcoll)
-  fbSet("gcoll", gcoll);
+  const ng={...gcoll,[gid]:!gcoll[gid]};
+  fbSet("gcoll",ng);
 }
 function toggleAll(expand){
   const ng={};getGroups().forEach(g=>ng[g.id]=!expand);
-  gcoll = ng;
-  _applyGcollVisual();
-  fbSet("gcoll", ng);
+  fbSet("gcoll",ng);
 }
 
 // Aplica estado de colapso dos grupos VISUALMENTE sem re-renderizar o DOM inteiro

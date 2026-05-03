@@ -3095,6 +3095,7 @@ function openModal(id){
   const _btnDup = document.getElementById("btnSalvarDuplicar");
   if(_btnDup) _btnDup.style.display = id ? "none" : "";
   if(id){
+    const b=boletos[id];
     if(!b){alert("Boleto não encontrado.");return;}
     document.getElementById("fDesc").value=b.desc||"";
     document.getElementById("fGrupo").value=b.grupo||"";
@@ -3149,6 +3150,8 @@ function closeModal(){
 // ══════════════════════════════════════════════
 // TAREFA 2: SALVAR COM RECORRÊNCIA
 // ══════════════════════════════════════════════
+function uid(){return"b"+Date.now()+"_"+Math.random().toString(36).slice(2,7);}
+
 function saveB(){
   const desc=document.getElementById("fDesc").value.trim();
   const grupo=document.getElementById("fGrupo").value;
@@ -3164,7 +3167,6 @@ function saveB(){
   const parcelaDias=parseInt(document.getElementById("fParcelaDias").value)||30;
   const duplicar=document.getElementById("fDuplicar").checked && !editId;
   const dupQtd=parseInt(document.getElementById("fDupQtd").value)||1;
-  const dupDias=parseInt(document.getElementById("fDupDias").value)||30;
   const modalidade=document.getElementById("modPix").classList.contains("active")?"pix":"boleto";
 
   // Pix fields
@@ -3187,7 +3189,7 @@ function saveB(){
     }
   }
 
-  // Build obs: merge user obs + pix info
+  // Build obs
   let obsBase=document.getElementById("fObs").value.trim();
   if(modalidade==="pix"){
     const pixInfo=pixPayload
@@ -3211,95 +3213,64 @@ function saveB(){
       ...(pixTipo==="ted_doc"?{tedBanco,tedAgencia,tedConta,tedCpf}:{})}:{})
   };
 
-  if(editId){
-    // Edição simples — sem recorrência
-    const cur=boletos[editId]||{};
-    fbSet("boletos/"+editId,{...cur,...baseObj});
-    toast("Boleto atualizado com sucesso!","ok");
-    closeModal();
+  // Capturar editId ANTES de fechar (closeModal zera editId)
+  const _editId = editId;
+
+  // Fechar o modal imediatamente — UX responsiva
+  closeModal();
+
+  if(_editId){
+    const cur=boletos[_editId]||{};
+    fbSet("boletos/"+_editId,{...cur,...baseObj})
+      .then(()=>toast("Boleto atualizado com sucesso!","ok"))
+      .catch(()=>toast("Erro ao atualizar — tente novamente.","err"));
     return;
   }
 
-  if(recorrente && recMeses >= 2){
-    // Gera série recorrente
-    const serieId = "s"+Date.now();
-    const [baseY, baseM, baseD] = venc.split("-").map(Number);
-    const promises = [];
-
-    for(let i=0; i<recMeses; i++){
-      let m = baseM - 1 + i;   // 0-indexed
-      let y = baseY + Math.floor(m / 12);
-      m = m % 12;
-      // Ajusta dia para o último dia do mês se necessário
-      const maxDia = new Date(y, m+1, 0).getDate();
-      const dia = Math.min(baseD, maxDia);
-      const dataVenc = `${y}-${p2(m+1)}-${p2(dia)}`;
-
-      const newId = "b"+Date.now()+"_"+i;
-      promises.push(fbSet("boletos/"+newId, {
-        ...baseObj,
-        vencimento: dataVenc,
-        pago: false,
-        checks: {},
-        recorrente: true,
-        serieId
-      }));
+  if(recorrente && recMeses>=2){
+    const serieId="s"+Date.now();
+    const [baseY,baseM,baseD]=venc.split("-").map(Number);
+    const updates={};
+    for(let i=0;i<recMeses;i++){
+      let m=baseM-1+i;
+      let y=baseY+Math.floor(m/12);
+      m=m%12;
+      const maxDia=new Date(y,m+1,0).getDate();
+      const dia=Math.min(baseD,maxDia);
+      const dataVenc=`${y}-${p2(m+1)}-${p2(dia)}`;
+      updates["boletos/"+uid()]={...baseObj,vencimento:dataVenc,pago:false,checks:{},recorrente:true,serieId};
     }
+    db.ref().update(updates)
+      .then(()=>toast(`${recMeses} boletos recorrentes criados!`,"ok"))
+      .catch(()=>toast("Erro ao criar recorrência.","err"));
 
-    Promise.all(promises).then(()=>{
-      toast(`${recMeses} boletos recorrentes criados!`, "ok");
-      closeModal();
-    });
-  } else if(parcelado && parcelas >= 2){
-    // Gera parcelas (mesmo valor a cada parcelaDias dias)
-    const serieId = "p"+Date.now();
-    const baseDate = toDate(venc);
-    const promises = [];
-    for(let i=0; i<parcelas; i++){
-      const d = new Date(baseDate); d.setDate(d.getDate() + parcelaDias * i);
-      const dataVenc = dstr(d);
-      const newId = "b"+Date.now()+"_p"+i;
-      const descParcela = `${desc} (${i+1}/${parcelas})`;
-      promises.push(fbSet("boletos/"+newId, {
-        ...baseObj,
-        desc: descParcela,
-        vencimento: dataVenc,
-        pago: false,
-        checks: {},
-        parcelado: true,
-        parcelaNum: i+1,
-        parcelaTotal: parcelas,
-        serieId
-      }));
+  } else if(parcelado && parcelas>=2){
+    const serieId="p"+Date.now();
+    const baseDate=toDate(venc);
+    const updates={};
+    for(let i=0;i<parcelas;i++){
+      const d=new Date(baseDate); d.setDate(d.getDate()+parcelaDias*i);
+      updates["boletos/"+uid()]={...baseObj,desc:`${desc} (${i+1}/${parcelas})`,vencimento:dstr(d),pago:false,checks:{},parcelado:true,parcelaNum:i+1,parcelaTotal:parcelas,serieId};
     }
-    Promise.all(promises).then(()=>{
-      toast(`${parcelas} parcelas criadas!`, "ok");
-      closeModal();
-    });
-  } else if(duplicar && dupQtd >= 1) {
-    // Duplicar X vezes — todas as cópias com a mesma data do original
-    const promises = [];
-    // Original
-    const origId = "b"+Date.now()+"_d0";
-    promises.push(fbSet("boletos/"+origId, {...baseObj, vencimento:venc, pago:false, checks:{}, recorrente:false}));
-    // Cópias — mesma data, mesmo valor, mesmo fornecedor
-    for(let i=1; i<=dupQtd; i++){
-      const newId = "b"+(Date.now()+i)+"_d"+i;
-      promises.push(fbSet("boletos/"+newId, {...baseObj, vencimento:venc, pago:false, checks:{}, recorrente:false}));
+    db.ref().update(updates)
+      .then(()=>toast(`${parcelas} parcelas criadas!`,"ok"))
+      .catch(()=>toast("Erro ao criar parcelas.","err"));
+
+  } else if(duplicar && dupQtd>=1){
+    const updates={};
+    updates["boletos/"+uid()]={...baseObj,vencimento:venc,pago:false,checks:{},recorrente:false};
+    for(let i=1;i<=dupQtd;i++){
+      updates["boletos/"+uid()]={...baseObj,vencimento:venc,pago:false,checks:{},recorrente:false};
     }
-    Promise.all(promises).then(()=>{
-      toast(`✅ 1 original + ${dupQtd} cópia${dupQtd>1?"s":""} criadas!`, "ok");
-      closeModal();
-    });
+    db.ref().update(updates)
+      .then(()=>toast(`✅ 1 original + ${dupQtd} cópia${dupQtd>1?"s":""} criadas!`,"ok"))
+      .catch(()=>toast("Erro ao duplicar.","err"));
+
   } else {
-    // Avulso normal
-    const newId = "b"+Date.now();
-    const vencFinal = venc || dstr(TODAY);
-    fbSet("boletos/"+newId, {...baseObj, vencimento:vencFinal, pago:false, checks:{}, recorrente:false});
-    toast(modalidade==="pix"?"Pix salvo! ⚡":"Boleto salvo!","ok");
+    fbSet("boletos/"+uid(),{...baseObj,vencimento:venc||dstr(TODAY),pago:false,checks:{},recorrente:false})
+      .then(()=>toast(modalidade==="pix"?"Pix salvo! ⚡":"Boleto salvo!","ok"))
+      .catch(()=>toast("Erro ao salvar — tente novamente.","err"));
   }
-
-  closeModal();
 }
 
 // ══════════════════════════════════════════════

@@ -1800,6 +1800,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-g" id="btnSalvarDuplicar" onclick="ativarDuplicarESalvar()" title="Duplicar este boleto várias vezes ao salvar" style="display:none">📋 Duplicar</button>
     <button class="btn btn-p" onclick="saveB()">Salvar</button>
   </div>
 </div>
@@ -2941,6 +2942,15 @@ function onDuplicarChange(){
   }
   updateDuplicarPreview();
 }
+// Ativa o painel de duplicar via botão na barra de ações do modal
+function ativarDuplicarESalvar(){
+  const cb = document.getElementById("fDuplicar");
+  if(!cb) return;
+  cb.checked = true;
+  onDuplicarChange();
+  const box = document.getElementById("duplicarBox");
+  if(box) box.scrollIntoView({behavior:"smooth", block:"nearest"});
+}
 
 function updateDuplicarPreview(){
   const n = parseInt(document.getElementById("fDupQtd").value)||1;
@@ -2969,6 +2979,9 @@ function openModal(id){
   onParceladoChange();
   document.getElementById("fDuplicar").checked=false;
   onDuplicarChange();
+  // Mostra o botão "Duplicar" na barra de ações apenas ao criar novo boleto (não ao editar)
+  const _btnDup = document.getElementById("btnSalvarDuplicar");
+  if(_btnDup) _btnDup.style.display = id ? "none" : "";
   if(id){
     if(!b){alert("Boleto não encontrado.");return;}
     document.getElementById("fDesc").value=b.desc||"";
@@ -3518,23 +3531,32 @@ function duplicateB(id){
   if(!b) return;
   editId = null;
   populateGrupoSel();
-  document.getElementById("moTit").textContent = "📋 Duplicar Boleto";
   document.getElementById("fDesc").value = b.desc || "";
   document.getElementById("fGrupo").value = b.grupo || "";
   setMaskedValor(b.valor||0);
-  document.getElementById("fVenc").value = b.vencimento || dstr(TODAY);
+  // FIX: usa sempre a data original do boleto duplicado, nunca a data de hoje
+  document.getElementById("fVenc").value = (b.vencimento && b.vencimento.length === 10) ? b.vencimento : dstr(TODAY);
   document.getElementById("fCat").value = b.cat || "Mercadoria";
-  document.getElementById("fObs").value = b.obs || "";
+  const obsRaw = b.obs || "";
+  const obsClean = b.modalidade === "pix" ? obsRaw.split("\nPIX")[0].split("PIX ")[0].trim() : obsRaw;
+  document.getElementById("fObs").value = obsClean;
   document.getElementById("fCasaCat").value = b.casaCat || "Água";
   document.getElementById("fCartao").value = b.cartao || "";
   document.getElementById("fRecorrente").checked = false;
   onRecorrenteChange();
   document.getElementById("fParcelado") && (document.getElementById("fParcelado").checked = false);
   onParceladoChange && onParceladoChange();
+  // FIX: mostra o box de duplicar e habilita por padrão ao duplicar boleto existente
   document.getElementById("fDuplicar").checked = false;
   onDuplicarChange();
+  // Mostra o botão Duplicar na barra de ações
+  const _btnDup2 = document.getElementById("btnSalvarDuplicar");
+  if(_btnDup2 && b.modalidade !== "pix") _btnDup2.style.display = "";
   setModalidade(b.modalidade||"boleto", false);
-  document.getElementById("moTit").textContent="📋 Duplicar Lançamento";
+  // FIX: garante que duplicarBox aparece mesmo vindo da duplicação (não é edição)
+  const duplicarBox = document.getElementById("duplicarBox");
+  if(duplicarBox && b.modalidade !== "pix") duplicarBox.style.display = "";
+  document.getElementById("moTit").textContent = "📋 Duplicar Lançamento";
   if(b.modalidade==="pix"){
     document.getElementById("fPixTipo").value=b.pixTipo||"cpf";
     document.getElementById("fPixChave").value=b.pixChave||"";

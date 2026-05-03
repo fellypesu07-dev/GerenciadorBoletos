@@ -346,6 +346,11 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   header{
     height: 52px;
     padding: 0 12px;
+    overflow: hidden;
+  }
+  .hright {
+    flex-wrap: nowrap;
+    overflow: hidden;
   }
   .logo{ font-size: 15px; }
 
@@ -356,7 +361,10 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
   .hright .notif-btn,
   .hright [onclick*="openChartModal"],
   .hright [onclick*="openLD"],
-  .hright [onclick*="openCNPJModal"] {
+  .hright [onclick*="openCNPJModal"],
+  .hright .theme-picker,
+  .hright #focoBtn,
+  .hright [onclick*="openSaldoModal"] {
     display: none !important;
   }
   /* + Boleto gets full-width feel but stays compact */

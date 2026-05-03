@@ -2202,8 +2202,8 @@ function _snapshotSaldoAnterior(){
           const gid=Object.keys(_c).find(k=>_c[k]===cnpj);
           if(!gid)return;
           const gs=_s[gid]||{};
-          // bancos = palavras que coincidem com 'Bradesco','Caixa',etc — reutilizar lógica simples
-          const tot=Object.values(gs).reduce((a,v)=>a+Number(v||0),0);
+          // Soma apenas valores numéricos do nó de saldo (exclui campos extras não-banco)
+          const tot=Object.values(gs).reduce((a,v)=>{ const n=Number(v); return a+(isFinite(n)?n:0); },0);
           const ab=Object.values(_b).filter(b=>b&&b.grupo===gid&&!b.pago)
             .reduce((a,b)=>a+Number(b.valor||0),0);
           updates['saldosAnt/'+gid+'/'+ontem]=tot-ab;
@@ -2312,12 +2312,21 @@ function status(b){
 // ══════════════════════════════════════════════
 // HELPERS
 // ══════════════════════════════════════════════
-function bancosDoGrupo(nome){
-  const n=(nome||"").toLowerCase();
-  if(n.includes("lanchonete"))return["Stone Matriz","Itaú","Santander"];
-  if(n.includes("restaurante"))return["Stone Filial","Itaú","Santander"];
-  if(n.includes("vicfel"))return["Santander","Stone"];
-  return["Banco 1","Banco 2"];
+function bancosDoGrupo(nome, gid){
+  // Lê os bancos reais salvos no Firebase para este grupo
+  if(gid && saldos[gid] && Object.keys(saldos[gid]).length){
+    return Object.keys(saldos[gid]);
+  }
+  // Fallback: tenta achar o gid pelo nome do CNPJ
+  if(!gid){
+    const entry = Object.entries(cnpjs).find(([,c])=>(c.nome||"")===(nome||""));
+    if(entry){
+      const [fid] = entry;
+      if(saldos[fid] && Object.keys(saldos[fid]).length) return Object.keys(saldos[fid]);
+    }
+  }
+  // Fallback final: nenhum saldo cadastrado ainda — lista vazia
+  return [];
 }
 
 function getGroups(){
@@ -2718,7 +2727,7 @@ function renderSaldoPanel(){
 
   let h="";
   groups.forEach(g=>{
-    const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
+    const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name,g.id);
     const tot=bancos.reduce((a,b)=>a+Number(gs[b]||0),0);
     // Previsão de entradas do dia para este CNPJ
     const prev=Number(previsoes[g.id]||0);
@@ -3353,7 +3362,7 @@ function openSaldoModal(){
   const groups=getGroups().filter(g=>!g.isCasa);
   let h="";
   groups.forEach(g=>{
-    const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name);
+    const gs=saldos[g.id]||{},bancos=bancosDoGrupo(g.name,g.id);
     const gd=depositosPrev[g.id]||{};
     h+=`<div>
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
@@ -4504,7 +4513,7 @@ function openPagar(id){
     // Casa: mostrar TODOS os bancos de todos os CNPJs, ordenados por saldo
     const allBancos = {}; // bankName -> {saldo, gid}
     Object.entries(cnpjs).forEach(([gid, c]) => {
-      const bList = bancosDoGrupo(c.nome);
+      const bList = bancosDoGrupo(c.nome, gid);
       const gSaldos = saldos[gid] || {};
       bList.forEach(bankName => {
         if(!(bankName in allBancos)){
@@ -4517,7 +4526,7 @@ function openPagar(id){
     gs = Object.fromEntries(sorted.map(([name,v]) => [name, v.saldo]));
     window._casaBancoGidMap = Object.fromEntries(sorted.map(([name,v]) => [name, v.gid]));
   } else {
-    bancos = g ? bancosDoGrupo(g.name) : [];
+    bancos = g ? bancosDoGrupo(g.name, g.id) : [];
     gs = saldos[grupo]||{};
     window._casaBancoGidMap = null;
   }
@@ -4567,9 +4576,9 @@ function confirmPagar(){
     saldoSnapshotGrupo = JSON.parse(JSON.stringify(gs)); // snapshot BEFORE subtraction
     const saldoAtual = Number(gs[bancoPago]||0);
     const valor = Number(b.valor||0);
-    gs[bancoPago] = Math.max(0, saldoAtual - valor);
-    const nsSaldos = {...saldos, [saldoGrupoId]: gs};
-    fbSet('saldos', nsSaldos);
+    const novoValor = Math.max(0, saldoAtual - valor);
+    // Write atômico apenas no campo do banco — evita race condition entre grupos
+    fbSet('saldos/'+saldoGrupoId+'/'+bancoPago, novoValor);
   }
   if(b.modalidade==='pix' && (b.pixChave||b.pixPayload)){
     const text = b.pixPayload || b.pixChave;
@@ -4580,7 +4589,8 @@ function confirmPagar(){
   toastUndo(`✓ "${desc}" marcado como pago${bancoLabel}`, ()=>{
     fbSet('boletos/'+id, snapshot);
     if(bancoPago !== '__nenhum__' && saldoGrupoId && saldoGrupoId !== '__casa__' && saldoSnapshotGrupo){
-      fbSet('saldos', {...saldos, [saldoGrupoId]: saldoSnapshotGrupo});
+      // Restaura apenas o campo do banco — evita sobrescrever outros grupos
+      fbSet('saldos/'+saldoGrupoId+'/'+bancoPago, saldoSnapshotGrupo[bancoPago]??0);
     }
   });
 }
@@ -4658,10 +4668,17 @@ function desfazerPago(id){
 
   // Restaurar saldo do banco se havia sido subtraído
   const restoreSaldo = () => {
-    if(bancoPago && bancoPago !== '__nenhum__' && b.grupo){
-      const gs = JSON.parse(JSON.stringify(saldos[b.grupo]||{}));
-      gs[bancoPago] = Number(gs[bancoPago]||0) + valor;
-      fbSet('saldos', {...saldos, [b.grupo]: gs});
+    if(bancoPago && bancoPago !== '__nenhum__'){
+      // Resolve o grupo real (boleto da Casa usa o grupo do banco via _casaBancoGidMap)
+      let gid = b.grupo;
+      if(gid === '__casa__' && window._casaBancoGidMap && window._casaBancoGidMap[bancoPago]){
+        gid = window._casaBancoGidMap[bancoPago];
+      }
+      if(gid && gid !== '__casa__'){
+        const novoValor = Number((saldos[gid]||{})[bancoPago]||0) + valor;
+        // Write atômico apenas no campo do banco — evita race condition entre grupos
+        fbSet('saldos/'+gid+'/'+bancoPago, novoValor);
+      }
     }
   };
 
@@ -4673,10 +4690,15 @@ function desfazerPago(id){
   toastUndo(`↩ Pagamento de "${desc}" desfeito`, ()=>{
     // Refazer: marcar como pago novamente e subtrair saldo
     fbSet('boletos/'+id, snapshot);
-    if(bancoPago && bancoPago !== '__nenhum__' && b.grupo){
-      const gs = JSON.parse(JSON.stringify(saldos[b.grupo]||{}));
-      gs[bancoPago] = Math.max(0, Number(gs[bancoPago]||0) - valor);
-      fbSet('saldos', {...saldos, [b.grupo]: gs});
+    if(bancoPago && bancoPago !== '__nenhum__'){
+      let gid = b.grupo;
+      if(gid === '__casa__' && window._casaBancoGidMap && window._casaBancoGidMap[bancoPago]){
+        gid = window._casaBancoGidMap[bancoPago];
+      }
+      if(gid && gid !== '__casa__'){
+        const novoValor = Math.max(0, Number((saldos[gid]||{})[bancoPago]||0) - valor);
+        fbSet('saldos/'+gid+'/'+bancoPago, novoValor);
+      }
     }
   }, 6000);
 }
@@ -4749,7 +4771,7 @@ function updateDashboard(){
     let bancoSugeridoHTML = '';
     if(!g.isCasa){
       const gs = saldos[g.id]||{};
-      const bancos = bancosDoGrupo(g.name);
+      const bancos = bancosDoGrupo(g.name, g.id);
       let melhorBanco = null, melhorSaldo = -Infinity;
       bancos.forEach(b => {
         const s = Number(gs[b]||0);
@@ -5216,6 +5238,7 @@ if(_saldoDashCollapsed) _applySaldoDashCollapse();
 <div id="gb-refresh-toast" style="display:none" aria-live="polite">
   <span id="gb-refresh-msg">Nova versão disponível</span>
   <button id="gb-refresh-btn" onclick="gbForceReload()">Atualizar</button>
+  <button id="gb-refresh-close" onclick="document.getElementById('gb-refresh-toast').style.display='none'" aria-label="Fechar">×</button>
 </div>
 <button id="gb-reload-fab" title="Verificar atualização" onclick="gbForceReload()" aria-label="Recarregar app">↻</button>
 
@@ -5225,6 +5248,8 @@ if(_saldoDashCollapsed) _applySaldoDashCollapse();
 #gb-refresh-toast[style*="display:flex"]{display:flex!important;}
 #gb-refresh-btn{background:#c8f135;color:#111;border:none;border-radius:999px;padding:7px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
 #gb-refresh-btn:hover{opacity:.85;}
+#gb-refresh-close{background:transparent;border:none;color:#8a8a80;font-size:18px;line-height:1;cursor:pointer;padding:0 2px;margin-left:-4px;}
+#gb-refresh-close:hover{color:#f0ede6;}
 #gb-reload-fab{position:fixed;top:58px;right:12px;width:34px;height:34px;border-radius:50%;background:rgba(26,26,24,.85);color:#c8f135;border:1px solid #3a3a34;font-size:17px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9998;transition:opacity .2s,transform .2s;display:flex;align-items:center;justify-content:center;}
 #gb-reload-fab:hover{opacity:.8;transform:rotate(30deg);}
 #gb-reload-fab:active{transform:scale(.9) rotate(30deg);}
@@ -5235,26 +5260,60 @@ if(_saldoDashCollapsed) _applySaldoDashCollapse();
 <script>
 (function(){
   if(!('serviceWorker' in navigator)) return;
+
+  function showUpdateToast(){
+    document.getElementById('gb-refresh-toast').style.display='flex';
+  }
+
+  // Listener de mensagem do SW (ex: SW envia UPDATE_AVAILABLE via postMessage)
+  navigator.serviceWorker.addEventListener('message', e=>{
+    if(e.data && e.data.type==='UPDATE_AVAILABLE') showUpdateToast();
+  });
+
+  // Listener para quando o controller muda (novo SW assumiu o controle)
+  // Não faz reload automático — apenas mostra o toast
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    // Controllerchange disparou por SKIP_WAITING acionado externamente — mostra toast
+    // (se veio do gbForceReload, o reload já está sendo feito lá)
+    if(!window._gbReloading) showUpdateToast();
+  });
+
   navigator.serviceWorker.register('/sw.js').then(reg=>{
-    document.addEventListener('visibilitychange',()=>{
+    // Detecta update via onupdatefound (fallback robusto além da mensagem do SW)
+    function trackInstalling(sw){
+      sw.addEventListener('statechange', ()=>{
+        if(sw.state==='installed' && navigator.serviceWorker.controller){
+          // Novo SW instalado e pronto em waiting — notifica
+          showUpdateToast();
+        }
+      });
+    }
+
+    if(reg.installing) trackInstalling(reg.installing);
+
+    reg.addEventListener('updatefound', ()=>{
+      if(reg.installing) trackInstalling(reg.installing);
+    });
+
+    // Verifica update ao voltar para aba visível
+    document.addEventListener('visibilitychange', ()=>{
       if(document.visibilityState==='visible') reg.update();
     });
-  });
-  navigator.serviceWorker.addEventListener('message',e=>{
-    if(e.data&&e.data.type==='UPDATE_AVAILABLE'){
-      document.getElementById('gb-refresh-toast').style.display='flex';
-    }
-  });
+  }).catch(err => console.warn('[SW] Falha ao registrar:', err));
 })();
+
 function gbForceReload(){
+  // Garante que doReload só executa uma vez (evita duplo reload)
+  let _reloaded = false;
   const doReload = () => {
+    if(_reloaded) return;
+    _reloaded = true;
+    window._gbReloading = true;
     // Limpa todos os caches da Cache API antes de recarregar
     if('caches' in window){
-      caches.keys().then(keys => {
-        Promise.all(keys.map(k => caches.delete(k))).then(() => {
-          window.location.reload();
-        });
-      }).catch(() => window.location.reload());
+      caches.keys().then(keys =>
+        Promise.all(keys.map(k => caches.delete(k)))
+      ).finally(() => window.location.reload());
     } else {
       window.location.reload();
     }
@@ -5263,14 +5322,22 @@ function gbForceReload(){
   if('serviceWorker' in navigator){
     navigator.serviceWorker.getRegistration().then(reg=>{
       if(reg && reg.waiting){
-        // Aguarda o novo SW tomar controle antes de recarregar
+        // Novo SW está em waiting — pede para assumir controle
         navigator.serviceWorker.addEventListener('controllerchange', doReload, { once: true });
         reg.waiting.postMessage({type:'SKIP_WAITING'});
-        // Timeout de segurança caso o controllerchange não dispare
-        setTimeout(doReload, 2000);
+        // Timeout de segurança caso controllerchange não dispare
+        setTimeout(doReload, 2500);
       } else if(reg){
-        // Força update do SW e recarrega
-        reg.update().then(doReload).catch(doReload);
+        // Sem SW em waiting — força checagem de update e recarrega
+        reg.update().then(()=>{
+          if(reg.waiting){
+            navigator.serviceWorker.addEventListener('controllerchange', doReload, { once: true });
+            reg.waiting.postMessage({type:'SKIP_WAITING'});
+            setTimeout(doReload, 2500);
+          } else {
+            doReload();
+          }
+        }).catch(doReload);
       } else {
         doReload();
       }

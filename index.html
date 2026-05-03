@@ -1776,6 +1776,27 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <p style="font-size:10px;color:var(--muted)">A chave fica salva no campo Obs. para facilitar o pagamento.</p>
     </div>
 
+    <!-- ── DUPLICAR X VEZES BOX ── -->
+    <div class="rec-box full" id="duplicarBox">
+      <label class="rec-toggle">
+        <input type="checkbox" id="fDuplicar" onchange="onDuplicarChange()">
+        <span>📋 Duplicar ao salvar</span>
+      </label>
+      <div class="rec-opts hidden" id="duplicarOpts">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <div class="fi" style="flex-direction:row;align-items:center;gap:8px;flex:1;min-width:130px">
+            <label style="font-size:11px;color:var(--muted);white-space:nowrap">Nº de cópias</label>
+            <input type="number" id="fDupQtd" value="1" min="1" max="36" style="width:60px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 8px;outline:none;" oninput="updateDuplicarPreview()">
+          </div>
+          <div class="fi" style="flex-direction:row;align-items:center;gap:8px;flex:1;min-width:130px">
+            <label style="font-size:11px;color:var(--muted);white-space:nowrap">Intervalo (dias)</label>
+            <input type="number" id="fDupDias" value="30" min="1" max="365" style="width:60px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 8px;outline:none;" oninput="updateDuplicarPreview()">
+          </div>
+        </div>
+        <div id="duplicarPreview" style="margin-top:6px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.8"></div>
+      </div>
+    </div>
+
   </div>
   <div class="mact">
     <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
@@ -2312,6 +2333,8 @@ function applyLD(){
   onRecorrenteChange();
   document.getElementById("fParcelado").checked=false;
   onParceladoChange();
+  document.getElementById("fDuplicar").checked=false;
+  onDuplicarChange();
   editId=null;
   onGrupoChange();onCasaCatChange();
   document.getElementById("moB").classList.add("open");
@@ -2906,6 +2929,36 @@ function updateParcelaPreview(){
   el.innerHTML = lines.join("<br>");
 }
 
+function onDuplicarChange(){
+  const checked = document.getElementById("fDuplicar").checked;
+  document.getElementById("duplicarOpts").classList.toggle("hidden", !checked);
+  // Desabilita recorrente e parcelado quando duplicar está ativo
+  if(checked){
+    document.getElementById("fRecorrente").checked = false;
+    document.getElementById("fParcelado").checked = false;
+    onRecorrenteChange();
+    onParceladoChange();
+  }
+  updateDuplicarPreview();
+}
+
+function updateDuplicarPreview(){
+  const n = parseInt(document.getElementById("fDupQtd").value)||1;
+  const dias = parseInt(document.getElementById("fDupDias").value)||30;
+  const venc = document.getElementById("fVenc").value;
+  const desc = document.getElementById("fDesc").value.trim();
+  const el = document.getElementById("duplicarPreview");
+  if(!venc){ el.textContent = "Preencha o vencimento para ver o preview."; return; }
+  const base = toDate(venc);
+  let lines = [`📌 Original — ${fmtD(venc)}${desc?" — "+desc:""}`];
+  for(let i=1; i<=Math.min(n,5); i++){
+    const d = new Date(base); d.setDate(d.getDate() + dias*i);
+    lines.push(`📋 Cópia ${i}/${n} — ${fmtD(dstr(d))}`);
+  }
+  if(n>5) lines.push(`… +${n-5} cópias adicionais`);
+  el.innerHTML = lines.join("<br>");
+}
+
 function openModal(id){
   editId=id||null;
   populateGrupoSel();
@@ -2914,8 +2967,9 @@ function openModal(id){
   onRecorrenteChange();
   document.getElementById("fParcelado").checked=false;
   onParceladoChange();
+  document.getElementById("fDuplicar").checked=false;
+  onDuplicarChange();
   if(id){
-    const b=boletos[id];
     if(!b){alert("Boleto não encontrado.");return;}
     document.getElementById("fDesc").value=b.desc||"";
     document.getElementById("fGrupo").value=b.grupo||"";
@@ -2983,6 +3037,9 @@ function saveB(){
   const parcelado=document.getElementById("fParcelado").checked;
   const parcelas=parseInt(document.getElementById("fParcelas").value)||3;
   const parcelaDias=parseInt(document.getElementById("fParcelaDias").value)||30;
+  const duplicar=document.getElementById("fDuplicar").checked && !editId;
+  const dupQtd=parseInt(document.getElementById("fDupQtd").value)||1;
+  const dupDias=parseInt(document.getElementById("fDupDias").value)||30;
   const modalidade=document.getElementById("modPix").classList.contains("active")?"pix":"boleto";
 
   // Pix fields
@@ -3091,6 +3148,23 @@ function saveB(){
     }
     Promise.all(promises).then(()=>{
       toast(`${parcelas} parcelas criadas!`, "ok");
+    });
+  } else if(duplicar && dupQtd >= 1) {
+    // Duplicar X vezes com intervalo em dias
+    const baseDate = toDate(venc);
+    const promises = [];
+    // Original
+    const origId = "b"+Date.now()+"_d0";
+    promises.push(fbSet("boletos/"+origId, {...baseObj, vencimento:venc, pago:false, checks:{}, recorrente:false}));
+    // Cópias
+    for(let i=1; i<=dupQtd; i++){
+      const d = new Date(baseDate); d.setDate(d.getDate() + dupDias * i);
+      const dataVenc = dstr(d);
+      const newId = "b"+(Date.now()+i)+"_d"+i;
+      promises.push(fbSet("boletos/"+newId, {...baseObj, vencimento:dataVenc, pago:false, checks:{}, recorrente:false}));
+    }
+    Promise.all(promises).then(()=>{
+      toast(`✅ 1 original + ${dupQtd} cópia${dupQtd>1?"s":""} criadas!`, "ok");
     });
   } else {
     // Avulso normal
@@ -3328,9 +3402,11 @@ function setModalidade(mode, updateTitle=true){
     document.getElementById("fPixPayload").value="";
     document.getElementById("pixDecoded").style.display="none";
   }
-  // Hide parcelamento in pix mode
+  // Hide parcelamento and duplicar in pix mode
   const parcelaBox = document.getElementById("parcelaBox");
   if(parcelaBox) parcelaBox.style.display = isPix ? "none" : "";
+  const duplicarBox = document.getElementById("duplicarBox");
+  if(duplicarBox) duplicarBox.style.display = (isPix || editId) ? "none" : "";
   onPixTipoChange();
 }
 
@@ -3446,13 +3522,17 @@ function duplicateB(id){
   document.getElementById("fDesc").value = b.desc || "";
   document.getElementById("fGrupo").value = b.grupo || "";
   setMaskedValor(b.valor||0);
-  document.getElementById("fVenc").value = dstr(TODAY);
+  document.getElementById("fVenc").value = b.vencimento || dstr(TODAY);
   document.getElementById("fCat").value = b.cat || "Mercadoria";
   document.getElementById("fObs").value = b.obs || "";
   document.getElementById("fCasaCat").value = b.casaCat || "Água";
   document.getElementById("fCartao").value = b.cartao || "";
   document.getElementById("fRecorrente").checked = false;
   onRecorrenteChange();
+  document.getElementById("fParcelado") && (document.getElementById("fParcelado").checked = false);
+  onParceladoChange && onParceladoChange();
+  document.getElementById("fDuplicar").checked = false;
+  onDuplicarChange();
   setModalidade(b.modalidade||"boleto", false);
   document.getElementById("moTit").textContent="📋 Duplicar Lançamento";
   if(b.modalidade==="pix"){

@@ -1125,7 +1125,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
    MOBILE DASHBOARD (v5)
 ════════════════════════════════════════════ */
 @media(max-width:480px) {
-  .dash-body { grid-template-columns: 1fr; }
+  .dash-body { grid-template-columns: repeat(2, 1fr) !important; }
   .dash-stat { border-right: none; border-bottom: 1px solid var(--border); }
   .dash-stat:last-child { border-bottom: none; }
 }
@@ -1393,27 +1393,37 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   <!-- MAIN -->
   <div class="main">
     <div class="alertbar" id="alertBar" style="display:none" role="alert">⚠️ <span id="alertMsg"></span></div>
-    <!-- DASHBOARD RESUMO (v5) -->
+    <!-- DASHBOARD RESUMO (v6 — útil) -->
     <div class="dash-panel" id="dashPanel">
       <div class="dash-header" onclick="toggleDash()" aria-expanded="true" aria-controls="dashBody" role="button" tabindex="0" onkeydown="if(event.key==='Enter')toggleDash()">
-        <div class="dash-title">📊 Dashboard Resumo <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
+        <div class="dash-title">📊 Dashboard <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
         <span class="dash-chevron" aria-hidden="true">▼</span>
       </div>
-      <div class="dash-body" id="dashBody">
+      <div class="dash-body" id="dashBody" style="grid-template-columns:repeat(5,1fr)">
         <div class="dash-stat">
-          <div class="dash-stat-lbl">💸 Maior Gasto do Mês</div>
-          <div class="dash-stat-val" id="dashMaiorGasto">—</div>
-          <div class="dash-stat-sub" id="dashMaiorGastoDesc">—</div>
+          <div class="dash-stat-lbl">⚠️ Vencidos</div>
+          <div class="dash-stat-val" id="dashVencidos" style="color:var(--danger)">—</div>
+          <div class="dash-stat-sub" id="dashVencidosVal">—</div>
         </div>
         <div class="dash-stat">
-          <div class="dash-stat-lbl">🏆 Fornecedor Frequente</div>
-          <div class="dash-stat-val" id="dashFornFreq">—</div>
-          <div class="dash-stat-sub" id="dashFornFreqQtd">—</div>
+          <div class="dash-stat-lbl">🔥 Vencem Hoje</div>
+          <div class="dash-stat-val" id="dashHoje" style="color:#ff9988">—</div>
+          <div class="dash-stat-sub" id="dashHojeVal">—</div>
         </div>
         <div class="dash-stat">
-          <div class="dash-stat-lbl">⏱ Média de Atraso</div>
-          <div class="dash-stat-val" id="dashMedAtraso">—</div>
-          <div class="dash-stat-sub" id="dashMedAtrasoSub">em dias</div>
+          <div class="dash-stat-lbl">📅 Próx. 7 dias</div>
+          <div class="dash-stat-val" id="dashProx7" style="color:var(--blue)">—</div>
+          <div class="dash-stat-sub" id="dashProx7Val">—</div>
+        </div>
+        <div class="dash-stat">
+          <div class="dash-stat-lbl">✅ Pagos no Mês</div>
+          <div class="dash-stat-val" id="dashPagosMes" style="color:var(--ok)">—</div>
+          <div class="dash-stat-sub" id="dashPagosMesQtd">—</div>
+        </div>
+        <div class="dash-stat" style="border-right:none">
+          <div class="dash-stat-lbl">💰 Saldo Líquido</div>
+          <div class="dash-stat-val" id="dashSaldoLiq">—</div>
+          <div class="dash-stat-sub" id="dashSaldoLiqSub">bancos − abertos</div>
         </div>
       </div>
     </div>
@@ -2441,13 +2451,15 @@ function renderSaldoPanel(){
     const prevTag=prev>0?`<span style="font-size:9px;color:var(--ok);font-family:'DM Mono',monospace;margin-left:4px">(+${fmtR(prev)} prev.)</span>`:'';
     const modeFootLabel = _saldoModo==='mes' ? ' (mês)' : _saldoModo==='dia' ? ' (hoje)' : '';
     const gd = depositosPrev[g.id]||{};
+    // Saldo anterior label contextual
+    const antLabel = _saldoModo==='dia' ? 'Saldo ontem:' : _saldoModo==='mes' ? 'Saldo início do mês:' : 'Saldo ontem:';
     h+=`<div class="sg">
       <div class="sg-head"><div class="sg-bar" style="background:${g.color}"></div><div class="sg-name">${g.name}${modeTag}</div></div>
       <div class="sg-body">${bancos.map(b=>{
         const dep=Number(gd[b]||0);
         return `<div class="banco-row"><span class="banco-nm">${b}</span><div class="sg-banco-valwrap"><span class="banco-vl" style="color:${Number(gs[b]||0)>0?"var(--ok)":"var(--muted)"}">${fmtR(gs[b]||0)}</span>${dep>0?`<span class="sg-previa" style="color:var(--ok)">(+dep. ${fmtR(dep)})</span>`:''}</div></div>`;
       }).join("")}
-      <div class="sg-dia-ant">Saldo ontem: <strong>${saldoAntStr}</strong></div></div>
+      <div class="sg-dia-ant">${antLabel} <strong>${saldoAntStr}</strong></div></div>
       <div class="sg-foot"><span class="sg-bol">Boletos${modeFootLabel}: ${fmtR(ab)}${prevTag}</span><span class="sg-sobra" style="color:${s>=0?"var(--ok)":"var(--danger)"}">${s>=0?"+":""}${fmtR(s)}</span></div>
     </div>`;
   });
@@ -2576,7 +2588,7 @@ function renderGroups(){
             <div class="bc-meta">${fmtD(b.vencimento)} · ${duEl}</div>
             ${catLabel?`<div class="bc-meta">${escHTML(catLabel)}</div>`:""}
             <div class="bc-acts">
-              ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')">✓ Pago</button>`:""}
+              ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')">✓ Pago</button>`:`<button class="btn btn-warn btn-sm" onclick="desfazerPago('${b.id}')" title="Desfazer pagamento" style="background:rgba(240,192,64,.15);color:var(--warn);border:1px solid var(--warn)44">↩ Desfazer</button>`}
               <button class="btn btn-g btn-sm" onclick="editB('${b.id}')">✏</button>
               <button class="btn btn-g btn-sm" onclick="duplicateB('${b.id}')">⧉</button>
               <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')">🗑</button>
@@ -2626,7 +2638,7 @@ function renderGroups(){
             <td style="max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:10px" title="${escHTML(b.obs||"")}">${escHTML(b.obs||"—")}</td>
             <td>
               <div class="act-btns">
-                ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')" title="Marcar como pago">✓ Pago</button>`:""}
+                ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')" title="Marcar como pago">✓ Pago</button>`:`<button class="btn btn-sm" onclick="desfazerPago('${b.id}')" title="Desfazer pagamento" style="background:rgba(240,192,64,.15);color:var(--warn);border:1px solid var(--warn)44;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px">↩ Desfazer</button>`}
                 <button class="btn btn-g btn-sm" onclick="editB('${b.id}')" title="Editar boleto">✏</button>
                 <button class="btn btn-g btn-sm" onclick="duplicateB('${b.id}')" title="Duplicar boleto">⧉</button>
                 <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')">🗑</button>
@@ -4063,8 +4075,10 @@ function confirmPagar(){
   // Mark boleto as paid
   fbSet('boletos/'+id, {...b, pago:true, pagoEm, bancoPago: bancoPago==='__nenhum__'?null:bancoPago});
   // Subtract from bank balance if applicable
+  let saldoSnapshotGrupo = null;
   if(bancoPago !== '__nenhum__' && b.grupo){
     const gs = JSON.parse(JSON.stringify(saldos[b.grupo]||{}));
+    saldoSnapshotGrupo = JSON.parse(JSON.stringify(gs)); // snapshot BEFORE subtraction
     const saldoAtual = Number(gs[bancoPago]||0);
     const valor = Number(b.valor||0);
     gs[bancoPago] = Math.max(0, saldoAtual - valor);
@@ -4079,8 +4093,8 @@ function confirmPagar(){
   const bancoLabel = bancoPago !== '__nenhum__' ? ` via ${bancoPago}` : '';
   toastUndo(`✓ "${desc}" marcado como pago${bancoLabel}`, ()=>{
     fbSet('boletos/'+id, snapshot);
-    if(bancoPago !== '__nenhum__' && b.grupo){
-      fbSet('saldos', saldos);
+    if(bancoPago !== '__nenhum__' && b.grupo && saldoSnapshotGrupo){
+      fbSet('saldos', {...saldos, [b.grupo]: saldoSnapshotGrupo});
     }
   });
 }
@@ -4145,40 +4159,100 @@ function _applySaldoDashCollapse(){
   if(hdr) hdr.setAttribute('aria-expanded', _saldoDashCollapsed ? 'false' : 'true');
 }
 
+// ════════════════════════════════════════════
+// v6 — DESFAZER PAGO (com restauro de saldo)
+// ════════════════════════════════════════════
+function desfazerPago(id){
+  const b = boletos[id];
+  if(!b || !b.pago) return;
+  const desc = b.desc || 'boleto';
+  const bancoPago = b.bancoPago;
+  const valor = Number(b.valor||0);
+  const snapshot = JSON.parse(JSON.stringify(b));
+
+  // Restaurar saldo do banco se havia sido subtraído
+  const restoreSaldo = () => {
+    if(bancoPago && bancoPago !== '__nenhum__' && b.grupo){
+      const gs = JSON.parse(JSON.stringify(saldos[b.grupo]||{}));
+      gs[bancoPago] = Number(gs[bancoPago]||0) + valor;
+      fbSet('saldos', {...saldos, [b.grupo]: gs});
+    }
+  };
+
+  // Desmarcar como pago
+  const {pago, pagoEm, bancoPago:_bp, ...rest} = b;
+  fbSet('boletos/'+id, {...rest, pago:false});
+  restoreSaldo();
+
+  toastUndo(`↩ Pagamento de "${desc}" desfeito`, ()=>{
+    // Refazer: marcar como pago novamente e subtrair saldo
+    fbSet('boletos/'+id, snapshot);
+    if(bancoPago && bancoPago !== '__nenhum__' && b.grupo){
+      const gs = JSON.parse(JSON.stringify(saldos[b.grupo]||{}));
+      gs[bancoPago] = Math.max(0, Number(gs[bancoPago]||0) - valor);
+      fbSet('saldos', {...saldos, [b.grupo]: gs});
+    }
+  }, 6000);
+}
+
+// ════════════════════════════════════════════
+// v6 — DASHBOARD RESUMO ÚTIL
+// ════════════════════════════════════════════
 function updateDashboard(){
   const now = new Date();
   const currentMonthStr = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
   const allB = boletoArr();
-  
-  // Maior gasto do mês (pagos no mês corrente)
-  const pagosMes = allB.filter(b => b.pago && b.vencimento && b.vencimento.startsWith(currentMonthStr));
-  let maiorGasto = 0, maiorDesc = '—';
-  pagosMes.forEach(b=>{ if((b.valor||0) > maiorGasto){ maiorGasto=(b.valor||0); maiorDesc=b.desc||'—'; } });
-  const elMG = document.getElementById('dashMaiorGasto');
-  const elMGD = document.getElementById('dashMaiorGastoDesc');
-  if(elMG) elMG.textContent = maiorGasto > 0 ? fmtR(maiorGasto) : '—';
-  if(elMGD) elMGD.textContent = maiorDesc.length > 22 ? maiorDesc.slice(0,22)+'…' : maiorDesc;
+  const d7 = new Set(next7DU());
+  const hojeStr = dstr(TODAY);
 
-  // Fornecedor mais frequente (todos os boletos pendentes/vencidos)
-  const freq = {};
-  allB.filter(b => !b.pago).forEach(b=>{ const k = (b.desc||'').trim(); if(k) freq[k] = (freq[k]||0) + 1; });
-  let topForn = '—', topQtd = 0;
-  Object.entries(freq).forEach(([k,v])=>{ if(v>topQtd){ topForn=k; topQtd=v; } });
-  const elFF = document.getElementById('dashFornFreq');
-  const elFFQ = document.getElementById('dashFornFreqQtd');
-  if(elFF) elFF.textContent = topForn.length > 20 ? topForn.slice(0,20)+'…' : topForn;
-  if(elFFQ) elFFQ.textContent = topQtd > 1 ? `${topQtd}× no histórico` : topForn !== '—' ? '1× no histórico' : '—';
-
-  // Média de atraso (vencidos, diferença em dias)
+  // Vencidos
   const vencidos = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
-  let somaAtraso = 0;
-  vencidos.forEach(b=>{ somaAtraso += Math.round((TODAY - toDate(b.vencimento)) / 86400000); });
-  const medAtraso = vencidos.length ? Math.round(somaAtraso / vencidos.length) : 0;
-  const elMA = document.getElementById('dashMedAtraso');
-  const elMAS = document.getElementById('dashMedAtrasoSub');
-  if(elMA) elMA.textContent = vencidos.length ? medAtraso + ' dias' : '0 dias';
-  if(elMAS) elMAS.textContent = vencidos.length ? `${vencidos.length} vencido${vencidos.length > 1 ? 's' : ''}` : 'sem atrasos';
-  if(elMA) elMA.style.color = medAtraso > 7 ? 'var(--danger)' : medAtraso > 0 ? 'var(--warn)' : 'var(--ok)';
+  const vencidosVal = vencidos.reduce((a,b)=>a+Number(b.valor||0),0);
+  const elV = document.getElementById('dashVencidos');
+  const elVV = document.getElementById('dashVencidosVal');
+  if(elV) elV.textContent = vencidos.length;
+  if(elVV) elVV.textContent = vencidos.length ? fmtR(vencidosVal) : 'nenhum';
+  if(elV) elV.style.color = vencidos.length > 0 ? 'var(--danger)' : 'var(--ok)';
+
+  // Vencem hoje
+  const hoje = allB.filter(b => !b.pago && b.vencimento === hojeStr);
+  const hojeVal = hoje.reduce((a,b)=>a+Number(b.valor||0),0);
+  const elH = document.getElementById('dashHoje');
+  const elHV = document.getElementById('dashHojeVal');
+  if(elH) elH.textContent = hoje.length;
+  if(elHV) elHV.textContent = hoje.length ? fmtR(hojeVal) : 'nenhum';
+  if(elH) elH.style.color = hoje.length > 0 ? '#ff9988' : 'var(--ok)';
+
+  // Próximos 7 DU (excluindo hoje)
+  const prox7 = allB.filter(b => !b.pago && b.vencimento && d7.has(b.vencimento) && b.vencimento !== hojeStr);
+  const prox7Val = prox7.reduce((a,b)=>a+Number(b.valor||0),0);
+  const elP = document.getElementById('dashProx7');
+  const elPV = document.getElementById('dashProx7Val');
+  if(elP) elP.textContent = prox7.length;
+  if(elPV) elPV.textContent = prox7.length ? fmtR(prox7Val) : 'nenhum';
+
+  // Pagos no mês (count + valor)
+  const pagosMes = allB.filter(b => b.pago && b.vencimento && b.vencimento.startsWith(currentMonthStr));
+  const pagosMesVal = pagosMes.reduce((a,b)=>a+Number(b.valor||0),0);
+  const elPM = document.getElementById('dashPagosMes');
+  const elPMQ = document.getElementById('dashPagosMesQtd');
+  if(elPM) elPM.textContent = fmtR(pagosMesVal);
+  if(elPMQ) elPMQ.textContent = `${pagosMes.length} boleto${pagosMes.length!==1?'s':''}`;
+
+  // Saldo líquido total (soma de todos os bancos de todos os grupos − abertos)
+  const groups = getGroups().filter(g=>!g.isCasa);
+  let totalBancos = 0, totalAbertos = 0;
+  groups.forEach(g=>{
+    const gs = saldos[g.id]||{};
+    const bancos = bancosDoGrupo(g.name);
+    totalBancos += bancos.reduce((a,b)=>a+Number(gs[b]||0),0);
+    totalAbertos += allB.filter(b=>b.grupo===g.id&&!b.pago).reduce((a,b)=>a+Number(b.valor||0),0);
+  });
+  const liquido = totalBancos - totalAbertos;
+  const elSL = document.getElementById('dashSaldoLiq');
+  const elSLS = document.getElementById('dashSaldoLiqSub');
+  if(elSL){ elSL.textContent = fmtR(liquido); elSL.style.color = liquido >= 0 ? 'var(--ok)' : 'var(--danger)'; }
+  if(elSLS) elSLS.textContent = `${fmtR(totalBancos)} − ${fmtR(totalAbertos)}`;
 
   // Update tag counts
   updateTagCounts();

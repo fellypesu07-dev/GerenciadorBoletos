@@ -1524,6 +1524,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       </div>
     </div>
     <div style="margin-top:auto;padding-top:8px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:4px;">
+      <!-- Temas -->
+      <div class="slbl" style="margin-bottom:2px">🎨 Tema</div>
+      <div style="display:flex;gap:8px;align-items:center;padding:4px 2px 8px">
+        <div class="theme-dot" id="sb-td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#f0c040);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"></div>
+        <div class="theme-dot" id="sb-td-dark-green" style="background:linear-gradient(135deg,#0c110e,#4cdf88);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Green" onclick="setTheme('dark-green')" tabindex="0" role="button" aria-label="Tema Dark Green"></div>
+        <div class="theme-dot" id="sb-td-dark-blue"  style="background:linear-gradient(135deg,#0c0f16,#6f8fff);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Blue"  onclick="setTheme('dark-blue')"  tabindex="0" role="button" aria-label="Tema Dark Blue"></div>
+        <div class="theme-dot" id="sb-td-light"      style="background:linear-gradient(135deg,#f5f5f2,#e08020);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Light"      onclick="setTheme('light')"      tabindex="0" role="button" aria-label="Tema Light"></div>
+      </div>
+      <div class="div"></div>
       <!-- Modo Foco -->
       <button class="btn btn-g btn-sm" style="width:100%" id="focoBtnSidebar" onclick="toggleFoco()" aria-pressed="false" title="Ocultar boletos pagos">👁 Modo Foco</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()" aria-label="Atualizar saldos">💰 Atualizar Saldos</button>
@@ -3777,8 +3786,8 @@ function toggleMobSidebar(){
   const open = sb.classList.toggle("mob-open");
   ov.classList.toggle("on", open);
   document.getElementById("bnavMenu").classList.toggle("bnav-active", open);
-  if(open) document.body.style.overflow="hidden";
-  else document.body.style.overflow="";
+  if(open) _lockBodyForSidebar();
+  else _unlockBodyForSidebar();
 }
 function closeMobSidebar(){
   const sb = document.querySelector(".sidebar");
@@ -3787,7 +3796,24 @@ function closeMobSidebar(){
   sb.classList.remove("mob-open");
   ov.classList.remove("on");
   document.getElementById("bnavMenu").classList.remove("bnav-active");
-  document.body.style.overflow="";
+  _unlockBodyForSidebar();
+}
+let _sbScrollY = 0;
+function _lockBodyForSidebar(){
+  _sbScrollY = window.scrollY;
+  document.body.style.position = "fixed";
+  document.body.style.top = "-" + _sbScrollY + "px";
+  document.body.style.left = "0";
+  document.body.style.right = "0";
+  document.body.style.overflow = "hidden";
+}
+function _unlockBodyForSidebar(){
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.left = "";
+  document.body.style.right = "";
+  document.body.style.overflow = "";
+  window.scrollTo(0, _sbScrollY);
 }
 
 function closeAllModals(){
@@ -4065,9 +4091,14 @@ function setTheme(name){
 
 function applyTheme(name, save){
   document.body.setAttribute('data-theme', name);
-  document.querySelectorAll('.theme-dot').forEach(d => d.classList.remove('active'));
+  document.querySelectorAll('.theme-dot').forEach(d => {
+    d.classList.remove('active');
+    d.style.borderColor = 'transparent';
+  });
   const dot = document.getElementById('td-' + name);
-  if(dot) dot.classList.add('active');
+  if(dot){ dot.classList.add('active'); dot.style.borderColor = 'var(--text)'; }
+  const sbDot = document.getElementById('sb-td-' + name);
+  if(sbDot){ sbDot.classList.add('active'); sbDot.style.borderColor = 'var(--text)'; }
   if(save) localStorage.setItem('gbTheme', name);
 }
 

@@ -2098,16 +2098,15 @@ function unlockBodyScroll(){
   _scrollLockCount = Math.max(0, _scrollLockCount - 1);
   if(_scrollLockCount === 0){
     const savedY = _scrollLockY;
-    document.body.style.position = '';
-    document.body.style.top = '';
-    document.body.style.left = '';
-    document.body.style.right = '';
-    document.body.style.overflow = '';
-    // Aguarda o browser recalcular o layout antes de restaurar o scroll
-    // Sem isso, iOS/Safari salta para o topo da página ao fechar modais
-    requestAnimationFrame(() => {
-      window.scrollTo(0, savedY);
-    });
+    document.body.style.position = "";
+    document.body.style.top = "";
+    document.body.style.left = "";
+    document.body.style.right = "";
+    document.body.style.overflow = "";
+    // Duplo rAF: garante que o iOS/Safari recalcula o layout antes de restaurar
+    // o scroll. Um unico rAF nao e suficiente — o layout ainda fica em transicao
+    // e scrollTo(0, y) e ignorado ou sobrescrito pelo proximo renderAll.
+    requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.scrollTo(0, savedY); }); });
   }
 }
 
@@ -2141,13 +2140,29 @@ function toast(msg, type="ok", dur=3000){
 // ══════════════════════════════════════════════
 function initFirebase(){
   setSyncBadge("saving","Conectando…");
-  db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};renderAll();checkNotificationsOnLoad();});
-  db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};renderAll();});
-  db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};renderAll();});
-  db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};renderAll();});
-  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};renderAll();});
-  db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};renderAll();});
-  db.ref("depositosPrev").on("value",snap=>{depositosPrev=snap.val()||{};renderAll();});
+
+  // Debounce: agrupa todos os listeners num unico renderAll() por ciclo.
+  // Sem isso, os 7 listeners disparam renderAll quase ao mesmo tempo,
+  // causando leituras de scrollY=0 no meio do rAF anterior e pulando pro topo.
+  let _fbRafId = null;
+  let _needsNotifCheck = false;
+  function _fbRenderDebounced(needsNotif){
+    if(needsNotif) _needsNotifCheck = true;
+    if(_fbRafId) return; // ja agendado, so acumula
+    _fbRafId = requestAnimationFrame(()=>{
+      _fbRafId = null;
+      renderAll();
+      if(_needsNotifCheck){ _needsNotifCheck=false; checkNotificationsOnLoad(); }
+    });
+  }
+
+  db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};_fbRenderDebounced(true);});
+  db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("previsoes").on("value",snap=>{previsoes=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("saldosAnt").on("value",snap=>{saldosAnt=snap.val()||{};_fbRenderDebounced(false);});
+  db.ref("depositosPrev").on("value",snap=>{depositosPrev=snap.val()||{};_fbRenderDebounced(false);});
   _snapshotSaldoAnterior();
   db.ref(".info/connected").on("value",snap=>{
     setSyncBadge(snap.val()?"ok":"err",snap.val()?"✓ Online":"⚠ Offline");
@@ -2301,29 +2316,12 @@ function isDU(s){return!isWE(toDate(s))&&!isFer(s);}
 function next7DU(){const r=[];let d=new Date(TODAY);while(r.length<7){const s=dstr(d);if(isDU(s))r.push(s);d.setDate(d.getDate()+1);}return r;}
 function duAte(s){const v=toDate(s);if(v<TODAY)return null;let n=0,d=new Date(TODAY);while(d<v){if(isDU(dstr(d)))n++;d.setDate(d.getDate()+1);}return n;}
 
-// Retorna a string "YYYY-MM-DD" do 1o dia util >= a data informada.
-// Ex: sabado -> segunda; feriado na segunda -> terca.
-function proximoDU(s){
-  let d=toDate(s);
-  while(!isDU(dstr(d))){d.setDate(d.getDate()+1);}
-  return dstr(d);
-}
-
-// Status considera que boletos com vencimento em FDS/feriado so sao
-// "vencidos" apos o 1o dia util seguinte passar. Ate la: "hoje" ou "pendente".
 function status(b){
   if(b.pago)return"pago";
   const d=toDate(b.vencimento);
-  const todayTime=TODAY.getTime();
-  if(d.getTime()===todayTime)return"hoje";
-  if(d>TODAY)return"pendente";
-  // d < TODAY: boleto passou da data nominal
-  // Verifica se o prazo real (1o DU >= vencimento) ja passou tambem
-  const prazoReal=proximoDU(b.vencimento);
-  const prazoDate=toDate(prazoReal);
-  if(prazoDate.getTime()===todayTime)return"hoje";   // 1o DU cai hoje -> ainda no prazo
-  if(prazoDate>TODAY)return"pendente";               // 1o DU ainda nao chegou
-  return"vencido";                                   // 1o DU ja passou -> vencido de verdade
+  if(d<TODAY)return"vencido";
+  if(d.getTime()===TODAY.getTime())return"hoje";
+  return"pendente";
 }
 
 // ══════════════════════════════════════════════
@@ -2985,7 +2983,9 @@ function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").
 // RENDER ALL
 // ══════════════════════════════════════════════
 function renderAll(){
-  const _bodyFixed = document.body.style.position === 'fixed';
+  // Quando o body esta fixo (modal aberto no iOS), window.scrollY retorna 0.
+  // Usa _scrollLockY que guarda a posicao real antes do lock.
+  const _bodyFixed = document.body.style.position === "fixed";
   const _sy = _bodyFixed ? _scrollLockY : window.scrollY;
   updateQFBtns();
   renderCNPJPills();
@@ -3860,11 +3860,9 @@ async function toggleNotifications(){
 
 function scheduleNotifications(){
   if(!notifEnabled || Notification.permission !== "granted") return;
-  // Usa status() que ja respeita FDS/feriados: boleto com vencimento no sabado
-  // so aparece como "vencido" apos a segunda-feira (1o DU) passar.
-  const todos = boletoArr().filter(b=>!b.pago && b.vencimento);
-  const vencHoje = todos.filter(b=>status(b)==="hoje");
-  const vencidos  = todos.filter(b=>status(b)==="vencido");
+  const hoje = dstr(TODAY);
+  const vencHoje = boletoArr().filter(b=>!b.pago && b.vencimento===hoje);
+  const vencidos = boletoArr().filter(b=>!b.pago && b.vencimento < hoje);
   if(vencHoje.length > 0 || vencidos.length > 0){
     const total = vencHoje.reduce((a,b)=>a+Number(b.valor||0),0)
                 + vencidos.reduce((a,b)=>a+Number(b.valor||0),0);
@@ -4025,8 +4023,8 @@ function _unlockBodyForSidebar(){
   document.body.style.left = "";
   document.body.style.right = "";
   document.body.style.overflow = "";
-  // Mesma correção do modal: aguarda reflow antes de restaurar scroll
-  requestAnimationFrame(() => { window.scrollTo(0, savedY); });
+  // Duplo rAF igual ao unlockBodyScroll — necessario no iOS/Safari
+  requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.scrollTo(0, savedY); }); });
 }
 
 function closeAllModals(){
@@ -4271,7 +4269,15 @@ function gbSignOut(){
   if(!confirm("Sair e voltar para a tela de login?")) return;
   localStorage.removeItem(_PIN_KEY);
   localStorage.removeItem(_FAIL_KEY);
+  // Remove sessao do Firebase e volta para tela de autenticacao
   auth.signOut().then(()=>{ window.location.reload(); });
+}
+
+// Recarrega o app mas mantem a sessao Firebase — volta para tela do PIN.
+// Diferente do gbSignOut que desloga. Usado quando quiser so "reiniciar" o app.
+function gbReloadToPin(){
+  // Nao remove _PIN_KEY: Firebase reconhece sessao e exige PIN novamente
+  window.location.reload();
 }
 
 function launchApp(){
@@ -4733,10 +4739,8 @@ function updateDashboard(){
   const amanhaStr = dstr(amanha);
 
   // ── Bloco 1: Briefing ──────────────────────
-  // Usa status() que respeita FDS/feriados: nao marca "vencido" boleto cujo
-  // 1o dia util ainda nao chegou (ex: venceu sabado, hoje e segunda = "hoje").
-  const bVencidos  = allB.filter(b => !b.pago && b.vencimento && status(b)==="vencido");
-  const bHoje      = allB.filter(b => !b.pago && b.vencimento && status(b)==="hoje");
+  const bVencidos  = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
+  const bHoje      = allB.filter(b => !b.pago && b.vencimento === hojeStr);
   const bAmanha    = allB.filter(b => !b.pago && b.vencimento === amanhaStr);
 
   const valVenc  = bVencidos.reduce((a,b)=>a+Number(b.valor||0),0);
@@ -4762,13 +4766,13 @@ function updateDashboard(){
 
   // ── Bloco 2: Fila de pagamentos por empresa ─
   // Mostra grupos que têm boleto vencido OU vence hoje OU vence amanhã
-  const urgentes = allB.filter(b => {
-    if(!b.pago && b.vencimento){
-      const s = status(b);
-      return s === "vencido" || s === "hoje" || b.vencimento === amanhaStr;
-    }
-    return false;
-  });
+  const urgentes = allB.filter(b =>
+    !b.pago && b.vencimento && (
+      toDate(b.vencimento) < TODAY ||
+      b.vencimento === hojeStr ||
+      b.vencimento === amanhaStr
+    )
+  );
 
   const filaEl = document.getElementById('dashFila');
   const emptyEl = document.getElementById('dashEmpty');
@@ -5262,7 +5266,7 @@ if(_saldoDashCollapsed) _applySaldoDashCollapse();
   <button id="gb-refresh-btn" onclick="gbForceReload()">Atualizar</button>
   <button id="gb-refresh-close" onclick="document.getElementById('gb-refresh-toast').style.display='none'" aria-label="Fechar">×</button>
 </div>
-<button id="gb-reload-fab" title="Verificar atualização" onclick="gbForceReload()" aria-label="Recarregar app">↻</button>
+<button id="gb-reload-fab" title="Recarregar app" onclick="gbForceReload()" aria-label="Recarregar app">↻</button>
 
 <style>
 #gb-refresh-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#f0ede6;border:1px solid #3a3a34;border-radius:999px;padding:10px 10px 10px 18px;align-items:center;gap:12px;font-family:'DM Sans',sans-serif;font-size:14px;box-shadow:0 4px 24px rgba(0,0,0,.45);z-index:99999;white-space:nowrap;animation:gbSlideUp .25s ease;}
@@ -5325,48 +5329,32 @@ if(_saldoDashCollapsed) _applySaldoDashCollapse();
 })();
 
 function gbForceReload(){
-  // Garante que doReload só executa uma vez (evita duplo reload)
-  let _reloaded = false;
-  const doReload = () => {
-    if(_reloaded) return;
-    _reloaded = true;
-    window._gbReloading = true;
-    // Limpa todos os caches da Cache API antes de recarregar
+  // 1) Se tiver SW novo esperando (versao nova do site disponivel),
+  //    manda ele assumir controle via SKIP_WAITING e recarrega.
+  // 2) Se nao tiver SW waiting, limpa o cache e recarrega direto.
+  // Isso garante que o novo index.html e sempre carregado.
+  function doReload(){
     if('caches' in window){
-      caches.keys().then(keys =>
-        Promise.all(keys.map(k => caches.delete(k)))
-      ).finally(() => window.location.reload());
+      caches.keys()
+        .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+        .finally(() => window.location.reload());
     } else {
       window.location.reload();
     }
-  };
-
-  if('serviceWorker' in navigator){
-    navigator.serviceWorker.getRegistration().then(reg=>{
-      if(reg && reg.waiting){
-        // Novo SW está em waiting — pede para assumir controle
-        navigator.serviceWorker.addEventListener('controllerchange', doReload, { once: true });
-        reg.waiting.postMessage({type:'SKIP_WAITING'});
-        // Timeout de segurança caso controllerchange não dispare
-        setTimeout(doReload, 2500);
-      } else if(reg){
-        // Sem SW em waiting — força checagem de update e recarrega
-        reg.update().then(()=>{
-          if(reg.waiting){
-            navigator.serviceWorker.addEventListener('controllerchange', doReload, { once: true });
-            reg.waiting.postMessage({type:'SKIP_WAITING'});
-            setTimeout(doReload, 2500);
-          } else {
-            doReload();
-          }
-        }).catch(doReload);
-      } else {
-        doReload();
-      }
-    }).catch(doReload);
-  } else {
-    doReload();
   }
+
+  if(!('serviceWorker' in navigator)){ doReload(); return; }
+
+  navigator.serviceWorker.getRegistration().then(reg => {
+    if(reg && reg.waiting){
+      // SW novo esperando: manda assumir e recarrega apos controllerchange
+      navigator.serviceWorker.addEventListener('controllerchange', doReload, {once:true});
+      reg.waiting.postMessage({type:'SKIP_WAITING'});
+      setTimeout(doReload, 1500); // seguranca caso controllerchange nao dispare
+    } else {
+      doReload();
+    }
+  }).catch(doReload);
 }
 
 // ══ SWIPE TO ACTION (mobile) ══

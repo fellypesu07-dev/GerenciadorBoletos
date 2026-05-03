@@ -32,7 +32,7 @@
 :root{
   --bg:#0f0f0d;--surf:#181816;--card:#1e1e1c;--card2:#242422;
   --border:#2a2a27;--text:#e4e4dc;--muted:#6a6a62;
-  --accent:#f0c040;--danger:#e05c3a;--ok:#4caf7d;--warn:#f0c040;
+  --accent:#22c55e;--danger:#e05c3a;--ok:#4caf7d;--warn:#22c55e;
   --blue:#6f8fff;--pink:#ff9fdf;--notion:#37352f;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -69,7 +69,7 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .hright{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .sync{font-size:10px;padding:3px 8px;border-radius:4px;white-space:nowrap;}
 .sync.ok{background:#4caf7d18;color:var(--ok);border:1px solid #4caf7d33;}
-.sync.saving{background:#f0c04018;color:var(--warn);border:1px solid #f0c04033;}
+.sync.saving{background:#22c55e18;color:var(--warn);border:1px solid #22c55e33;}
 .sync.err{background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a33;}
 
 /* LAYOUT */
@@ -90,7 +90,7 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 .cc{text-align:center;font-size:10px;padding:2px 1px;border-radius:4px;cursor:pointer;min-height:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;transition:background .1s;line-height:1;}
 .cc:hover:not(.ce){background:var(--card);}
 .ce{cursor:default;}
-.ct{background:#f0c04015;color:var(--accent);font-weight:700;border:1px solid #f0c04030;}
+.ct{background:#22c55e15;color:var(--accent);font-weight:700;border:1px solid #22c55e30;}
 .cs{background:var(--accent)!important;color:#0f0f0d!important;font-weight:700;}
 .cwe{color:#4a4a44;}.cfer{color:var(--danger);}
 .dot-row{display:flex;gap:2px;justify-content:center;}
@@ -111,8 +111,8 @@ header{background:var(--surf);border-bottom:1px solid var(--border);height:52px;
 /* 7DU */
 .du-strip{display:flex;gap:5px;overflow-x:auto;padding-bottom:2px;}
 .duc{flex-shrink:0;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:6px 8px;min-width:66px;cursor:pointer;text-align:center;transition:.12s;}
-.duc:hover,.duc.ds{border-color:var(--accent);background:#f0c04010;}
-.duc.dt{border-color:#f0c04055;}
+.duc:hover,.duc.ds{border-color:var(--accent);background:#22c55e10;}
+.duc.dt{border-color:#22c55e55;}
 .du-wd{font-size:8px;color:var(--muted);text-transform:uppercase;font-weight:700;}
 .du-n{font-family:'DM Mono',monospace;font-size:13px;font-weight:700;margin:2px 0;}
 .du-i{font-size:10px;color:var(--muted);}
@@ -308,7 +308,7 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 /* ── CARD VIEW ── */
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:6px 0;}
 .bol-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;flex-direction:column;gap:6px;}
-.bol-card:hover{background:#f0c04005;}
+.bol-card:hover{background:#22c55e05;}
 .bol-card.pago-card{opacity:.7;}
 .bc-desc{font-weight:700;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bc-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;}
@@ -715,7 +715,7 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 body[data-theme="dark-gold"] {
   --bg:#0f0f0d;--surf:#181816;--card:#1e1e1c;--card2:#242422;
   --border:#2a2a27;--text:#e4e4dc;--muted:#6a6a62;
-  --accent:#f0c040;--danger:#e05c3a;--ok:#4caf7d;--warn:#f0c040;
+  --accent:#22c55e;--danger:#e05c3a;--ok:#4caf7d;--warn:#22c55e;
   --blue:#6f8fff;--pink:#ff9fdf;
 }
 
@@ -723,7 +723,7 @@ body[data-theme="dark-gold"] {
 body[data-theme="dark-green"] {
   --bg:#0c110e;--surf:#131a15;--card:#192019;--card2:#1f281f;
   --border:#243027;--text:#dde8de;--muted:#5f7262;
-  --accent:#4cdf88;--danger:#e05c5c;--ok:#4caf7d;--warn:#f0c040;
+  --accent:#4cdf88;--danger:#e05c5c;--ok:#4caf7d;--warn:#22c55e;
   --blue:#6fb5ff;--pink:#ff9fdf;
 }
 
@@ -731,7 +731,7 @@ body[data-theme="dark-green"] {
 body[data-theme="dark-blue"] {
   --bg:#0c0f16;--surf:#121620;--card:#181d2a;--card2:#1e2432;
   --border:#232b3a;--text:#dde2f0;--muted:#5c6480;
-  --accent:#6f8fff;--danger:#e05c7a;--ok:#4caf7d;--warn:#f0c040;
+  --accent:#6f8fff;--danger:#e05c7a;--ok:#4caf7d;--warn:#22c55e;
   --blue:#6f8fff;--pink:#ff9fdf;
 }
 
@@ -750,7 +750,7 @@ body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
 body[data-theme="oled"] {
   --bg:#000000;--surf:#080808;--card:#0d0d0d;--card2:#111111;
   --border:#1a1a1a;--text:#e4e4dc;--muted:#555550;
-  --accent:#f0c040;--danger:#e05c3a;--ok:#4caf7d;--warn:#f0c040;
+  --accent:#22c55e;--danger:#e05c3a;--ok:#4caf7d;--warn:#22c55e;
   --blue:#6f8fff;--pink:#ff9fdf;
 }
 body[data-theme="oled"] header { background: #000; border-bottom-color: #1a1a1a; }
@@ -903,7 +903,7 @@ body.modo-foco .foco-badge { display: inline-flex; align-items: center; gap: 4px
 }
 .free-tag:hover { opacity: .75; }
 .free-tag-urgente  { background: #e05c3a18; color: var(--danger); border-color: #e05c3a44; }
-.free-tag-contestado { background: #f0c04018; color: var(--warn); border-color: #f0c04044; }
+.free-tag-contestado { background: #22c55e18; color: var(--warn); border-color: #22c55e44; }
 .free-tag-aguardando { background: #6f8fff18; color: var(--blue); border-color: #6f8fff44; }
 
 /* Tag dropdown in table */
@@ -1430,11 +1430,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <span class="sync ok" id="syncBadge" aria-live="polite">✓ Online</span>
     <!-- Temas de cor -->
     <div class="theme-picker" title="Tema de cor" aria-label="Selecionar tema de cor">
-      <div class="theme-dot active" id="td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#f0c040)" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"  onkeydown="if(event.key==='Enter')setTheme('dark-gold')"></div>
+      <div class="theme-dot active" id="td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#22c55e)" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"  onkeydown="if(event.key==='Enter')setTheme('dark-gold')"></div>
       <div class="theme-dot"        id="td-dark-green" style="background:linear-gradient(135deg,#0c110e,#4cdf88)" title="Dark Green" onclick="setTheme('dark-green')" tabindex="0" role="button" aria-label="Tema Dark Green" onkeydown="if(event.key==='Enter')setTheme('dark-green')"></div>
       <div class="theme-dot"        id="td-dark-blue"  style="background:linear-gradient(135deg,#0c0f16,#6f8fff)" title="Dark Blue"  onclick="setTheme('dark-blue')"  tabindex="0" role="button" aria-label="Tema Dark Blue"  onkeydown="if(event.key==='Enter')setTheme('dark-blue')"></div>
       <div class="theme-dot"        id="td-light"      style="background:linear-gradient(135deg,#f5f5f2,#e08020)" title="Light"      onclick="setTheme('light')"      tabindex="0" role="button" aria-label="Tema Light"      onkeydown="if(event.key==='Enter')setTheme('light')"></div>
-      <div class="theme-dot"        id="td-oled"       style="background:linear-gradient(135deg,#000000,#f0c040)" title="OLED Black" onclick="setTheme('oled')"       tabindex="0" role="button" aria-label="Tema OLED Black"  onkeydown="if(event.key==='Enter')setTheme('oled')"></div>
+      <div class="theme-dot"        id="td-oled"       style="background:linear-gradient(135deg,#000000,#22c55e)" title="OLED Black" onclick="setTheme('oled')"       tabindex="0" role="button" aria-label="Tema OLED Black"  onkeydown="if(event.key==='Enter')setTheme('oled')"></div>
     </div>
     <!-- Modo foco -->
     <button class="btn btn-g btn-sm foco-badge" id="focoBtn" onclick="toggleFoco()" aria-pressed="false" title="Modo Foco: oculta pagos">👁 Foco</button>
@@ -1564,11 +1564,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <!-- Temas -->
       <div class="slbl" style="margin-bottom:2px">🎨 Tema</div>
       <div style="display:flex;gap:8px;align-items:center;padding:4px 2px 8px">
-        <div class="theme-dot" id="sb-td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#f0c040);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"></div>
+        <div class="theme-dot" id="sb-td-dark-gold"  style="background:linear-gradient(135deg,#0f0f0d,#22c55e);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Gold"  onclick="setTheme('dark-gold')"  tabindex="0" role="button" aria-label="Tema Dark Gold"></div>
         <div class="theme-dot" id="sb-td-dark-green" style="background:linear-gradient(135deg,#0c110e,#4cdf88);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Green" onclick="setTheme('dark-green')" tabindex="0" role="button" aria-label="Tema Dark Green"></div>
         <div class="theme-dot" id="sb-td-dark-blue"  style="background:linear-gradient(135deg,#0c0f16,#6f8fff);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Blue"  onclick="setTheme('dark-blue')"  tabindex="0" role="button" aria-label="Tema Dark Blue"></div>
         <div class="theme-dot" id="sb-td-light"      style="background:linear-gradient(135deg,#f5f5f2,#e08020);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Light"      onclick="setTheme('light')"      tabindex="0" role="button" aria-label="Tema Light"></div>
-        <div class="theme-dot" id="sb-td-oled"       style="background:linear-gradient(135deg,#000000,#f0c040);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="OLED Black" onclick="setTheme('oled')"       tabindex="0" role="button" aria-label="Tema OLED Black"></div>
+        <div class="theme-dot" id="sb-td-oled"       style="background:linear-gradient(135deg,#000000,#22c55e);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="OLED Black" onclick="setTheme('oled')"       tabindex="0" role="button" aria-label="Tema OLED Black"></div>
       </div>
       <div class="div"></div>
       <!-- Modo Foco -->
@@ -1983,7 +1983,7 @@ const auth = firebase.auth();
 // STATE
 // ══════════════════════════════════════════════
 const CASA="__casa__";
-const GCOLS=["#6f8fff","#f07f40","#40c0a0","#b07fff","#f0c040","#40a0ff"];
+const GCOLS=["#6f8fff","#f07f40","#40c0a0","#b07fff","#22c55e","#40a0ff"];
 const CASACOL="#ff9fdf";
 const MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 const DIAS=["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
@@ -2400,7 +2400,7 @@ function renderCal(){
     const s=`${calY}-${p2(calM+1)}-${p2(d)}`,dt=toDate(s);
     const isTod=s===dstr(TODAY),isSel=s===calSel,we=isWE(dt),fer=isFer(s),bs=bmap[s]||[];
     let cls="cc";if(we&&!fer)cls+=" cwe";if(fer)cls+=" cfer";if(isTod&&!isSel)cls+=" ct";if(isSel)cls+=" cs";
-    const dots=bs.length?`<div class="dot-row">${bs.slice(0,4).map(b=>{const c=status(b)==="pago"?"#4caf7d":status(b)==="vencido"?"#e05c3a":status(b)==="hoje"?"#ff9988":"#f0c040";return`<div class="bd" style="background:${c}"></div>`;}).join("")}</div>`:"";
+    const dots=bs.length?`<div class="dot-row">${bs.slice(0,4).map(b=>{const c=status(b)==="pago"?"#4caf7d":status(b)==="vencido"?"#e05c3a":status(b)==="hoje"?"#ff9988":"#22c55e";return`<div class="bd" style="background:${c}"></div>`;}).join("")}</div>`:"";
     h+=`<div class="${cls}" onclick="calClick('${s}')">${d}${dots}</div>`;
   }
   document.getElementById("calGrid").innerHTML=h;
@@ -2737,7 +2737,7 @@ function toggleAll(expand){
 // ══════════════════════════════════════════════
 const BST={
   pago:'<span class="badge" style="background:#4caf7d20;color:var(--ok)">✓ Pago</span>',
-  pendente:'<span class="badge" style="background:#f0c04020;color:var(--warn)">⏳ Pend.</span>',
+  pendente:'<span class="badge" style="background:#22c55e20;color:var(--warn)">⏳ Pend.</span>',
   vencido:'<span class="badge" style="background:#e05c3a20;color:var(--danger)">⚠ Venc.</span>',
   hoje:'<span class="badge" style="background:#ff999920;color:#ff9988;border:1px solid #ff999940">🔥 Hoje</span>'
 };
@@ -3176,6 +3176,7 @@ function saveB(){
 
     Promise.all(promises).then(()=>{
       toast(`${recMeses} boletos recorrentes criados!`, "ok");
+      closeModal();
     });
   } else if(parcelado && parcelas >= 2){
     // Gera parcelas (mesmo valor a cada parcelaDias dias)
@@ -3201,6 +3202,7 @@ function saveB(){
     }
     Promise.all(promises).then(()=>{
       toast(`${parcelas} parcelas criadas!`, "ok");
+      closeModal();
     });
   } else if(duplicar && dupQtd >= 1) {
     // Duplicar X vezes — todas as cópias com a mesma data do original
@@ -3215,6 +3217,7 @@ function saveB(){
     }
     Promise.all(promises).then(()=>{
       toast(`✅ 1 original + ${dupQtd} cópia${dupQtd>1?"s":""} criadas!`, "ok");
+      closeModal();
     });
   } else {
     // Avulso normal
@@ -3670,7 +3673,7 @@ function openChartModal(){
     return `<div class="chart-col">
       <div class="chart-bar-group">
         <div class="chart-bar" style="background:var(--ok);height:${hPg}px;width:18px" title="Pago: ${fmtR(pg)}"></div>
-        <div class="chart-bar" style="background:#f0c04088;height:${hAb}px;width:18px" title="Aberto: ${fmtR(ab)}"></div>
+        <div class="chart-bar" style="background:#22c55e88;height:${hAb}px;width:18px" title="Aberto: ${fmtR(ab)}"></div>
       </div>
       <div class="chart-lbl">${lbl}</div>
     </div>`;
@@ -3684,7 +3687,7 @@ function openChartModal(){
     <div class="chart-bar-wrap">${bars}</div>
     <div class="chart-legend">
       <span><span class="chart-legend-dot" style="background:var(--ok)"></span>Pago: ${fmtR(totalPago)}</span>
-      <span><span class="chart-legend-dot" style="background:#f0c04088"></span>Em aberto: ${fmtR(totalAberto)}</span>
+      <span><span class="chart-legend-dot" style="background:#22c55e88"></span>Em aberto: ${fmtR(totalAberto)}</span>
     </div>
     <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:10px">
       <div class="slbl" style="margin-bottom:6px">Por Grupo (em aberto)</div>

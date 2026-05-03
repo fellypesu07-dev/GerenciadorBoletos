@@ -13,11 +13,11 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE))
   );
-  /* NÃO chama skipWaiting() aqui.
-     O app (index.html) controla quando o novo SW assume,
-     via postMessage({type:'SKIP_WAITING'}) após o usuário
-     confirmar o update. Sem isso o SW ativaria sozinho,
-     quebrando o fluxo de "Nova versão disponível". */
+  /* Chama skipWaiting() imediatamente para que o SW novo assuma
+     o controle assim que instalado, sem esperar o usuario fechar
+     todas as abas. O index.html ainda pode mandar SKIP_WAITING
+     explicitamente (redundante mas inofensivo). */
+  self.skipWaiting();
 });
 
 /* ── Mensagens do app: recebe SKIP_WAITING do index.html ── */

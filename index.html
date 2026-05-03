@@ -4983,5 +4983,50 @@ if(_saldoDashCollapsed) _applySaldoDashCollapse();
 })();
 
 </script>
+
+<!-- ═══ Refresh Toast + FAB ═══ -->
+<div id="gb-refresh-toast" style="display:none" aria-live="polite">
+  <span id="gb-refresh-msg">Nova versão disponível</span>
+  <button id="gb-refresh-btn" onclick="gbForceReload()">Atualizar</button>
+</div>
+<button id="gb-reload-fab" title="Verificar atualização" onclick="gbForceReload()" aria-label="Recarregar app">↻</button>
+
+<style>
+#gb-refresh-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a18;color:#f0ede6;border:1px solid #3a3a34;border-radius:999px;padding:10px 10px 10px 18px;align-items:center;gap:12px;font-family:'DM Sans',sans-serif;font-size:14px;box-shadow:0 4px 24px rgba(0,0,0,.45);z-index:99999;white-space:nowrap;animation:gbSlideUp .25s ease;}
+#gb-refresh-toast[style*="display:none"]{display:none!important;}
+#gb-refresh-toast[style*="display:flex"]{display:flex!important;}
+#gb-refresh-btn{background:#c8f135;color:#111;border:none;border-radius:999px;padding:7px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+#gb-refresh-btn:hover{opacity:.85;}
+#gb-reload-fab{position:fixed;bottom:22px;right:18px;width:40px;height:40px;border-radius:50%;background:rgba(26,26,24,.85);color:#c8f135;border:1px solid #3a3a34;font-size:20px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:9998;transition:opacity .2s,transform .2s;display:flex;align-items:center;justify-content:center;}
+#gb-reload-fab:hover{opacity:.8;transform:rotate(30deg);}
+#gb-reload-fab:active{transform:scale(.9) rotate(30deg);}
+@media(min-width:768px){#gb-reload-fab{bottom:28px;right:28px;}#gb-refresh-toast{bottom:32px;}}
+@keyframes gbSlideUp{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
+</style>
+
+<script>
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('/sw.js').then(reg=>{
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='visible') reg.update();
+    });
+  });
+  navigator.serviceWorker.addEventListener('message',e=>{
+    if(e.data&&e.data.type==='UPDATE_AVAILABLE'){
+      document.getElementById('gb-refresh-toast').style.display='flex';
+    }
+  });
+})();
+function gbForceReload(){
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistration().then(reg=>{
+      if(reg&&reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'});
+      window.location.reload(true);
+    });
+  } else { window.location.reload(true); }
+}
+</script>
+
 </body>
 </html>

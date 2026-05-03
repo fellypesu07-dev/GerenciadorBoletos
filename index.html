@@ -1788,10 +1788,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
             <label style="font-size:11px;color:var(--muted);white-space:nowrap">Nº de cópias</label>
             <input type="number" id="fDupQtd" value="1" min="1" max="36" style="width:60px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 8px;outline:none;" oninput="updateDuplicarPreview()">
           </div>
-          <div class="fi" style="flex-direction:row;align-items:center;gap:8px;flex:1;min-width:130px">
-            <label style="font-size:11px;color:var(--muted);white-space:nowrap">Intervalo (dias)</label>
-            <input type="number" id="fDupDias" value="30" min="1" max="365" style="width:60px;text-align:center;background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:13px;padding:4px 8px;outline:none;" oninput="updateDuplicarPreview()">
-          </div>
         </div>
         <div id="duplicarPreview" style="margin-top:6px;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.8"></div>
       </div>
@@ -2954,16 +2950,13 @@ function ativarDuplicarESalvar(){
 
 function updateDuplicarPreview(){
   const n = parseInt(document.getElementById("fDupQtd").value)||1;
-  const dias = parseInt(document.getElementById("fDupDias").value)||30;
   const venc = document.getElementById("fVenc").value;
   const desc = document.getElementById("fDesc").value.trim();
   const el = document.getElementById("duplicarPreview");
   if(!venc){ el.textContent = "Preencha o vencimento para ver o preview."; return; }
-  const base = toDate(venc);
   let lines = [`📌 Original — ${fmtD(venc)}${desc?" — "+desc:""}`];
   for(let i=1; i<=Math.min(n,5); i++){
-    const d = new Date(base); d.setDate(d.getDate() + dias*i);
-    lines.push(`📋 Cópia ${i}/${n} — ${fmtD(dstr(d))}`);
+    lines.push(`📋 Cópia ${i}/${n} — ${fmtD(venc)}`);
   }
   if(n>5) lines.push(`… +${n-5} cópias adicionais`);
   el.innerHTML = lines.join("<br>");
@@ -3163,18 +3156,15 @@ function saveB(){
       toast(`${parcelas} parcelas criadas!`, "ok");
     });
   } else if(duplicar && dupQtd >= 1) {
-    // Duplicar X vezes com intervalo em dias
-    const baseDate = toDate(venc);
+    // Duplicar X vezes — todas as cópias com a mesma data do original
     const promises = [];
     // Original
     const origId = "b"+Date.now()+"_d0";
     promises.push(fbSet("boletos/"+origId, {...baseObj, vencimento:venc, pago:false, checks:{}, recorrente:false}));
-    // Cópias
+    // Cópias — mesma data, mesmo valor, mesmo fornecedor
     for(let i=1; i<=dupQtd; i++){
-      const d = new Date(baseDate); d.setDate(d.getDate() + dupDias * i);
-      const dataVenc = dstr(d);
       const newId = "b"+(Date.now()+i)+"_d"+i;
-      promises.push(fbSet("boletos/"+newId, {...baseObj, vencimento:dataVenc, pago:false, checks:{}, recorrente:false}));
+      promises.push(fbSet("boletos/"+newId, {...baseObj, vencimento:venc, pago:false, checks:{}, recorrente:false}));
     }
     Promise.all(promises).then(()=>{
       toast(`✅ 1 original + ${dupQtd} cópia${dupQtd>1?"s":""} criadas!`, "ok");

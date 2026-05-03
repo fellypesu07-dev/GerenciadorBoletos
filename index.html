@@ -2339,7 +2339,7 @@ const BANCOS_CONHECIDOS={
   "453":"Banco Rural","745":"Citibank","756":"SICOOB","748":"Sicredi",
   "070":"BRB","389":"Mercantil","399":"HSBC","041":"Banrisul",
   "004":"BNB","021":"Banestes","047":"Banese","655":"Votorantim",
-  "085":"Cecred","136":"Unicred","085":"AILOS","197":"Stone",
+  "085":"AILOS / Cecred","136":"Unicred","197":"Stone",
   "077":"Banco Inter","260":"Nu Pagamentos (Nubank)","336":"C6 Bank",
   "290":"Pagseguro","323":"Mercado Pago","380":"PicPay","364":"Efí"
 };
@@ -3411,9 +3411,11 @@ function saveSaldos(){
     if(!gid)return;
     np[gid]=parseFloat(inp.value)||0;
   });
-  fbSet("saldos",ns);
-  fbSet("previsoes",np);
-  fbSet("depositosPrev",nd);
+  // Grava em uma única operação atômica para evitar inconsistência
+  setSyncBadge("saving","Salvando…");
+  db.ref().update({ saldos: ns, previsoes: np, depositosPrev: nd })
+    .then(()=>setSyncBadge("ok","✓ Online"))
+    .catch(()=>setSyncBadge("err","⚠ Erro ao salvar"));
   closeSaldo();
 }
 
@@ -3701,7 +3703,10 @@ function startInlineEdit(id, currentVal, el){
   el.innerHTML = "";
   el.appendChild(inp);
   inp.focus(); inp.select();
+  let _committed = false;
   const done = (save) => {
+    if(_committed) return;
+    _committed = true;
     if(save){
       const nv = parseFloat(inp.value);
       if(!isNaN(nv) && nv > 0){
@@ -3714,7 +3719,7 @@ function startInlineEdit(id, currentVal, el){
   };
   inp.addEventListener("keydown", e=>{
     if(e.key==="Enter"){ e.preventDefault(); done(true); }
-    if(e.key==="Escape"){ done(false); }
+    if(e.key==="Escape"){ _committed = true; el.innerHTML = orig; }
   });
   inp.addEventListener("blur", ()=> done(true));
 }
@@ -3867,7 +3872,8 @@ document.addEventListener("keydown", e=>{
   if(e.key==="Escape" && anyModalOpen){
     document.querySelectorAll(".mo.open").forEach(m=>m.classList.remove("open"));
     editId = null;
-    _scrollLockCount = 0;
+    // Zera o contador e chama unlock normalmente (inclui rAF para iOS)
+    _scrollLockCount = 1;
     unlockBodyScroll();
     e.preventDefault();
     return;
@@ -3982,18 +3988,21 @@ function _lockBodyForSidebar(){
   document.body.style.overflow = "hidden";
 }
 function _unlockBodyForSidebar(){
+  const savedY = _sbScrollY;
   document.body.style.position = "";
   document.body.style.top = "";
   document.body.style.left = "";
   document.body.style.right = "";
   document.body.style.overflow = "";
-  window.scrollTo(0, _sbScrollY);
+  // Mesma correção do modal: aguarda reflow antes de restaurar scroll
+  requestAnimationFrame(() => { window.scrollTo(0, savedY); });
 }
 
 function closeAllModals(){
   document.querySelectorAll(".mo.open").forEach(m=>m.classList.remove("open"));
   editId = null;
-  _scrollLockCount = 0;
+  // Força o unlock correto com rAF para iOS
+  _scrollLockCount = 1;
   unlockBodyScroll();
 }
 
@@ -4320,6 +4329,8 @@ function editLogoName(){
 function commitLogoName(){
   const inp = document.getElementById('logoInput');
   if(!inp) return;
+  // Remove listener antes de qualquer outra operação para evitar chamada dupla via blur
+  inp.removeEventListener('blur', commitLogoName);
   const val = inp.value.trim() || 'Real-Financeiro';
   localStorage.setItem('gbAppName', val);
   renderLogoName(val);

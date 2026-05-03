@@ -1124,17 +1124,44 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 /* ════════════════════════════════════════════
    DASHBOARD BRIEFING + FILA (v7)
 ════════════════════════════════════════════ */
+/* ── DASHBOARD: BRIEFING & FILA — VERDE ── */
+.dash-panel#dashPanel {
+  border: 1px solid rgba(76,175,125,.35) !important;
+  background: linear-gradient(135deg, rgba(76,175,125,.04) 0%, var(--card) 60%) !important;
+  box-shadow: 0 0 0 1px rgba(76,175,125,.12), 0 4px 20px rgba(76,175,125,.06);
+}
+.dash-panel#dashPanel .dash-header {
+  border-bottom: 1px solid rgba(76,175,125,.2);
+}
+.dash-panel#dashPanel .dash-title {
+  color: var(--ok);
+}
+.dash-title-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(76,175,125,.15);
+  color: var(--ok);
+  border: 1px solid rgba(76,175,125,.3);
+  border-radius: 20px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .4px;
+  padding: 1px 8px;
+  margin-left: 8px;
+  text-transform: uppercase;
+}
 .dash-briefing-cell {
   padding: 12px 14px;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid rgba(76,175,125,.15);
   display: flex;
   flex-direction: column;
   gap: 3px;
   cursor: pointer;
   transition: background .12s;
+  position: relative;
 }
 .dash-briefing-cell:last-child { border-right: none; }
-.dash-briefing-cell:hover { background: var(--card); }
+.dash-briefing-cell:hover { background: rgba(76,175,125,.06); }
 .dbc-lbl {
   font-size: 9px;
   font-weight: 700;
@@ -1153,8 +1180,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   font-size: 11px;
   font-weight: 600;
 }
+.dash-briefing-row {
+  border-bottom: 1px solid rgba(76,175,125,.15);
+}
 .dash-fila-group {
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(76,175,125,.12);
   padding: 8px 14px 10px;
 }
 .dfg-head {
@@ -1510,12 +1540,16 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <!-- DASHBOARD v7: BRIEFING DO DIA + FILA DE PAGAMENTOS -->
     <div class="dash-panel" id="dashPanel">
       <div class="dash-header" onclick="toggleDash()" aria-expanded="true" aria-controls="dashBody" role="button" tabindex="0" onkeydown="if(event.key==='Enter')toggleDash()">
-        <div class="dash-title">📋 Briefing do Dia <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
+        <div class="dash-title">📋 Briefing do Dia <span class="dash-title-badge">✦ perfeito pra você</span> <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
         <span class="dash-chevron" aria-hidden="true">▼</span>
       </div>
       <div id="dashBody" style="padding:0">
         <!-- Bloco 1: Briefing resumo -->
-        <div id="dashBriefing" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border)"></div>
+        <div id="dashBriefing" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid rgba(76,175,125,.15)"></div>
+        <!-- Bloco 2: Fila por empresa header -->
+        <div id="dashFilaHeader" style="display:none;padding:6px 14px 5px;align-items:center;gap:8px;border-bottom:1px solid rgba(76,175,125,.12);background:rgba(76,175,125,.03)">
+          <span style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--ok)">🏦 Fila de pagamentos — por empresa</span>
+        </div>
         <!-- Bloco 2: Fila por empresa -->
         <div id="dashFila" style="display:flex;flex-direction:column;gap:0"></div>
         <!-- Empty state -->
@@ -4133,8 +4167,29 @@ function openPagar(id){
   document.getElementById('pagarDesc').textContent = `Boleto: "${desc}" — ${fmtR(Number(b.valor||0))}`;
   // build bank list for this grupo
   const g = getGroups().find(x=>x.id===grupo);
-  const bancos = g ? bancosDoGrupo(g.name) : [];
-  const gs = saldos[grupo]||{};
+  let bancos, gs;
+
+  if(g && g.isCasa){
+    // Casa: mostrar TODOS os bancos de todos os CNPJs, ordenados por saldo
+    const allBancos = {}; // bankName -> {saldo, gid}
+    Object.entries(cnpjs).forEach(([gid, c]) => {
+      const bList = bancosDoGrupo(c.nome);
+      const gSaldos = saldos[gid] || {};
+      bList.forEach(bankName => {
+        if(!(bankName in allBancos)){
+          allBancos[bankName] = {saldo: Number(gSaldos[bankName]||0), gid};
+        }
+      });
+    });
+    const sorted = Object.entries(allBancos).sort((a,b2) => b2[1].saldo - a[1].saldo);
+    bancos = sorted.map(([name]) => name);
+    gs = Object.fromEntries(sorted.map(([name,v]) => [name, v.saldo]));
+    window._casaBancoGidMap = Object.fromEntries(sorted.map(([name,v]) => [name, v.gid]));
+  } else {
+    bancos = g ? bancosDoGrupo(g.name) : [];
+    gs = saldos[grupo]||{};
+    window._casaBancoGidMap = null;
+  }
   let listH = bancos.length
     ? bancos.map(banco=>`
         <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:7px 10px;border-radius:5px;border:1px solid var(--border);background:var(--card2)">
@@ -4170,14 +4225,19 @@ function confirmPagar(){
   // Mark boleto as paid
   fbSet('boletos/'+id, {...b, pago:true, pagoEm, bancoPago: bancoPago==='__nenhum__'?null:bancoPago});
   // Subtract from bank balance if applicable
+  // Para Casa: usar o grupo do banco selecionado (window._casaBancoGidMap)
   let saldoSnapshotGrupo = null;
-  if(bancoPago !== '__nenhum__' && b.grupo){
-    const gs = JSON.parse(JSON.stringify(saldos[b.grupo]||{}));
+  let saldoGrupoId = b.grupo;
+  if(bancoPago !== '__nenhum__' && b.grupo === '__casa__' && window._casaBancoGidMap && window._casaBancoGidMap[bancoPago]){
+    saldoGrupoId = window._casaBancoGidMap[bancoPago];
+  }
+  if(bancoPago !== '__nenhum__' && saldoGrupoId && saldoGrupoId !== '__casa__'){
+    const gs = JSON.parse(JSON.stringify(saldos[saldoGrupoId]||{}));
     saldoSnapshotGrupo = JSON.parse(JSON.stringify(gs)); // snapshot BEFORE subtraction
     const saldoAtual = Number(gs[bancoPago]||0);
     const valor = Number(b.valor||0);
     gs[bancoPago] = Math.max(0, saldoAtual - valor);
-    const nsSaldos = {...saldos, [b.grupo]: gs};
+    const nsSaldos = {...saldos, [saldoGrupoId]: gs};
     fbSet('saldos', nsSaldos);
   }
   if(b.modalidade==='pix' && (b.pixChave||b.pixPayload)){
@@ -4188,8 +4248,8 @@ function confirmPagar(){
   const bancoLabel = bancoPago !== '__nenhum__' ? ` via ${bancoPago}` : '';
   toastUndo(`✓ "${desc}" marcado como pago${bancoLabel}`, ()=>{
     fbSet('boletos/'+id, snapshot);
-    if(bancoPago !== '__nenhum__' && b.grupo && saldoSnapshotGrupo){
-      fbSet('saldos', {...saldos, [b.grupo]: saldoSnapshotGrupo});
+    if(bancoPago !== '__nenhum__' && saldoGrupoId && saldoGrupoId !== '__casa__' && saldoSnapshotGrupo){
+      fbSet('saldos', {...saldos, [saldoGrupoId]: saldoSnapshotGrupo});
     }
   });
 }
@@ -4395,6 +4455,8 @@ function updateDashboard(){
   });
 
   filaEl.innerHTML = filaHTML;
+  const filaHdrEl = document.getElementById('dashFilaHeader');
+  if(filaHdrEl) filaHdrEl.style.display = temAlgo ? 'flex' : 'none';
   if(emptyEl) emptyEl.style.display = temAlgo ? 'none' : 'block';
   if(brEl) brEl.style.display = temAlgo || (bVencidos.length||bHoje.length||bAmanha.length) ? '' : 'none';
 

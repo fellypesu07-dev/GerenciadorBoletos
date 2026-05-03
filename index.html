@@ -1122,8 +1122,122 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 
 /* ════════════════════════════════════════════
-   MOBILE DASHBOARD (v5)
+   DASHBOARD BRIEFING + FILA (v7)
 ════════════════════════════════════════════ */
+.dash-briefing-cell {
+  padding: 12px 14px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  cursor: pointer;
+  transition: background .12s;
+}
+.dash-briefing-cell:last-child { border-right: none; }
+.dash-briefing-cell:hover { background: var(--card); }
+.dbc-lbl {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .6px;
+  color: var(--muted);
+}
+.dbc-count {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1;
+}
+.dbc-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.dash-fila-group {
+  border-top: 1px solid var(--border);
+  padding: 8px 14px 10px;
+}
+.dfg-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.dfg-bar {
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.dfg-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text);
+  flex: 1;
+}
+.dfg-total {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--warn);
+}
+.dfg-banco-sugerido {
+  font-size: 10px;
+  color: var(--ok);
+  font-family: 'DM Mono', monospace;
+  margin-left: auto;
+}
+.dfg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 8px;
+}
+.dfg-row:last-child { border-bottom: none; }
+.dfg-desc {
+  font-size: 11px;
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dfg-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text);
+  white-space: nowrap;
+}
+.dfg-status-vencido { color: var(--danger); }
+.dfg-status-hoje { color: #ff9988; }
+.dfg-status-amanha { color: var(--warn); }
+.dfg-banco-tag {
+  font-size: 9px;
+  background: rgba(76,175,125,.15);
+  color: var(--ok);
+  border: 1px solid rgba(76,175,125,.3);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+.dfg-banco-tag-warn {
+  font-size: 9px;
+  background: rgba(240,192,64,.1);
+  color: var(--warn);
+  border: 1px solid rgba(240,192,64,.25);
+  border-radius: 3px;
+  padding: 1px 5px;
+  white-space: nowrap;
+}
+@media(max-width:480px){
+  #dashBriefing { grid-template-columns: 1fr; }
+  .dash-briefing-cell { border-right: none; border-bottom: 1px solid var(--border); }
+  .dash-briefing-cell:last-child { border-bottom: none; }
+}
+
+
 @media(max-width:480px) {
   .dash-body { grid-template-columns: repeat(2, 1fr) !important; }
   .dash-stat { border-right: none; border-bottom: 1px solid var(--border); }
@@ -1393,38 +1507,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   <!-- MAIN -->
   <div class="main">
     <div class="alertbar" id="alertBar" style="display:none" role="alert">⚠️ <span id="alertMsg"></span></div>
-    <!-- DASHBOARD RESUMO (v6 — útil) -->
+    <!-- DASHBOARD v7: BRIEFING DO DIA + FILA DE PAGAMENTOS -->
     <div class="dash-panel" id="dashPanel">
       <div class="dash-header" onclick="toggleDash()" aria-expanded="true" aria-controls="dashBody" role="button" tabindex="0" onkeydown="if(event.key==='Enter')toggleDash()">
-        <div class="dash-title">📊 Dashboard <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
+        <div class="dash-title">📋 Briefing do Dia <span class="foco-badge" id="focoBadgeDash" style="display:none">👁 Foco ativo</span></div>
         <span class="dash-chevron" aria-hidden="true">▼</span>
       </div>
-      <div class="dash-body" id="dashBody" style="grid-template-columns:repeat(5,1fr)">
-        <div class="dash-stat">
-          <div class="dash-stat-lbl">⚠️ Vencidos</div>
-          <div class="dash-stat-val" id="dashVencidos" style="color:var(--danger)">—</div>
-          <div class="dash-stat-sub" id="dashVencidosVal">—</div>
-        </div>
-        <div class="dash-stat">
-          <div class="dash-stat-lbl">🔥 Vencem Hoje</div>
-          <div class="dash-stat-val" id="dashHoje" style="color:#ff9988">—</div>
-          <div class="dash-stat-sub" id="dashHojeVal">—</div>
-        </div>
-        <div class="dash-stat">
-          <div class="dash-stat-lbl">📅 Próx. 7 dias</div>
-          <div class="dash-stat-val" id="dashProx7" style="color:var(--blue)">—</div>
-          <div class="dash-stat-sub" id="dashProx7Val">—</div>
-        </div>
-        <div class="dash-stat">
-          <div class="dash-stat-lbl">✅ Pagos no Mês</div>
-          <div class="dash-stat-val" id="dashPagosMes" style="color:var(--ok)">—</div>
-          <div class="dash-stat-sub" id="dashPagosMesQtd">—</div>
-        </div>
-        <div class="dash-stat" style="border-right:none">
-          <div class="dash-stat-lbl">💰 Saldo Líquido</div>
-          <div class="dash-stat-val" id="dashSaldoLiq">—</div>
-          <div class="dash-stat-sub" id="dashSaldoLiqSub">bancos − abertos</div>
-        </div>
+      <div id="dashBody" style="padding:0">
+        <!-- Bloco 1: Briefing resumo -->
+        <div id="dashBriefing" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border)"></div>
+        <!-- Bloco 2: Fila por empresa -->
+        <div id="dashFila" style="display:flex;flex-direction:column;gap:0"></div>
+        <!-- Empty state -->
+        <div id="dashEmpty" style="display:none;padding:14px 16px;font-size:12px;color:var(--muted);text-align:center">✅ Nenhum boleto vence hoje.</div>
       </div>
     </div>
     <div class="stats-row">
@@ -4196,65 +4291,113 @@ function desfazerPago(id){
 }
 
 // ════════════════════════════════════════════
-// v6 — DASHBOARD RESUMO ÚTIL
+// v7 — DASHBOARD: BRIEFING DO DIA + FILA DE PAGAMENTOS
 // ════════════════════════════════════════════
 function updateDashboard(){
-  const now = new Date();
-  const currentMonthStr = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
   const allB = boletoArr();
-  const d7 = new Set(next7DU());
   const hojeStr = dstr(TODAY);
+  const amanha = new Date(TODAY); amanha.setDate(amanha.getDate()+1);
+  const amanhaStr = dstr(amanha);
 
-  // Vencidos
-  const vencidos = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
-  const vencidosVal = vencidos.reduce((a,b)=>a+Number(b.valor||0),0);
-  const elV = document.getElementById('dashVencidos');
-  const elVV = document.getElementById('dashVencidosVal');
-  if(elV) elV.textContent = vencidos.length;
-  if(elVV) elVV.textContent = vencidos.length ? fmtR(vencidosVal) : 'nenhum';
-  if(elV) elV.style.color = vencidos.length > 0 ? 'var(--danger)' : 'var(--ok)';
+  // ── Bloco 1: Briefing ──────────────────────
+  const bVencidos  = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
+  const bHoje      = allB.filter(b => !b.pago && b.vencimento === hojeStr);
+  const bAmanha    = allB.filter(b => !b.pago && b.vencimento === amanhaStr);
 
-  // Vencem hoje
-  const hoje = allB.filter(b => !b.pago && b.vencimento === hojeStr);
-  const hojeVal = hoje.reduce((a,b)=>a+Number(b.valor||0),0);
-  const elH = document.getElementById('dashHoje');
-  const elHV = document.getElementById('dashHojeVal');
-  if(elH) elH.textContent = hoje.length;
-  if(elHV) elHV.textContent = hoje.length ? fmtR(hojeVal) : 'nenhum';
-  if(elH) elH.style.color = hoje.length > 0 ? '#ff9988' : 'var(--ok)';
+  const valVenc  = bVencidos.reduce((a,b)=>a+Number(b.valor||0),0);
+  const valHoje  = bHoje.reduce((a,b)=>a+Number(b.valor||0),0);
+  const valAmanha= bAmanha.reduce((a,b)=>a+Number(b.valor||0),0);
 
-  // Próximos 7 DU (excluindo hoje)
-  const prox7 = allB.filter(b => !b.pago && b.vencimento && d7.has(b.vencimento) && b.vencimento !== hojeStr);
-  const prox7Val = prox7.reduce((a,b)=>a+Number(b.valor||0),0);
-  const elP = document.getElementById('dashProx7');
-  const elPV = document.getElementById('dashProx7Val');
-  if(elP) elP.textContent = prox7.length;
-  if(elPV) elPV.textContent = prox7.length ? fmtR(prox7Val) : 'nenhum';
+  const brEl = document.getElementById('dashBriefing');
+  if(brEl){
+    const cell = (label, count, val, colorClass, qf) => {
+      const hasItems = count > 0;
+      const onclick = hasItems ? `setQF('${qf}');` : '';
+      return `<div class="dash-briefing-cell" onclick="${onclick}" title="${hasItems?'Clique para filtrar':''}">
+        <div class="dbc-lbl">${label}</div>
+        <div class="dbc-count" style="color:${hasItems ? colorClass : 'var(--muted)'}">${count}</div>
+        <div class="dbc-val" style="color:${hasItems ? colorClass : 'var(--muted)'}">${hasItems ? fmtR(val) : '—'}</div>
+      </div>`;
+    };
+    brEl.innerHTML =
+      cell('⚠ Vencido', bVencidos.length, valVenc, 'var(--danger)', 'vencido') +
+      cell('🔥 Vence hoje', bHoje.length, valHoje, '#ff9988', 'hoje') +
+      cell('📅 Vence amanhã', bAmanha.length, valAmanha, 'var(--warn)', 'pendente');
+  }
 
-  // Pagos no mês (count + valor)
-  const pagosMes = allB.filter(b => b.pago && b.vencimento && b.vencimento.startsWith(currentMonthStr));
-  const pagosMesVal = pagosMes.reduce((a,b)=>a+Number(b.valor||0),0);
-  const elPM = document.getElementById('dashPagosMes');
-  const elPMQ = document.getElementById('dashPagosMesQtd');
-  if(elPM) elPM.textContent = fmtR(pagosMesVal);
-  if(elPMQ) elPMQ.textContent = `${pagosMes.length} boleto${pagosMes.length!==1?'s':''}`;
+  // ── Bloco 2: Fila de pagamentos por empresa ─
+  // Mostra grupos que têm boleto vencido OU vence hoje OU vence amanhã
+  const urgentes = allB.filter(b =>
+    !b.pago && b.vencimento && (
+      toDate(b.vencimento) < TODAY ||
+      b.vencimento === hojeStr ||
+      b.vencimento === amanhaStr
+    )
+  );
 
-  // Saldo líquido total (soma de todos os bancos de todos os grupos − abertos)
-  const groups = getGroups().filter(g=>!g.isCasa);
-  let totalBancos = 0, totalAbertos = 0;
-  groups.forEach(g=>{
-    const gs = saldos[g.id]||{};
-    const bancos = bancosDoGrupo(g.name);
-    totalBancos += bancos.reduce((a,b)=>a+Number(gs[b]||0),0);
-    totalAbertos += allB.filter(b=>b.grupo===g.id&&!b.pago).reduce((a,b)=>a+Number(b.valor||0),0);
+  const filaEl = document.getElementById('dashFila');
+  const emptyEl = document.getElementById('dashEmpty');
+
+  if(!filaEl) { updateTagCounts(); return; }
+
+  const groups = getGroups();
+  let filaHTML = '';
+  let temAlgo = false;
+
+  groups.forEach(g => {
+    const gBols = urgentes
+      .filter(b => g.isCasa ? b.grupo === CASA : b.grupo === g.id)
+      .sort((a,b) => toDate(a.vencimento) - toDate(b.vencimento));
+
+    if(!gBols.length) return;
+    temAlgo = true;
+
+    const totalG = gBols.reduce((a,b)=>a+Number(b.valor||0),0);
+
+    // Banco sugerido = banco com maior saldo no grupo (exceto casa)
+    let bancoSugeridoHTML = '';
+    if(!g.isCasa){
+      const gs = saldos[g.id]||{};
+      const bancos = bancosDoGrupo(g.name);
+      let melhorBanco = null, melhorSaldo = -Infinity;
+      bancos.forEach(b => {
+        const s = Number(gs[b]||0);
+        if(s > melhorSaldo){ melhorSaldo = s; melhorBanco = b; }
+      });
+      if(melhorBanco && melhorSaldo > 0){
+        const cobre = melhorSaldo >= totalG;
+        bancoSugeridoHTML = `<span class="${cobre?'dfg-banco-tag':'dfg-banco-tag-warn'}">${melhorBanco}: ${fmtR(melhorSaldo)}</span>`;
+      }
+    }
+
+    const rows = gBols.map(b => {
+      const isVencido = toDate(b.vencimento) < TODAY;
+      const isHoje    = b.vencimento === hojeStr;
+      const statusCls = isVencido ? 'dfg-status-vencido' : isHoje ? 'dfg-status-hoje' : 'dfg-status-amanha';
+      const statusTag = isVencido ? '⚠ vencido' : isHoje ? '🔥 hoje' : '📅 amanhã';
+      const desc = escHTML((b.desc||'').slice(0,32));
+      return `<div class="dfg-row">
+        <span class="dfg-desc ${statusCls}" title="${escHTML(b.desc||'')}">${desc}</span>
+        <span class="dfg-val ${statusCls}" style="font-size:10px;margin-right:4px">${statusTag}</span>
+        <span class="dfg-val">${fmtR(b.valor)}</span>
+      </div>`;
+    }).join('');
+
+    filaHTML += `<div class="dash-fila-group">
+      <div class="dfg-head">
+        <div class="dfg-bar" style="background:${g.color}"></div>
+        <span class="dfg-name">${g.isCasa?'🏠 ':''}${escHTML(g.name)}</span>
+        ${bancoSugeridoHTML}
+        <span class="dfg-total">${fmtR(totalG)}</span>
+      </div>
+      <div>${rows}</div>
+    </div>`;
   });
-  const liquido = totalBancos - totalAbertos;
-  const elSL = document.getElementById('dashSaldoLiq');
-  const elSLS = document.getElementById('dashSaldoLiqSub');
-  if(elSL){ elSL.textContent = fmtR(liquido); elSL.style.color = liquido >= 0 ? 'var(--ok)' : 'var(--danger)'; }
-  if(elSLS) elSLS.textContent = `${fmtR(totalBancos)} − ${fmtR(totalAbertos)}`;
 
-  // Update tag counts
+  filaEl.innerHTML = filaHTML;
+  if(emptyEl) emptyEl.style.display = temAlgo ? 'none' : 'block';
+  if(brEl) brEl.style.display = temAlgo || (bVencidos.length||bHoje.length||bAmanha.length) ? '' : 'none';
+
   updateTagCounts();
 }
 

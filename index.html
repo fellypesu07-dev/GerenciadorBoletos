@@ -2301,12 +2301,29 @@ function isDU(s){return!isWE(toDate(s))&&!isFer(s);}
 function next7DU(){const r=[];let d=new Date(TODAY);while(r.length<7){const s=dstr(d);if(isDU(s))r.push(s);d.setDate(d.getDate()+1);}return r;}
 function duAte(s){const v=toDate(s);if(v<TODAY)return null;let n=0,d=new Date(TODAY);while(d<v){if(isDU(dstr(d)))n++;d.setDate(d.getDate()+1);}return n;}
 
+// Retorna a string "YYYY-MM-DD" do 1o dia util >= a data informada.
+// Ex: sabado -> segunda; feriado na segunda -> terca.
+function proximoDU(s){
+  let d=toDate(s);
+  while(!isDU(dstr(d))){d.setDate(d.getDate()+1);}
+  return dstr(d);
+}
+
+// Status considera que boletos com vencimento em FDS/feriado so sao
+// "vencidos" apos o 1o dia util seguinte passar. Ate la: "hoje" ou "pendente".
 function status(b){
   if(b.pago)return"pago";
   const d=toDate(b.vencimento);
-  if(d<TODAY)return"vencido";
-  if(d.getTime()===TODAY.getTime())return"hoje";
-  return"pendente";
+  const todayTime=TODAY.getTime();
+  if(d.getTime()===todayTime)return"hoje";
+  if(d>TODAY)return"pendente";
+  // d < TODAY: boleto passou da data nominal
+  // Verifica se o prazo real (1o DU >= vencimento) ja passou tambem
+  const prazoReal=proximoDU(b.vencimento);
+  const prazoDate=toDate(prazoReal);
+  if(prazoDate.getTime()===todayTime)return"hoje";   // 1o DU cai hoje -> ainda no prazo
+  if(prazoDate>TODAY)return"pendente";               // 1o DU ainda nao chegou
+  return"vencido";                                   // 1o DU ja passou -> vencido de verdade
 }
 
 // ══════════════════════════════════════════════
@@ -2968,7 +2985,8 @@ function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").
 // RENDER ALL
 // ══════════════════════════════════════════════
 function renderAll(){
-  const _sy = window.scrollY;
+  const _bodyFixed = document.body.style.position === 'fixed';
+  const _sy = _bodyFixed ? _scrollLockY : window.scrollY;
   updateQFBtns();
   renderCNPJPills();
   renderDUStrip();
@@ -3842,9 +3860,11 @@ async function toggleNotifications(){
 
 function scheduleNotifications(){
   if(!notifEnabled || Notification.permission !== "granted") return;
-  const hoje = dstr(TODAY);
-  const vencHoje = boletoArr().filter(b=>!b.pago && b.vencimento===hoje);
-  const vencidos = boletoArr().filter(b=>!b.pago && b.vencimento < hoje);
+  // Usa status() que ja respeita FDS/feriados: boleto com vencimento no sabado
+  // so aparece como "vencido" apos a segunda-feira (1o DU) passar.
+  const todos = boletoArr().filter(b=>!b.pago && b.vencimento);
+  const vencHoje = todos.filter(b=>status(b)==="hoje");
+  const vencidos  = todos.filter(b=>status(b)==="vencido");
   if(vencHoje.length > 0 || vencidos.length > 0){
     const total = vencHoje.reduce((a,b)=>a+Number(b.valor||0),0)
                 + vencidos.reduce((a,b)=>a+Number(b.valor||0),0);
@@ -4713,8 +4733,10 @@ function updateDashboard(){
   const amanhaStr = dstr(amanha);
 
   // ── Bloco 1: Briefing ──────────────────────
-  const bVencidos  = allB.filter(b => !b.pago && b.vencimento && toDate(b.vencimento) < TODAY);
-  const bHoje      = allB.filter(b => !b.pago && b.vencimento === hojeStr);
+  // Usa status() que respeita FDS/feriados: nao marca "vencido" boleto cujo
+  // 1o dia util ainda nao chegou (ex: venceu sabado, hoje e segunda = "hoje").
+  const bVencidos  = allB.filter(b => !b.pago && b.vencimento && status(b)==="vencido");
+  const bHoje      = allB.filter(b => !b.pago && b.vencimento && status(b)==="hoje");
   const bAmanha    = allB.filter(b => !b.pago && b.vencimento === amanhaStr);
 
   const valVenc  = bVencidos.reduce((a,b)=>a+Number(b.valor||0),0);
@@ -4740,13 +4762,13 @@ function updateDashboard(){
 
   // ── Bloco 2: Fila de pagamentos por empresa ─
   // Mostra grupos que têm boleto vencido OU vence hoje OU vence amanhã
-  const urgentes = allB.filter(b =>
-    !b.pago && b.vencimento && (
-      toDate(b.vencimento) < TODAY ||
-      b.vencimento === hojeStr ||
-      b.vencimento === amanhaStr
-    )
-  );
+  const urgentes = allB.filter(b => {
+    if(!b.pago && b.vencimento){
+      const s = status(b);
+      return s === "vencido" || s === "hoje" || b.vencimento === amanhaStr;
+    }
+    return false;
+  });
 
   const filaEl = document.getElementById('dashFila');
   const emptyEl = document.getElementById('dashEmpty');

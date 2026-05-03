@@ -192,6 +192,11 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .mono{font-family:'DM Mono',monospace;}
 .badge{display:inline-flex;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;text-transform:uppercase;white-space:nowrap;}
 .dtag{display:inline-block;border-radius:3px;font-size:10px;padding:1px 5px;font-family:'DM Mono',monospace;font-weight:700;}
+.status-pill{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;font-family:'DM Sans',sans-serif;}
+.pill-pago   {background:#4caf7d18;color:var(--ok);border:1px solid #4caf7d35;}
+.pill-pendente{background:#22c55e18;color:#22c55e;border:1px solid #22c55e30;}
+.pill-vencido{background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a35;}
+.pill-hoje   {background:#ff888818;color:#ff9988;border:1px solid #ff888835;}
 .vdots{display:flex;gap:3px;}
 .vd{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:9px;transition:.12s;color:transparent;flex-shrink:0;}
 .vd.vok{background:var(--ok);border-color:var(--ok);color:#fff;}
@@ -250,6 +255,14 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 
 /* LOADING */
 .loading-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:var(--bg);color:var(--muted);gap:12px;}
+.skel-wrap{padding:16px;display:flex;flex-direction:column;gap:12px;max-width:480px;width:100%;}
+.skel-row{display:flex;align-items:center;gap:10px;}
+.skel{background:var(--card);border-radius:5px;position:relative;overflow:hidden;}
+.skel::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.04) 50%,transparent 100%);animation:skelShine 1.4s ease-in-out infinite;}
+@keyframes skelShine{0%{transform:translateX(-100%)}100%{transform:translateX(100%)}}
+.skel-circle{width:36px;height:36px;border-radius:50%;flex-shrink:0;}
+.skel-block{height:10px;}
+.skel-card{border:1px solid var(--border);border-radius:9px;padding:13px;display:flex;flex-direction:column;gap:8px;}
 .spin{border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -310,6 +323,13 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 .bol-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;flex-direction:column;gap:6px;}
 .bol-card:hover{background:#22c55e05;}
 .bol-card.pago-card{opacity:.7;}
+.bol-card{position:relative;overflow:hidden;touch-action:pan-y;}
+.swipe-reveal{position:absolute;top:0;right:0;bottom:0;display:flex;align-items:stretch;border-radius:0 8px 8px 0;overflow:hidden;transform:translateX(100%);transition:transform .18s ease;}
+.swipe-del{background:#e05c3a;color:#fff;border:none;padding:0 14px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;}
+.swipe-pay{background:var(--ok);color:#fff;border:none;padding:0 14px;font-size:11px;font-weight:700;cursor:pointer;display:flex;align-items:center;}
+.bol-card.swiped .swipe-reveal{transform:translateX(0);}
+.bol-card-inner{transition:transform .18s ease;}
+.bol-card.swiped .bol-card-inner{transform:translateX(-120px);}
 .bc-desc{font-weight:700;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bc-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;}
 .bc-meta{font-size:10px;color:var(--muted);}
@@ -1418,8 +1438,33 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 <!-- LOADING -->
 <div class="loading-screen" id="loadingScreen">
-  <div class="spin" style="width:32px;height:32px;border:3px solid #2a2a27;border-top-color:var(--accent);"></div>
-  <div style="font-size:13px;">Conectando ao banco de dados…</div>
+  <div class="skel-wrap">
+    <div class="skel-row">
+      <div class="skel skel-circle"></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+        <div class="skel skel-block" style="width:55%;"></div>
+        <div class="skel skel-block" style="width:35%;height:8px;"></div>
+      </div>
+      <div class="skel skel-block" style="width:60px;height:14px;border-radius:7px;"></div>
+    </div>
+    <div class="skel skel-card">
+      <div class="skel-row">
+        <div class="skel skel-block" style="width:45%;"></div>
+        <div class="skel skel-block" style="width:20%;margin-left:auto;height:18px;border-radius:9px;"></div>
+      </div>
+      <div class="skel skel-block" style="width:30%;height:14px;"></div>
+      <div class="skel skel-block" style="width:80%;height:8px;"></div>
+    </div>
+    <div class="skel skel-card">
+      <div class="skel-row">
+        <div class="skel skel-block" style="width:52%;"></div>
+        <div class="skel skel-block" style="width:22%;margin-left:auto;height:18px;border-radius:9px;"></div>
+      </div>
+      <div class="skel skel-block" style="width:28%;height:14px;"></div>
+      <div class="skel skel-block" style="width:65%;height:8px;"></div>
+    </div>
+    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:4px;">Conectando…</div>
+  </div>
 </div>
 
 <div id="app" style="display:none;">
@@ -1612,6 +1657,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         <div id="dashFila" style="display:flex;flex-direction:column;gap:0"></div>
         <!-- Empty state -->
         <div id="dashEmpty" style="display:none;padding:14px 16px;font-size:12px;color:var(--muted);text-align:center">✅ Nenhum boleto vence hoje.</div>
+<div style="padding:10px 12px 4px;border-top:1px solid var(--border);margin-top:4px;">
+  <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Últimos 6 meses</div>
+  <canvas id="miniChart" height="56" style="width:100%;display:block;"></canvas>
+  <div id="miniChartLabels" style="display:flex;justify-content:space-between;margin-top:3px;font-size:8px;color:var(--muted);font-family:'DM Mono',monospace;"></div>
+</div>
       </div>
     </div>
     <div class="stats-row">
@@ -2736,10 +2786,10 @@ function toggleAll(expand){
 // RENDER GROUPS
 // ══════════════════════════════════════════════
 const BST={
-  pago:'<span class="badge" style="background:#4caf7d20;color:var(--ok)">✓ Pago</span>',
-  pendente:'<span class="badge" style="background:#22c55e20;color:var(--warn)">⏳ Pend.</span>',
-  vencido:'<span class="badge" style="background:#e05c3a20;color:var(--danger)">⚠ Venc.</span>',
-  hoje:'<span class="badge" style="background:#ff999920;color:#ff9988;border:1px solid #ff999940">🔥 Hoje</span>'
+  pago:    '<span class="status-pill pill-pago">✓ Pago</span>',
+  pendente:'<span class="status-pill pill-pendente">● Pendente</span>',
+  vencido: '<span class="status-pill pill-vencido">⚠ Vencido</span>',
+  hoje:    '<span class="status-pill pill-hoje">🔥 Hoje</span>'
 };
 
 function renderGroups(){
@@ -2785,10 +2835,10 @@ function renderGroups(){
           const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):(b.cat||"");
           let duEl="";
           if(b.pago)duEl=`<span style="color:var(--ok);font-size:10px">pago${b.pagoEm?" · "+fmtD(b.pagoEm):""}</span>`;
-          else if(du===null)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">atrasado</span>`;
-          else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
+          else if(du===null)duEl=`<span class="status-pill pill-vencido">⚠ Atrasado</span>`;
+          else if(du===0)duEl=`<span class="status-pill pill-hoje">🔥 Hoje</span>`;
           else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
-          html+=`<div class="bol-card ${b.pago?"pago-card":""}${s==="vencido"?" vencido-card":""}">
+          html+=`<div class="bol-card ${b.pago?"pago-card":""}${s==="vencido"?" vencido-card":""}" data-id="${b.id}">
             <div class="bc-desc" title="${escHTML(b.desc||"")}">${escHTML(b.desc||"")}${b.recorrente?` <span class="rec-tag">🔁</span>`:""}${b.modalidade==="pix"?` <span class="pix-badge">⚡</span>`:""}</div>
           ${b.modalidade==="pix"&&(b.pixChave||b.pixPayload)?`<button class="pix-copy-btn" onclick="copyPixKey('${b.id}')">⚡ Copiar chave Pix</button>`:""}
             <div class="bc-val" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}" title="Duplo clique para editar" ondblclick="startInlineEdit('${b.id}', ${b.valor||0}, this)">${fmtR(b.valor)}</div>
@@ -2814,8 +2864,8 @@ function renderGroups(){
           const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):(b.cat||"");
           let duEl;
           if(b.pago)duEl=`<span style="color:var(--ok);font-size:10px">pago${b.pagoEm?" · "+fmtD(b.pagoEm):""}</span>`;
-          else if(du===null)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">atrasado</span>`;
-          else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
+          else if(du===null)duEl=`<span class="status-pill pill-vencido">⚠ Atrasado</span>`;
+          else if(du===0)duEl=`<span class="status-pill pill-hoje">🔥 Hoje</span>`;
           else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
 
           html+=`<tr style="${in7?"background:rgba(111,143,255,.04)":""}">
@@ -2859,7 +2909,12 @@ function renderGroups(){
     html+=`</div>`;
   });
 
-  document.getElementById("groupsWrap").innerHTML=html||`<div style="text-align:center;padding:40px;color:var(--muted)">Nenhum boleto encontrado.</div>`;
+  document.getElementById("groupsWrap").innerHTML=html||`<div style="text-align:center;padding:48px 24px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:10px;">
+    <div style="font-size:36px;line-height:1;">🎉</div>
+    <div style="font-size:14px;font-weight:700;color:var(--text)">Tudo em dia!</div>
+    <div style="font-size:12px;max-width:200px;line-height:1.5;">Nenhum boleto encontrado para este filtro.</div>
+    <button class="btn btn-p" style="margin-top:4px;font-size:12px;padding:7px 16px;" onclick="openModal()">＋ Adicionar boleto</button>
+  </div>`;
 }
 
 function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
@@ -2893,8 +2948,9 @@ function markPago(id){
   if(!b) return;
   const pagoEm = new Date().toISOString().slice(0,10);
   fbSet("boletos/"+id, {...b, pago:true, pagoEm});
+  // Microinteração: checkmark animado
+  showCheckAnim();
   if(b.modalidade==="pix" && (b.pixChave||b.pixPayload)){
-    // Auto-copy pix key when marking paid
     const text=b.pixPayload||b.pixChave;
     navigator.clipboard.writeText(text).then(()=>{
       toast("✓ Pago! Chave Pix copiada ⚡", "ok");
@@ -2904,6 +2960,22 @@ function markPago(id){
   } else {
     toast("✓ Marcado como pago!", "ok");
   }
+}
+
+function showCheckAnim(){
+  const el=document.createElement("div");
+  el.innerHTML=`<svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="28" fill="#4caf7d22" stroke="#4caf7d" stroke-width="2"/><path d="M20 32l9 9 15-15" fill="none" stroke="#4caf7d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="33" stroke-dashoffset="33" style="transition:stroke-dashoffset .35s ease"/></svg>`;
+  Object.assign(el.style,{position:"fixed",top:"50%",left:"50%",transform:"translate(-50%,-50%) scale(.6)",zIndex:"99999",pointerEvents:"none",transition:"transform .2s ease, opacity .3s ease",opacity:"0"});
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>{
+    el.style.transform="translate(-50%,-50%) scale(1)";
+    el.style.opacity="1";
+    const path=el.querySelector("path");
+    if(path) setTimeout(()=>{path.style.strokeDashoffset="0";},50);
+    setTimeout(()=>{el.style.opacity="0";el.style.transform="translate(-50%,-50%) scale(1.15)";},700);
+    setTimeout(()=>el.remove(),1050);
+  });
+  if(navigator.vibrate) navigator.vibrate(60);
 }
 
 // Confirm delete modal
@@ -5098,6 +5170,99 @@ function gbForceReload(){
     });
   } else { window.location.reload(true); }
 }
+
+// ══ SWIPE TO ACTION (mobile) ══
+function initSwipe(card, id, isPago){
+  let startX=0, currentX=0, swiped=false;
+  card.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;},{ passive:true });
+  card.addEventListener("touchmove",e=>{
+    currentX=e.touches[0].clientX;
+    const dx=startX-currentX;
+    if(dx>10 && !swiped){ card.classList.add("swiped"); swiped=true; }
+    else if(dx<-10 && swiped){ card.classList.remove("swiped"); swiped=false; }
+  },{ passive:true });
+  card.addEventListener("touchend",()=>{ if(!swiped) card.classList.remove("swiped"); });
+}
+
+// Attach swipe after render
+const _origRenderAll = typeof renderAll === "function" ? renderAll : null;
+document.addEventListener("DOMContentLoaded", ()=>{
+  const observer = new MutationObserver(()=>{
+    document.querySelectorAll(".bol-card:not([data-swipe])").forEach(card=>{
+      card.setAttribute("data-swipe","1");
+      const id=card.getAttribute("data-id");
+      if(!id) return;
+      const isPago=card.classList.contains("pago-card");
+      // Wrap inner content
+      if(!card.querySelector(".bol-card-inner")){
+        const inner=document.createElement("div");
+        inner.className="bol-card-inner";
+        while(card.firstChild) inner.appendChild(card.firstChild);
+        card.appendChild(inner);
+        // Add swipe reveal actions
+        const rev=document.createElement("div");
+        rev.className="swipe-reveal";
+        if(!isPago){
+          rev.innerHTML=`<button class="swipe-pay" onclick="event.stopPropagation();markPago('${id}');this.closest('.bol-card').classList.remove('swiped')">✓ Pago</button>`;
+        }
+        rev.innerHTML+=`<button class="swipe-del" onclick="event.stopPropagation();card.classList.remove('swiped');confirmDel('${id}','')">🗑</button>`;
+        card.appendChild(rev);
+      }
+      initSwipe(card, id, isPago);
+    });
+    renderMiniChart();
+  });
+  observer.observe(document.getElementById("groupsWrap")||document.body, {childList:true, subtree:true});
+});
+
+// ══ MINI GRÁFICO MENSAL ══
+function renderMiniChart(){
+  const canvas=document.getElementById("miniChart");
+  const labelsEl=document.getElementById("miniChartLabels");
+  if(!canvas||!labelsEl||typeof boletos==="undefined") return;
+  const ctx=canvas.getContext("2d");
+  const W=canvas.offsetWidth||200;
+  canvas.width=W*window.devicePixelRatio;
+  canvas.height=56*window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio,window.devicePixelRatio);
+  const w=W, h=56;
+
+  // Build last 6 months
+  const months=[];
+  const d=new Date();
+  for(let i=5;i>=0;i--){
+    const t=new Date(d.getFullYear(),d.getMonth()-i,1);
+    months.push({y:t.getFullYear(),m:t.getMonth(),label:t.toLocaleString("pt-BR",{month:"short"})});
+  }
+  const vals=months.map(({y,m})=>{
+    return Object.values(boletos).filter(b=>{
+      const bd=b.vencimento?new Date(b.vencimento+"T00:00:00"):null;
+      return bd&&bd.getFullYear()===y&&bd.getMonth()===m;
+    }).reduce((sum,b)=>sum+Number(b.valor||0),0);
+  });
+
+  const maxV=Math.max(...vals,1);
+  const pad=6, barW=Math.floor((w-pad*2)/6)-4, gap=4;
+  ctx.clearRect(0,0,w,h);
+
+  const accent=getComputedStyle(document.documentElement).getPropertyValue("--accent").trim()||"#22c55e";
+  const mutedC=getComputedStyle(document.documentElement).getPropertyValue("--muted").trim()||"#6a6a62";
+  const isCurrentMonth=(i)=>i===5;
+
+  vals.forEach((v,i)=>{
+    const bh=Math.max(4,((v/maxV)*(h-pad*2)));
+    const x=pad+i*(barW+gap);
+    const y=h-pad-bh;
+    ctx.fillStyle=isCurrentMonth(i)?accent:mutedC+"55";
+    ctx.beginPath();
+    ctx.roundRect(x,y,barW,bh,3);
+    ctx.fill();
+  });
+
+  // Labels
+  labelsEl.innerHTML=months.map((mo,i)=>`<span style="${isCurrentMonth(i)?"color:var(--accent);font-weight:700":""}">${mo.label}</span>`).join("");
+}
+
 </script>
 
 </body>

@@ -206,7 +206,7 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 /* MODAL */
 .mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;align-items:center;justify-content:center;padding:16px;}
 .mo.open{display:flex;}
-.mbox{background:var(--surf);border:1px solid var(--border);border-radius:12px;padding:22px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;}
+.mbox{background:rgba(24,24,22,.82);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:22px;width:100%;max-width:500px;max-height:92vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.6);}
 .mtit{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;margin-bottom:15px;color:var(--accent);}
 .fg{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .fg .full{grid-column:1/-1;}
@@ -307,8 +307,8 @@ td{padding:8px 10px;font-size:12px;vertical-align:middle;}
 
 /* ── CARD VIEW ── */
 .card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;padding:6px 0;}
-.bol-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;flex-direction:column;gap:6px;transition:.12s;}
-.bol-card:hover{border-color:var(--accent);background:#f0c04005;}
+.bol-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:11px 13px;display:flex;flex-direction:column;gap:6px;}
+.bol-card:hover{background:#f0c04005;}
 .bol-card.pago-card{opacity:.7;}
 .bc-desc{font-weight:700;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .bc-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:700;}
@@ -746,6 +746,19 @@ body[data-theme="light"] header { box-shadow: 0 1px 4px rgba(0,0,0,.1); }
 body[data-theme="light"] .gb-head:hover { background: #e8e8e4; }
 body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
 
+/* OLED Black — pixels apagam, zero bateria */
+body[data-theme="oled"] {
+  --bg:#000000;--surf:#080808;--card:#0d0d0d;--card2:#111111;
+  --border:#1a1a1a;--text:#e4e4dc;--muted:#555550;
+  --accent:#f0c040;--danger:#e05c3a;--ok:#4caf7d;--warn:#f0c040;
+  --blue:#6f8fff;--pink:#ff9fdf;
+}
+body[data-theme="oled"] header { background: #000; border-bottom-color: #1a1a1a; }
+body[data-theme="oled"] .sidebar { background: #050505; }
+body[data-theme="oled"] .mbox { background: rgba(8,8,8,.95); }
+body[data-theme="oled"] .dash-panel { background: rgba(8,8,8,.85); }
+body[data-theme="oled"] #bottomNav { background: rgba(0,0,0,.95); }
+
 /* ── Theme toggle pill ── */
 .theme-picker {
   display: flex;
@@ -793,21 +806,41 @@ body[data-theme="light"] .toast-item { box-shadow: 0 4px 16px rgba(0,0,0,.15); }
 
 /* Card entrada suave */
 @keyframes cardIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .bol-card, tbody tr {
-  animation: cardIn .22s ease both;
+  animation: cardIn .32s cubic-bezier(.22,1,.36,1) both;
+  transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
+.bol-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent) !important;
+  box-shadow: 0 6px 20px rgba(0,0,0,.25), 0 0 0 1px var(--accent)22;
+}
+.bol-card:active { transform: scale(.985); }
 /* Stagger via CSS custom prop para cards */
-.bol-card:nth-child(1)  { animation-delay: .02s; }
-.bol-card:nth-child(2)  { animation-delay: .04s; }
-.bol-card:nth-child(3)  { animation-delay: .06s; }
-.bol-card:nth-child(4)  { animation-delay: .08s; }
-.bol-card:nth-child(5)  { animation-delay: .10s; }
-.bol-card:nth-child(6)  { animation-delay: .12s; }
-.bol-card:nth-child(7)  { animation-delay: .14s; }
-.bol-card:nth-child(8)  { animation-delay: .16s; }
+.bol-card:nth-child(1)  { animation-delay: .03s; }
+.bol-card:nth-child(2)  { animation-delay: .07s; }
+.bol-card:nth-child(3)  { animation-delay: .11s; }
+.bol-card:nth-child(4)  { animation-delay: .15s; }
+.bol-card:nth-child(5)  { animation-delay: .19s; }
+.bol-card:nth-child(6)  { animation-delay: .23s; }
+.bol-card:nth-child(7)  { animation-delay: .27s; }
+.bol-card:nth-child(8)  { animation-delay: .31s; }
+/* Glow nos vencidos */
+.bol-card.vencido-card .bc-val,
+.bol-card.vencido-card .bc-status {
+  text-shadow: 0 0 10px rgba(224,92,58,.55);
+}
+.bol-card.vencido-card {
+  border-color: rgba(224,92,58,.35) !important;
+  box-shadow: inset 0 0 0 1px rgba(224,92,58,.12);
+}
+.bol-card.vencido-card:hover {
+  border-color: rgba(224,92,58,.7) !important;
+  box-shadow: 0 6px 20px rgba(224,92,58,.18), inset 0 0 0 1px rgba(224,92,58,.2);
+}
 
 /* Stats contam para cima */
 @keyframes countUp {
@@ -924,12 +957,15 @@ body.modo-foco .foco-badge { display: inline-flex; align-items: center; gap: 4px
    DASHBOARD RESUMO (v5)
 ════════════════════════════════════════════ */
 .dash-panel {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
+  background: rgba(24,24,22,.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 12px;
   overflow: hidden;
   transition: max-height .3s cubic-bezier(.4,0,.2,1);
   max-height: 300px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.3);
 }
 .dash-panel.collapsed { max-height: 44px; }
 .dash-header {
@@ -1398,6 +1434,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <div class="theme-dot"        id="td-dark-green" style="background:linear-gradient(135deg,#0c110e,#4cdf88)" title="Dark Green" onclick="setTheme('dark-green')" tabindex="0" role="button" aria-label="Tema Dark Green" onkeydown="if(event.key==='Enter')setTheme('dark-green')"></div>
       <div class="theme-dot"        id="td-dark-blue"  style="background:linear-gradient(135deg,#0c0f16,#6f8fff)" title="Dark Blue"  onclick="setTheme('dark-blue')"  tabindex="0" role="button" aria-label="Tema Dark Blue"  onkeydown="if(event.key==='Enter')setTheme('dark-blue')"></div>
       <div class="theme-dot"        id="td-light"      style="background:linear-gradient(135deg,#f5f5f2,#e08020)" title="Light"      onclick="setTheme('light')"      tabindex="0" role="button" aria-label="Tema Light"      onkeydown="if(event.key==='Enter')setTheme('light')"></div>
+      <div class="theme-dot"        id="td-oled"       style="background:linear-gradient(135deg,#000000,#f0c040)" title="OLED Black" onclick="setTheme('oled')"       tabindex="0" role="button" aria-label="Tema OLED Black"  onkeydown="if(event.key==='Enter')setTheme('oled')"></div>
     </div>
     <!-- Modo foco -->
     <button class="btn btn-g btn-sm foco-badge" id="focoBtn" onclick="toggleFoco()" aria-pressed="false" title="Modo Foco: oculta pagos">👁 Foco</button>
@@ -1531,6 +1568,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
         <div class="theme-dot" id="sb-td-dark-green" style="background:linear-gradient(135deg,#0c110e,#4cdf88);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Green" onclick="setTheme('dark-green')" tabindex="0" role="button" aria-label="Tema Dark Green"></div>
         <div class="theme-dot" id="sb-td-dark-blue"  style="background:linear-gradient(135deg,#0c0f16,#6f8fff);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Dark Blue"  onclick="setTheme('dark-blue')"  tabindex="0" role="button" aria-label="Tema Dark Blue"></div>
         <div class="theme-dot" id="sb-td-light"      style="background:linear-gradient(135deg,#f5f5f2,#e08020);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="Light"      onclick="setTheme('light')"      tabindex="0" role="button" aria-label="Tema Light"></div>
+        <div class="theme-dot" id="sb-td-oled"       style="background:linear-gradient(135deg,#000000,#f0c040);width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;flex-shrink:0" title="OLED Black" onclick="setTheme('oled')"       tabindex="0" role="button" aria-label="Tema OLED Black"></div>
       </div>
       <div class="div"></div>
       <!-- Modo Foco -->
@@ -2750,7 +2788,7 @@ function renderGroups(){
           else if(du===null)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">atrasado</span>`;
           else if(du===0)duEl=`<span class="dtag" style="background:#e05c3a18;color:var(--danger);border:1px solid #e05c3a30">hoje</span>`;
           else duEl=`<span class="dtag" style="background:#6f8fff18;color:var(--blue);border:1px solid #6f8fff30">${du}DU</span>`;
-          html+=`<div class="bol-card ${b.pago?"pago-card":""}">
+          html+=`<div class="bol-card ${b.pago?"pago-card":""}${s==="vencido"?" vencido-card":""}">
             <div class="bc-desc" title="${escHTML(b.desc||"")}">${escHTML(b.desc||"")}${b.recorrente?` <span class="rec-tag">🔁</span>`:""}${b.modalidade==="pix"?` <span class="pix-badge">⚡</span>`:""}</div>
           ${b.modalidade==="pix"&&(b.pixChave||b.pixPayload)?`<button class="pix-copy-btn" onclick="copyPixKey('${b.id}')">⚡ Copiar chave Pix</button>`:""}
             <div class="bc-val" style="color:${s==="pago"?"var(--ok)":s==="vencido"?"var(--danger)":"var(--text)"}" title="Duplo clique para editar" ondblclick="startInlineEdit('${b.id}', ${b.valor||0}, this)">${fmtR(b.valor)}</div>

@@ -1814,7 +1814,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       </div>
       <div class="fi full" id="cartaoRow" style="display:none"><label>Cartão (bandeira/banco)</label><input type="text" id="fCartao" placeholder="Ex: Nubank, Itaú Visa"></div>
     </div>
-    <div class="fi"><label>Valor (R$)</label><input type="text" id="fValor" placeholder="R$ 0,00" inputmode="decimal" autocomplete="off"></div>
+    <div class="fi"><label>Valor (R$)</label><input type="text" id="fValor" placeholder="R$ 0,00" inputmode="numeric" autocomplete="off"></div>
     <div class="fi"><label>Vencimento</label><input type="date" id="fVenc"></div>
     <div class="fi full"><label>Observação (NF, linha digitável, fone...)</label><textarea id="fObs" placeholder="NF 1234 · linha digitável · (11) 9999-9999"></textarea></div>
 
@@ -2768,7 +2768,7 @@ function renderSaldoPanel(){
   const now = new Date();
   const mesAtual = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
   const mesLabel = MESES[now.getMonth()] + '/' + now.getFullYear();
-  const hoje = dstr(now); // usa data local (não UTC) para evitar dessincronismo
+  const hoje = dstr(now); // data local (não UTC) — evita bug de fuso horário
   const diaLabel = `${p2(now.getDate())}/${p2(now.getMonth()+1)}/${now.getFullYear()}`;
 
   // Update label
@@ -3431,6 +3431,44 @@ function removeCNPJ(id){
 // ══════════════════════════════════════════════
 // MODAL SALDO
 // ══════════════════════════════════════════════
+// ══════════════════════════════════════════════
+// HELPERS DE VALOR EM FORMATO BRASILEIRO (vírgula)
+// ══════════════════════════════════════════════
+
+// Converte número armazenado (ex: 1749.8) para exibição com vírgula (ex: "1.749,80")
+function fmtInputBR(v){
+  if(v === null || v === undefined || v === "") return "";
+  const n = Number(v);
+  if(!n && n !== 0) return "";
+  if(n === 0) return "";
+  return n.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// Converte texto BR (ex: "1.749,80" ou "1749,80" ou "1749.80") para número
+function parseBR(s){
+  if(!s) return 0;
+  s = String(s).trim();
+  // Remove pontos de milhar, troca vírgula por ponto decimal
+  s = s.replace(/\./g,"").replace(",",".");
+  return parseFloat(s) || 0;
+}
+
+// Normaliza input enquanto o usuário digita: remove tudo exceto dígitos e vírgula,
+// garante no máximo uma vírgula e 2 casas decimais
+function normBR(el){
+  let v = el.value;
+  // Troca ponto por vírgula imediatamente (iOS pode inserir ponto)
+  v = v.replace(/\./g, ",");
+  // Remove tudo que não for dígito ou vírgula
+  v = v.replace(/[^0-9,]/g, "");
+  // Apenas uma vírgula
+  const parts = v.split(",");
+  if(parts.length > 2) v = parts[0] + "," + parts.slice(1).join("");
+  // Limita casas decimais a 2
+  if(parts.length === 2 && parts[1].length > 2) v = parts[0] + "," + parts[1].slice(0,2);
+  el.value = v;
+}
+
 function openSaldoModal(){
   const groups=getGroups().filter(g=>!g.isCasa);
   let h="";
@@ -3446,21 +3484,27 @@ function openSaldoModal(){
       <div style="display:flex;flex-direction:column;gap:4px;padding-left:11px">
         <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;margin-bottom:4px;min-width:0">
           <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Banco</div>
-          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Saldo</div>
-          <div style="font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.5px">Depósito</div>
+          <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Saldo (R$)</div>
+          <div style="font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.5px">Depósito (R$)</div>
         </div>
         ${bancos.map(b=>`<div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;align-items:center;min-width:0">
           <div style="font-size:12px;color:var(--muted);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis">${b}</div>
-          <input type="text" inputmode="decimal" pattern="[0-9.,]*" data-gid="${g.id}" data-banco="${b}" value="${gs[b]||""}" placeholder="0,00"
+          <input type="text" inputmode="decimal" pattern="[0-9,]*" data-gid="${g.id}" data-banco="${b}"
+            value="${fmtInputBR(gs[b])}" placeholder="0,00"
+            oninput="normBR(this)"
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px;outline:none;text-align:right;width:100%;min-width:0;box-sizing:border-box"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-          <input type="text" inputmode="decimal" pattern="[0-9.,]*" data-gid="${g.id}" data-deposito="${b}" value="${gd[b]||""}" placeholder="0,00"
+          <input type="text" inputmode="decimal" pattern="[0-9,]*" data-gid="${g.id}" data-deposito="${b}"
+            value="${fmtInputBR(gd[b])}" placeholder="0,00"
+            oninput="normBR(this)"
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px;outline:none;text-align:right;width:100%;min-width:0;box-sizing:border-box"
             onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
         </div>`).join("")}
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
           <label style="display:block;font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia (Total)</label>
-          <input type="text" inputmode="decimal" pattern="[0-9.,]*" data-gid="${g.id}" data-previsao="1" value="${previsoes[g.id]||''}" placeholder="0,00" aria-label="Previsão de entradas"
+          <input type="text" inputmode="decimal" pattern="[0-9,]*" data-gid="${g.id}" data-previsao="1"
+            value="${fmtInputBR(previsoes[g.id])}" placeholder="0,00"
+            oninput="normBR(this)" aria-label="Previsão de entradas"
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right;"
             onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
         </div>
@@ -3473,15 +3517,6 @@ function openSaldoModal(){
 }
 
 function closeSaldo(){document.getElementById("moS").classList.remove("open");unlockBodyScroll();}
-
-// Converte valor BR (ex: "1.234,56" ou "1234,56" ou "1234.56") para número
-function parseBR(s){
-  if(!s) return 0;
-  s = String(s).trim();
-  // Remove separadores de milhar (ponto) e troca vírgula por ponto decimal
-  s = s.replace(/\./g,'').replace(',','.');
-  return parseFloat(s) || 0;
-}
 
 function saveSaldos(){
   const ns={...saldos};
@@ -3790,9 +3825,11 @@ function startInlineEdit(id, currentVal, el){
   inp.className = "val-inline";
   inp.type = "text";
   inp.inputMode = "decimal";
-  inp.pattern = "[0-9.,]*";
-  inp.value = currentVal;
-  inp.title = "Enter para salvar, Esc para cancelar";
+  inp.pattern = "[0-9,]*";
+  // Exibe com vírgula (formato BR)
+  inp.value = fmtInputBR(currentVal);
+  inp.title = "Ex: 1.234,56 — Enter para salvar, Esc para cancelar";
+  inp.addEventListener("input", function(){ normBR(this); });
   const orig = el.innerHTML;
   el.innerHTML = "";
   el.appendChild(inp);
@@ -3926,15 +3963,15 @@ async function toggleNotifications(){
 function scheduleNotifications(){
   if(!notifEnabled || Notification.permission !== "granted") return;
   const hoje = dstr(TODAY);
-  const iconSvg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%230f0f0d' width='32' height='32' rx='8'/><text x='16' y='22' text-anchor='middle' fill='%23f0c040' font-size='18'>💰</text></svg>";
+  const icon = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%230f0f0d' width='32' height='32' rx='8'/><text x='16' y='22' text-anchor='middle' fill='%23f0c040' font-size='18'>💰</text></svg>";
 
   // Uma notificação individual por boleto que vence hoje
   const vencHoje = boletoArr().filter(b=>!b.pago && b.vencimento===hoje);
   vencHoje.forEach(b=>{
-    const nome = b.desc || b.obs || "Boleto";
+    const nome = b.desc || "Boleto";
     new Notification("RealFinanceiro ⚠️ — " + nome, {
       body: fmtR(b.valor||0) + " vence hoje",
-      icon: iconSvg
+      icon
     });
   });
 
@@ -3944,7 +3981,7 @@ function scheduleNotifications(){
     const total = vencidos.reduce((a,b)=>a+Number(b.valor||0),0);
     new Notification("RealFinanceiro ⚠️ Vencidos", {
       body: vencidos.length + " vencido(s) — " + fmtR(total),
-      icon: iconSvg
+      icon
     });
   }
 }

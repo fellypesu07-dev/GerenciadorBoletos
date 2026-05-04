@@ -1814,7 +1814,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       </div>
       <div class="fi full" id="cartaoRow" style="display:none"><label>Cartão (bandeira/banco)</label><input type="text" id="fCartao" placeholder="Ex: Nubank, Itaú Visa"></div>
     </div>
-    <div class="fi"><label>Valor (R$)</label><input type="text" id="fValor" placeholder="R$ 0,00" inputmode="numeric" autocomplete="off"></div>
+    <div class="fi"><label>Valor (R$)</label><input type="text" id="fValor" placeholder="R$ 0,00" inputmode="decimal" autocomplete="off"></div>
     <div class="fi"><label>Vencimento</label><input type="date" id="fVenc"></div>
     <div class="fi full"><label>Observação (NF, linha digitável, fone...)</label><textarea id="fObs" placeholder="NF 1234 · linha digitável · (11) 9999-9999"></textarea></div>
 
@@ -2768,7 +2768,7 @@ function renderSaldoPanel(){
   const now = new Date();
   const mesAtual = `${now.getFullYear()}-${p2(now.getMonth()+1)}`;
   const mesLabel = MESES[now.getMonth()] + '/' + now.getFullYear();
-  const hoje = now.toISOString().slice(0,10);
+  const hoje = dstr(now); // usa data local (não UTC) para evitar dessincronismo
   const diaLabel = `${p2(now.getDate())}/${p2(now.getMonth()+1)}/${now.getFullYear()}`;
 
   // Update label
@@ -3451,16 +3451,16 @@ function openSaldoModal(){
         </div>
         ${bancos.map(b=>`<div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;align-items:center;min-width:0">
           <div style="font-size:12px;color:var(--muted);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis">${b}</div>
-          <input type="number" data-gid="${g.id}" data-banco="${b}" value="${gs[b]||""}" placeholder="0,00" step="0.01" min="0"
+          <input type="text" inputmode="decimal" pattern="[0-9.,]*" data-gid="${g.id}" data-banco="${b}" value="${gs[b]||""}" placeholder="0,00"
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px;outline:none;text-align:right;width:100%;min-width:0;box-sizing:border-box"
             onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-          <input type="number" data-gid="${g.id}" data-deposito="${b}" value="${gd[b]||""}" placeholder="0,00" step="0.01" min="0"
+          <input type="text" inputmode="decimal" pattern="[0-9.,]*" data-gid="${g.id}" data-deposito="${b}" value="${gd[b]||""}" placeholder="0,00"
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px;outline:none;text-align:right;width:100%;min-width:0;box-sizing:border-box"
             onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
         </div>`).join("")}
         <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border)">
           <label style="display:block;font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia (Total)</label>
-          <input type="number" data-gid="${g.id}" data-previsao="1" value="${previsoes[g.id]||''}" placeholder="0,00" step="0.01" min="0" aria-label="Previsão de entradas"
+          <input type="text" inputmode="decimal" pattern="[0-9.,]*" data-gid="${g.id}" data-previsao="1" value="${previsoes[g.id]||''}" placeholder="0,00" aria-label="Previsão de entradas"
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 8px;width:130px;outline:none;text-align:right;"
             onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
         </div>
@@ -3474,6 +3474,15 @@ function openSaldoModal(){
 
 function closeSaldo(){document.getElementById("moS").classList.remove("open");unlockBodyScroll();}
 
+// Converte valor BR (ex: "1.234,56" ou "1234,56" ou "1234.56") para número
+function parseBR(s){
+  if(!s) return 0;
+  s = String(s).trim();
+  // Remove separadores de milhar (ponto) e troca vírgula por ponto decimal
+  s = s.replace(/\./g,'').replace(',','.');
+  return parseFloat(s) || 0;
+}
+
 function saveSaldos(){
   const ns={...saldos};
   const np={...previsoes};
@@ -3482,18 +3491,18 @@ function saveSaldos(){
     const gid=inp.dataset.gid,banco=inp.dataset.banco;
     if(!gid||!banco)return;
     if(!ns[gid])ns[gid]={};
-    ns[gid][banco]=parseFloat(inp.value)||0;
+    ns[gid][banco]=parseBR(inp.value);
   });
   document.querySelectorAll("#saldoForm input[data-deposito]").forEach(inp=>{
     const gid=inp.dataset.gid,banco=inp.dataset.deposito;
     if(!gid||!banco)return;
     if(!nd[gid])nd[gid]={};
-    nd[gid][banco]=parseFloat(inp.value)||0;
+    nd[gid][banco]=parseBR(inp.value);
   });
   document.querySelectorAll("#saldoForm input[data-previsao]").forEach(inp=>{
     const gid=inp.dataset.gid;
     if(!gid)return;
-    np[gid]=parseFloat(inp.value)||0;
+    np[gid]=parseBR(inp.value);
   });
   // Grava em uma única operação atômica para evitar inconsistência
   setSyncBadge("saving","Salvando…");
@@ -3779,8 +3788,9 @@ function duplicateB(id){
 function startInlineEdit(id, currentVal, el){
   const inp = document.createElement("input");
   inp.className = "val-inline";
-  inp.type = "number";
-  inp.step = "0.01";
+  inp.type = "text";
+  inp.inputMode = "decimal";
+  inp.pattern = "[0-9.,]*";
   inp.value = currentVal;
   inp.title = "Enter para salvar, Esc para cancelar";
   const orig = el.innerHTML;
@@ -3792,7 +3802,7 @@ function startInlineEdit(id, currentVal, el){
     if(_committed) return;
     _committed = true;
     if(save){
-      const nv = parseFloat(inp.value);
+      const nv = parseBR(inp.value);
       if(!isNaN(nv) && nv > 0){
         fbSet("boletos/"+id+"/valor", nv);
         toast("Valor atualizado!", "ok");
@@ -3916,17 +3926,25 @@ async function toggleNotifications(){
 function scheduleNotifications(){
   if(!notifEnabled || Notification.permission !== "granted") return;
   const hoje = dstr(TODAY);
+  const iconSvg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%230f0f0d' width='32' height='32' rx='8'/><text x='16' y='22' text-anchor='middle' fill='%23f0c040' font-size='18'>💰</text></svg>";
+
+  // Uma notificação individual por boleto que vence hoje
   const vencHoje = boletoArr().filter(b=>!b.pago && b.vencimento===hoje);
+  vencHoje.forEach(b=>{
+    const nome = b.desc || b.obs || "Boleto";
+    new Notification("RealFinanceiro ⚠️ — " + nome, {
+      body: fmtR(b.valor||0) + " vence hoje",
+      icon: iconSvg
+    });
+  });
+
+  // Notificação resumida para vencidos (agrupada para não fazer spam)
   const vencidos = boletoArr().filter(b=>!b.pago && b.vencimento < hoje);
-  if(vencHoje.length > 0 || vencidos.length > 0){
-    const total = vencHoje.reduce((a,b)=>a+Number(b.valor||0),0)
-                + vencidos.reduce((a,b)=>a+Number(b.valor||0),0);
-    let msg = [];
-    if(vencidos.length) msg.push(`${vencidos.length} vencido(s)`);
-    if(vencHoje.length) msg.push(`${vencHoje.length} vencem hoje`);
-    new Notification("RealFinanceiro ⚠️", {
-      body: msg.join(" · ") + " — " + fmtR(total),
-      icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect fill='%230f0f0d' width='32' height='32' rx='8'/><text x='16' y='22' text-anchor='middle' fill='%23f0c040' font-size='18'>💰</text></svg>"
+  if(vencidos.length > 0){
+    const total = vencidos.reduce((a,b)=>a+Number(b.valor||0),0);
+    new Notification("RealFinanceiro ⚠️ Vencidos", {
+      body: vencidos.length + " vencido(s) — " + fmtR(total),
+      icon: iconSvg
     });
   }
 }

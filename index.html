@@ -1446,6 +1446,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <span class="bnav-icon">🔍</span>
     <span>Buscar</span>
   </button>
+  <button class="bnav-btn" id="bnavRefresh" onclick="forcarUpdate()" title="Forçar atualização / limpar cache">
+    <span class="bnav-icon">🔄</span>
+    <span>Atualizar</span>
+  </button>
   <button class="bnav-add" onclick="if(document.querySelector('.mo.open')){closeAllModals();}else{openModal();}">
     <div class="bnav-add-circle">＋</div>
   </button>
@@ -1648,6 +1652,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
       <button class="btn btn-g btn-sm" style="width:100%" id="focoBtnSidebar" onclick="toggleFoco()" aria-pressed="false" title="Ocultar boletos pagos">👁 Modo Foco</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="openSaldoModal()" aria-label="Atualizar saldos">💰 Atualizar Saldos</button>
       <button class="btn btn-g btn-sm" style="width:100%" onclick="loadData()">🔄 Atualizar</button>
+      <button class="btn btn-g btn-sm" style="width:100%" onclick="forcarUpdate()" title="Força limpeza de cache e recarregamento completo">⚡ Forçar Atualização</button>
       <!-- CSV DROPDOWN -->
       <div class="csv-wrap" style="width:100%">
         <button class="btn btn-g btn-sm" style="width:100%" onclick="toggleCSVMenu(event)">⬇ Exportar CSV ▾</button>
@@ -2123,6 +2128,17 @@ function setView(mode){
 
 const TODAY=(()=>{const d=new Date();d.setHours(0,0,0,0);return d;})();
 
+// ── SCROLL POSITION TRACKER GLOBAL ──
+// Rastreia a posição de scroll continuamente via evento 'scroll'.
+// renderAll() sempre lê _lastScrollY — não depende de parâmetros
+// que se perdem nos monkey-patches do final do arquivo.
+let _lastScrollY = 0;
+window.addEventListener('scroll', function(){
+  if(document.body.style.position !== 'fixed'){
+    _lastScrollY = window.scrollY;
+  }
+}, { passive: true });
+
 // ══════════════════════════════════════════════
 // TOAST
 // ══════════════════════════════════════════════
@@ -2133,6 +2149,25 @@ function toast(msg, type="ok", dur=3000){
   el.innerHTML=`${type==="ok"?"✓":type==="err"?"✕":"ℹ"} ${msg}`;
   c.appendChild(el);
   setTimeout(()=>{el.style.opacity="0";el.style.transform="translateX(20px)";el.style.transition=".3s";setTimeout(()=>el.remove(),300);},dur);
+}
+
+// ══════════════════════════════════════════════
+// FORÇAR ATUALIZAÇÃO / LIMPAR CACHE
+// ══════════════════════════════════════════════
+function forcarUpdate(){
+  toast("🔄 Buscando atualizações…", "info", 2000);
+
+  // 1. Limpa todos os caches do Service Worker (se existir)
+  if('caches' in window){
+    caches.keys().then(names => {
+      names.forEach(name => caches.delete(name));
+    });
+  }
+
+  // 2. Força recarregamento ignorando cache do navegador
+  setTimeout(() => {
+    window.location.reload(true);
+  }, 1200);
 }
 
 // ══════════════════════════════════════════════
@@ -2983,10 +3018,10 @@ function escHTML(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").
 // RENDER ALL
 // ══════════════════════════════════════════════
 function renderAll(){
-  // Captura posicao antes de re-renderizar o DOM.
-  // Quando body esta fixo (modal iOS) scrollY retorna 0 — usa _scrollLockY.
-  const _bodyFixed = document.body.style.position === "fixed";
-  const _sy = _bodyFixed ? _scrollLockY : window.scrollY;
+  // Usa _lastScrollY — rastreado continuamente pelo listener global de scroll.
+  // Não depende de window.scrollY no momento do rAF (que retorna 0 durante layout)
+  // nem de parâmetros que se perdem nos monkey-patches do final do arquivo.
+  const _sy = (document.body.style.position === 'fixed') ? _scrollLockY : _lastScrollY;
   updateQFBtns();
   renderCNPJPills();
   renderDUStrip();
@@ -2996,9 +3031,27 @@ function renderAll(){
   renderGroups();
   renderCSVMenu();
   renderMesFiltros();
-  // Restaura scroll imediatamente — sem rAF extra que conflita com o
-  // debounce do Firebase e com o patch de updateDashboard abaixo.
-  if(_sy > 0) window.scrollTo(0, _sy);
+  // Restaura scroll — usa _restoreScroll para maior confiabilidade no iOS
+  if(_sy > 0) _restoreScroll(_sy);
+}
+
+// Tenta restaurar o scroll até 10 frames, parando se o usuário já scrollou por conta própria
+function _restoreScroll(target){
+  if(target <= 0) return;
+  let attempts = 0;
+  let lastUserScroll = _lastScrollY;
+  function attempt(){
+    attempts++;
+    if(attempts > 10) return; // desiste após 10 frames
+    window.scrollTo(0, target);
+    // Se o usuário scrollou por conta própria, para
+    if(Math.abs(_lastScrollY - lastUserScroll) > 30) return;
+    // Verifica se chegou na posição
+    if(Math.abs(window.scrollY - target) > 5){
+      requestAnimationFrame(attempt);
+    }
+  }
+  requestAnimationFrame(attempt);
 }
 
 // ══════════════════════════════════════════════
@@ -4010,7 +4063,10 @@ function closeMobSidebar(){
   _unlockBodyForSidebar();
 }
 let _sbScrollY = 0;
+let _sbLocked = false;
 function _lockBodyForSidebar(){
+  if(_sbLocked) return;
+  _sbLocked = true;
   _sbScrollY = window.scrollY;
   document.body.style.position = "fixed";
   document.body.style.top = "-" + _sbScrollY + "px";
@@ -4019,13 +4075,15 @@ function _lockBodyForSidebar(){
   document.body.style.overflow = "hidden";
 }
 function _unlockBodyForSidebar(){
+  if(!_sbLocked) return; // guarda: só restaura se de fato travou
+  _sbLocked = false;
   const savedY = _sbScrollY;
   document.body.style.position = "";
   document.body.style.top = "";
   document.body.style.left = "";
   document.body.style.right = "";
   document.body.style.overflow = "";
-  // Duplo rAF igual ao unlockBodyScroll — necessario no iOS/Safari
+  // Duplo rAF necessario no iOS/Safari
   requestAnimationFrame(()=>{ requestAnimationFrame(()=>{ window.scrollTo(0, savedY); }); });
 }
 
@@ -4303,9 +4361,10 @@ function updateMobileClass(){
 updateMobileClass();
 window.addEventListener("resize", updateMobileClass);
 
-// On mobile, close sidebar when scrolling main
+// On mobile, close sidebar ONLY if it is actually open
 document.querySelector(".main") && document.querySelector(".main").addEventListener("touchstart", ()=>{
-  if(window.innerWidth <= 480) closeMobSidebar();
+  const sb = document.querySelector(".sidebar");
+  if(window.innerWidth <= 480 && sb && sb.classList.contains("mob-open")) closeMobSidebar();
 }, {passive:true});
 
 

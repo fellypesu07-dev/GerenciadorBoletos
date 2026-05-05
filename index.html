@@ -1794,8 +1794,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
     <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
       <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap" id="chipArea"></div>
       <div style="display:flex;gap:5px;">
-        <button class="btn btn-g btn-sm" onclick="toggleAll(true)">▼ Expandir</button>
-        <button class="btn btn-g btn-sm" onclick="toggleAll(false)">▶ Recolher</button>
+        <button class="btn btn-g btn-sm" onclick="toggleAll(true)" title="Expandir todos"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="6 9 12 15 18 9"/></svg>Expandir</button>
+        <button class="btn btn-g btn-sm" onclick="toggleAll(false)" title="Recolher todos"><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><polyline points="6 15 12 9 18 15"/></svg>Recolher</button>
       </div>
     </div>
     <div id="groupsWrap" class="mobile-force-cards"></div>
@@ -2970,9 +2970,9 @@ function renderGroups(){
             ${catLabel?`<div class="bc-meta">${escHTML(catLabel)}</div>`:""}
             <div class="bc-acts">
               ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Pago</button>`:`<button class="btn btn-warn btn-sm" onclick="desfazerPago('${b.id}')" title="Desfazer pagamento" style="background:rgba(240,192,64,.15);color:var(--warn);border:1px solid var(--warn)44"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg> Desfazer</button>`}
-              <button class="btn btn-g btn-sm" onclick="editB('${b.id}')">✏</button>
-              <button class="btn btn-g btn-sm" onclick="duplicateB('${b.id}')">⧉</button>
-              <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')">🗑</button>
+              <button class="btn btn-g btn-sm" onclick="editB('${b.id}')" title="Editar"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+              <button class="btn btn-g btn-sm" onclick="duplicateB('${b.id}')" title="Duplicar"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+              <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')" title="Excluir"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
             </div>
           </div>`;
         });
@@ -3020,9 +3020,9 @@ function renderGroups(){
             <td>
               <div class="act-btns">
                 ${s!=="pago"?`<button class="btn btn-ok btn-sm" onclick="markPago('${b.id}')" title="Marcar como pago"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Pago</button>`:`<button class="btn btn-sm" onclick="desfazerPago('${b.id}')" title="Desfazer pagamento" style="background:rgba(240,192,64,.15);color:var(--warn);border:1px solid var(--warn)44;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:11px"><svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg> Desfazer</button>`}
-                <button class="btn btn-g btn-sm" onclick="editB('${b.id}')" title="Editar boleto">✏</button>
-                <button class="btn btn-g btn-sm" onclick="duplicateB('${b.id}')" title="Duplicar boleto">⧉</button>
-                <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')">🗑</button>
+                <button class="btn btn-g btn-sm" onclick="editB('${b.id}')" title="Editar boleto"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+                <button class="btn btn-g btn-sm" onclick="duplicateB('${b.id}')" title="Duplicar boleto"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+                <button class="btn btn-d btn-sm" onclick="confirmDel('${b.id}','${escHTML(b.desc||"")}')" title="Excluir boleto"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
               </div>
             </td>
           </tr>`;
@@ -3437,7 +3437,7 @@ function renderCNPJMList(){
       <div style="width:8px;height:8px;border-radius:50%;background:${GCOLS[i%6]};flex-shrink:0"></div>
       <strong style="font-size:13px">${escHTML(c.nome)}</strong>
       <span style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${escHTML(c.num)}</span>
-      <button class="btn btn-d btn-sm" style="margin-left:auto" onclick="removeCNPJ('${id}')">✕</button>
+      <button class="btn btn-d btn-sm" style="margin-left:auto" onclick="removeCNPJ('${id}')" title="Remover CNPJ"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>`).join("");
 }
 
@@ -4680,38 +4680,44 @@ function openPagar(id){
   const g = getGroups().find(x=>x.id===grupo);
   let bancos, gs;
 
-  if(g && g.isCasa){
-    // Casa: mostrar TODOS os bancos de todos os CNPJs, ordenados por saldo
-    const allBancos = {}; // bankName -> {saldo, gid}
+  // Montar lista de TODOS os bancos de TODOS os CNPJs — com sufixo do CNPJ quando o
+  // mesmo nome de banco aparece em mais de um grupo (ex: "Santander Rest", "Santander Matriz")
+  {
+    // 1. Coletar todas as entradas banco+grupo
+    const entries = []; // [{bankName, label, saldo, gid}]
     Object.entries(cnpjs).forEach(([gid, c]) => {
       const bList = bancosDoGrupo(c.nome, gid);
       const gSaldos = saldos[gid] || {};
       bList.forEach(bankName => {
-        if(!(bankName in allBancos)){
-          allBancos[bankName] = {saldo: Number(gSaldos[bankName]||0), gid};
-        }
+        entries.push({
+          bankName,
+          label: bankName,        // pode ser substituído abaixo
+          saldo: Number(gSaldos[bankName]||0),
+          gid,
+          cnpjNome: c.nome || gid
+        });
       });
     });
-    const sorted = Object.entries(allBancos).sort((a,b2) => b2[1].saldo - a[1].saldo);
-    bancos = sorted.map(([name]) => name);
-    gs = Object.fromEntries(sorted.map(([name,v]) => [name, v.saldo]));
-    window._casaBancoGidMap = Object.fromEntries(sorted.map(([name,v]) => [name, v.gid]));
-  } else {
-    // Mostrar TODOS os bancos de TODOS os CNPJs, ordenados por saldo
-    const allBancos = {};
-    Object.entries(cnpjs).forEach(([gid, c]) => {
-      const bList = bancosDoGrupo(c.nome, gid);
-      const gSaldos = saldos[gid] || {};
-      bList.forEach(bankName => {
-        if(!(bankName in allBancos)){
-          allBancos[bankName] = {saldo: Number(gSaldos[bankName]||0), gid};
-        }
-      });
+
+    // 2. Detectar bancos com mesmo nome em CNPJs diferentes → adicionar sufixo curto do CNPJ
+    const countByName = {};
+    entries.forEach(e => { countByName[e.bankName] = (countByName[e.bankName]||0) + 1; });
+    entries.forEach(e => {
+      if(countByName[e.bankName] > 1){
+        // Sufixo: primeira palavra do nome do CNPJ
+        const sufixo = (e.cnpjNome||'').split(/\s+/)[0];
+        e.label = `${e.bankName} ${sufixo}`;
+      }
     });
-    const sorted = Object.entries(allBancos).sort((a,b2) => b2[1].saldo - a[1].saldo);
-    bancos = sorted.map(([name]) => name);
-    gs = Object.fromEntries(sorted.map(([name,v]) => [name, v.saldo]));
-    window._casaBancoGidMap = Object.fromEntries(sorted.map(([name,v]) => [name, v.gid]));
+
+    // 3. Ordenar por saldo desc
+    entries.sort((a, b2) => b2.saldo - a.saldo);
+
+    bancos = entries.map(e => e.label);
+    gs = Object.fromEntries(entries.map(e => [e.label, e.saldo]));
+    // Mapear label → {gid, bankName real no Firebase}
+    window._casaBancoGidMap = Object.fromEntries(entries.map(e => [e.label, e.gid]));
+    window._bancoPagarRealName = Object.fromEntries(entries.map(e => [e.label, e.bankName]));
   }
   let listH = bancos.length
     ? bancos.map(banco=>`
@@ -4741,17 +4747,23 @@ function confirmPagar(){
   const b = boletos[id];
   if(!b){ closePagar(); return; }
   const sel = document.querySelector('input[name="pagarBanco"]:checked');
-  const bancoPago = sel ? sel.value : '__nenhum__';
+  const bancoLabel_sel = sel ? sel.value : '__nenhum__';
+  // Resolver nome real do banco no Firebase (sem sufixo do CNPJ, ex: "Santander" em vez de "Santander Rest")
+  const bancoPagoReal = (bancoLabel_sel !== '__nenhum__' && window._bancoPagarRealName && window._bancoPagarRealName[bancoLabel_sel])
+    ? window._bancoPagarRealName[bancoLabel_sel]
+    : bancoLabel_sel;
+  const bancoPago = bancoPagoReal; // nome real para escrita no Firebase
+  const bancoPagoLabel = bancoLabel_sel; // label exibida ao usuário
   const snapshot = JSON.parse(JSON.stringify(b));
   const desc = b.desc || 'boleto';
   const pagoEm = new Date().toISOString().slice(0,10);
-  // Mark boleto as paid
-  fbSet('boletos/'+id, {...b, pago:true, pagoEm, bancoPago: bancoPago==='__nenhum__'?null:bancoPago});
+  // Mark boleto as paid (guarda label exibida para histórico)
+  fbSet('boletos/'+id, {...b, pago:true, pagoEm, bancoPago: bancoPago==='__nenhum__'?null:bancoPago, bancoPagoLabel: bancoPagoLabel==='__nenhum__'?null:bancoPagoLabel});
   // Para todos os grupos: usar o mapa de banco→gid
   let saldoSnapshotGrupo = null;
   let saldoGrupoId = b.grupo;
-  if(bancoPago !== '__nenhum__' && window._casaBancoGidMap && window._casaBancoGidMap[bancoPago]){
-    saldoGrupoId = window._casaBancoGidMap[bancoPago];
+  if(bancoPagoLabel !== '__nenhum__' && window._casaBancoGidMap && window._casaBancoGidMap[bancoPagoLabel]){
+    saldoGrupoId = window._casaBancoGidMap[bancoPagoLabel];
   }
   if(bancoPago !== '__nenhum__' && saldoGrupoId && saldoGrupoId !== '__casa__'){
     const gs = JSON.parse(JSON.stringify(saldos[saldoGrupoId]||{}));
@@ -4767,8 +4779,8 @@ function confirmPagar(){
     navigator.clipboard.writeText(text).catch(()=>{});
   }
   closePagar();
-  const bancoLabel = bancoPago !== '__nenhum__' ? ` via ${bancoPago}` : '';
-  toastUndo(`✓ "${desc}" marcado como pago${bancoLabel}`, ()=>{
+  const bancoDisplayLabel = bancoPagoLabel !== '__nenhum__' ? ` via ${bancoPagoLabel}` : '';
+  toastUndo(`✓ "${desc}" marcado como pago${bancoDisplayLabel}`, ()=>{
     fbSet('boletos/'+id, snapshot);
     if(bancoPago !== '__nenhum__' && saldoGrupoId && saldoGrupoId !== '__casa__' && saldoSnapshotGrupo){
       // Restaura apenas o campo do banco — evita sobrescrever outros grupos

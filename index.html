@@ -2704,6 +2704,41 @@ function getGroups(){
 
 function boletoArr(){return Object.entries(boletos).map(([id,b])=>({...b,id}));}
 
+function addBancoRow(gid){
+  const inp = document.getElementById('newBanco_'+gid);
+  if(!inp) return;
+  const nome = inp.value.trim();
+  if(!nome){ inp.focus(); return; }
+  // Verifica duplicata
+  const existe = document.querySelector(`#saldoForm input[data-gid="${CSS.escape(gid)}"][data-banco="${CSS.escape(nome)}"]`);
+  if(existe){ inp.value=''; inp.placeholder='Já existe!'; setTimeout(()=>inp.placeholder='+ Adicionar banco (ex: Itaú)',1500); return; }
+  // Insere nova linha antes do campo de adicionar
+  const addRow = document.getElementById('addBancoRow_'+gid);
+  const div = document.createElement('div');
+  div.style.cssText='display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px;align-items:center;min-width:0';
+  div.innerHTML=`
+    <div style="font-size:12px;color:var(--muted);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis">${escHTML(nome)}</div>
+    <input type="text" inputmode="decimal" pattern="[0-9,]*" data-gid="${escHTML(gid)}" data-banco="${escHTML(nome)}"
+      value="" placeholder="0,00" oninput="normBR(this)"
+      style="background:var(--card2);border:1px solid var(--accent);border-radius:4px;color:var(--text);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px;outline:none;text-align:right;width:100%;min-width:0;box-sizing:border-box"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+    <input type="text" inputmode="decimal" pattern="[0-9,]*" data-gid="${escHTML(gid)}" data-deposito="${escHTML(nome)}"
+      value="" placeholder="0,00" oninput="normBR(this)"
+      style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px;outline:none;text-align:right;width:100%;min-width:0;box-sizing:border-box"
+      onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
+    <button onclick="removeBancoRow(this)" title="Remover banco" data-gid="${escHTML(gid)}" data-banco="${escHTML(nome)}"
+      style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px 4px;font-size:14px;line-height:1;flex-shrink:0;"
+      onmouseover="this.style.color='#ff4d6d'" onmouseout="this.style.color='var(--muted)'">✕</button>`;
+  addRow.parentNode.insertBefore(div, addRow);
+  inp.value='';
+  div.querySelector('input[data-banco]').focus();
+}
+
+function removeBancoRow(btn){
+  const row = btn.closest('div[style*="grid-template-columns:auto 1fr 1fr auto"]');
+  if(row) row.remove();
+}
+
 // ══════════════════════════════════════════════
 // TAREFA 1: LINHA DIGITÁVEL — DECODIFICAÇÃO MATEMÁTICA
 // Suporte a boletos bancários (47 dígitos) e arrecadação (48 dígitos)
@@ -3842,12 +3877,13 @@ function openSaldoModal(){
         ${g.num?`<span style="font-size:10px;color:var(--muted);font-family:'DM Mono',monospace">${escHTML(g.num)}</span>`:""}
       </div>
       <div style="display:flex;flex-direction:column;gap:4px;padding-left:11px">
-        <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;margin-bottom:4px;min-width:0">
+        <div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px;margin-bottom:4px;min-width:0">
           <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Banco</div>
           <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Saldo (R$)</div>
           <div style="font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.5px">Depósito (R$)</div>
+          <div></div>
         </div>
-        ${bancos.map(b=>`<div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:6px;align-items:center;min-width:0">
+        ${bancos.map(b=>`<div style="display:grid;grid-template-columns:auto 1fr 1fr auto;gap:6px;align-items:center;min-width:0">
           <div style="font-size:12px;color:var(--muted);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis">${b}</div>
           <input type="text" inputmode="decimal" pattern="[0-9,]*" data-gid="${g.id}" data-banco="${b}"
             value="${fmtInputBR(gs[b])}" placeholder="0,00"
@@ -3859,7 +3895,18 @@ function openSaldoModal(){
             oninput="normBR(this)"
             style="background:var(--card2);border:1px solid var(--border);border-radius:4px;color:var(--ok);font-family:'DM Mono',monospace;font-size:12px;padding:4px 6px;outline:none;text-align:right;width:100%;min-width:0;box-sizing:border-box"
             onfocus="this.style.borderColor='var(--ok)'" onblur="this.style.borderColor='var(--border)'">
+          <button onclick="removeBancoRow(this)" title="Remover banco" data-gid="${g.id}" data-banco="${b}"
+            style="background:none;border:none;cursor:pointer;color:var(--muted);padding:2px 4px;font-size:14px;line-height:1;flex-shrink:0;"
+            onmouseover="this.style.color='#ff4d6d'" onmouseout="this.style.color='var(--muted)'">✕</button>
         </div>`).join("")}
+        <div style="display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center;margin-top:6px" id="addBancoRow_${g.id}">
+          <input type="text" id="newBanco_${g.id}" placeholder="+ Adicionar banco (ex: Itaú)"
+            style="background:var(--card2);border:1px dashed var(--border);border-radius:4px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:12px;padding:4px 8px;outline:none;width:100%;box-sizing:border-box;"
+            onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();addBancoRow('${g.id}');}">
+          <button onclick="addBancoRow('${g.id}')"
+            style="background:var(--accent);border:none;border-radius:4px;color:#000;font-size:11px;font-weight:700;padding:4px 10px;cursor:pointer;white-space:nowrap;">Adicionar</button>
+        </div>
         <div style="display:none">
           <label style="display:block;font-size:9px;font-weight:700;color:var(--ok);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">Previsão de Entradas do Dia (Total)</label>
           <input type="text" inputmode="decimal" pattern="[0-9,]*" data-gid="${g.id}" data-previsao="1"
@@ -3879,9 +3926,24 @@ function openSaldoModal(){
 function closeSaldo(){document.getElementById("moS").classList.remove("open");unlockBodyScroll();}
 
 function saveSaldos(){
-  const ns={...saldos};
+  // Reconstrói ns e nd SOMENTE com bancos visíveis na tela
+  // (bancos removidos pelo ✕ não aparecem mais → são excluídos do Firebase)
+  const ns={};
   const np={...previsoes};
-  const nd={...depositosPrev};
+  const nd={};
+
+  // Preserva grupos que não estão no form (ex: Casa)
+  Object.keys(saldos).forEach(gid=>{
+    if(!document.querySelector(`#saldoForm input[data-gid="${CSS.escape(gid)}"]`)){
+      ns[gid]={...saldos[gid]};
+    }
+  });
+  Object.keys(depositosPrev).forEach(gid=>{
+    if(!document.querySelector(`#saldoForm input[data-gid="${CSS.escape(gid)}"]`)){
+      nd[gid]={...depositosPrev[gid]};
+    }
+  });
+
   document.querySelectorAll("#saldoForm input[data-banco]").forEach(inp=>{
     const gid=inp.dataset.gid,banco=inp.dataset.banco;
     if(!gid||!banco)return;

@@ -2325,6 +2325,11 @@ tbody tr.row-pago .mono {
       </select>
       <input type="text" id="fCatCustom" placeholder="Digite a categoria…" style="display:none;margin-top:6px;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
     </div>
+    <div class="fi" id="fSubCatRow" style="display:none">
+      <label>Subcategoria</label>
+      <select id="fSubCat" onchange="onSubCatChange()"></select>
+      <input type="text" id="fSubCatCustom" placeholder="Digite a subcategoria…" style="display:none;margin-top:6px;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
+    </div>
     <div class="casa-box" id="casaBox">
       <div class="full" style="font-size:9px;font-weight:700;color:var(--pink);text-transform:uppercase;letter-spacing:.8px"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Casa / Pessoal</div>
       <div class="fi full">
@@ -3113,6 +3118,8 @@ function applyLD(){
   populateCatSel();
   document.getElementById("fCat").value="Mercadoria";
   document.getElementById("fCatCustom").style.display="none";
+  populateSubCatSel("");
+  updateSubCatVisibility();
   const obs = `Banco: ${lastLD.nomeBanco}`;
   document.getElementById("fObs").value=obs;
   document.getElementById("fCasaCat").value="Água";
@@ -3628,7 +3635,7 @@ function renderGroups(){
         html+=`<div class="card-grid">`;
         glist.forEach(b=>{
           const s=status(b),du=duAte(b.vencimento);
-          const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):(b.cat||"");
+          const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):((b.cat||"")+(b.cat==="Mercadoria"&&b.subcat?` › ${b.subcat}`:""));
           let duEl="";
           if(b.pago)duEl=`<span style="color:var(--ok);font-size:10px">pago${b.pagoEm?" · "+fmtD(b.pagoEm):""}</span>`;
           else if(du===null)duEl=`<span class="status-pill pill-vencido"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Atrasado</span>`;
@@ -3657,7 +3664,7 @@ function renderGroups(){
           const s=status(b),ck=b.checks||{},du=duAte(b.vencimento);
           const in7=d7.has(b.vencimento)&&!b.pago;
           const isFerV=isFer(b.vencimento)&&!b.pago,isWEV=isWE(toDate(b.vencimento))&&!b.pago;
-          const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):(b.cat||"");
+          const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):((b.cat||"")+(b.cat==="Mercadoria"&&b.subcat?` › ${b.subcat}`:""));
           let duEl;
           if(b.pago)duEl=`<span style="color:var(--ok);font-size:10px">pago${b.pagoEm?" · "+fmtD(b.pagoEm):""}</span>`;
           else if(du===null)duEl=`<span class="status-pill pill-vencido"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Atrasado</span>`;
@@ -3856,10 +3863,70 @@ function populateCatSel(selected){
   if(cur && allStdCats().includes(cur)) sel.value=cur;
 }
 
+// ── Subcategorias de "Mercadoria" ──
+const BASE_SUBCATS=["Alimentos","Bebidas","Limpeza","Embalagens","Hortifruti","Congelados"];
+function getCustomSubcats(){
+  try{return JSON.parse(localStorage.getItem("gb_custom_subcats")||"[]");}catch(e){return [];}
+}
+function saveCustomSubcats(arr){
+  try{localStorage.setItem("gb_custom_subcats",JSON.stringify(arr));}catch(e){}
+}
+function addCustomSubcat(name){
+  name=(name||"").trim();
+  if(!name) return null;
+  const arr=getCustomSubcats();
+  if(!arr.some(c=>c.toLowerCase()===name.toLowerCase()) && !BASE_SUBCATS.some(c=>c.toLowerCase()===name.toLowerCase())){
+    arr.push(name);
+    saveCustomSubcats(arr);
+  }
+  return name;
+}
+function allSubCats(){
+  return BASE_SUBCATS.concat(getCustomSubcats());
+}
+function populateSubCatSel(selected){
+  const sel=document.getElementById("fSubCat");
+  if(!sel) return;
+  const cur=selected!==undefined?selected:sel.value;
+  let html=`<option value="">Nenhuma</option>`+allSubCats().map(c=>`<option>${c}</option>`).join("");
+  html+=`<option>Outro</option><option value="__new__">➕ Nova subcategoria…</option>`;
+  sel.innerHTML=html;
+  if(cur && (cur==="" || allSubCats().includes(cur))) sel.value=cur;
+}
+function onSubCatChange(){
+  const sel=document.getElementById("fSubCat");
+  const v=sel.value;
+  if(v==="__new__"){
+    const name=(prompt("Nome da nova subcategoria:")||"").trim();
+    if(name){
+      addCustomSubcat(name);
+      populateSubCatSel(name);
+    } else {
+      populateSubCatSel("");
+    }
+    document.getElementById("fSubCatCustom").style.display="none";
+    document.getElementById("fSubCatCustom").value="";
+    return;
+  }
+  document.getElementById("fSubCatCustom").style.display=v==="Outro"?"":"none";
+  if(v!=="Outro")document.getElementById("fSubCatCustom").value="";
+}
+function updateSubCatVisibility(){
+  const isCasa=document.getElementById("fGrupo").value===CASA;
+  const show=!isCasa && document.getElementById("fCat").value==="Mercadoria";
+  document.getElementById("fSubCatRow").style.display=show?"":"none";
+  if(!show){
+    populateSubCatSel("");
+    document.getElementById("fSubCatCustom").style.display="none";
+    document.getElementById("fSubCatCustom").value="";
+  }
+}
+
 function onGrupoChange(){
   const v=document.getElementById("fGrupo").value,isCasa=v===CASA;
   document.getElementById("fCatRow").style.display=isCasa?"none":"";
   document.getElementById("casaBox").classList.toggle("show",isCasa);
+  updateSubCatVisibility();
 }
 function onCasaCatChange(){
   document.getElementById("cartaoRow").style.display=document.getElementById("fCasaCat").value==="Cartão de Crédito"?"":"none";
@@ -3959,6 +4026,11 @@ function openModal(id){
     populateCatSel();
     if(allStdCats().includes(_bCat)){document.getElementById("fCat").value=_bCat;document.getElementById("fCatCustom").style.display="none";}
     else{document.getElementById("fCat").value="Outro";document.getElementById("fCatCustom").value=_bCat;document.getElementById("fCatCustom").style.display="";}
+    const _bSubCat=b.subcat||"";
+    populateSubCatSel();
+    if(_bSubCat===""||allSubCats().includes(_bSubCat)){document.getElementById("fSubCat").value=_bSubCat;document.getElementById("fSubCatCustom").style.display="none";}
+    else{document.getElementById("fSubCat").value="Outro";document.getElementById("fSubCatCustom").value=_bSubCat;document.getElementById("fSubCatCustom").style.display="";}
+    updateSubCatVisibility();
     // Strip pix info from obs for display
     const obsRaw=b.obs||"";
     const obsClean=b.modalidade==="pix"?obsRaw.split("\nPIX")[0].split("PIX ")[0].trim():obsRaw;
@@ -3988,6 +4060,8 @@ function openModal(id){
     populateCatSel();
     document.getElementById("fCat").value="Mercadoria";
     document.getElementById("fCatCustom").style.display="none";
+    populateSubCatSel("");
+    updateSubCatVisibility();
     document.getElementById("fObs").value="";
     document.getElementById("fCasaCat").value="Água";
     document.getElementById("fCartao").value="";
@@ -4018,6 +4092,11 @@ function saveB(){
   const venc=document.getElementById("fVenc").value;
   const _catSel=document.getElementById("fCat").value;
   const cat=_catSel==="Outro"?(document.getElementById("fCatCustom").value.trim()||"Outro"):_catSel;
+  let subcat="";
+  if(cat==="Mercadoria"){
+    const _subSel=document.getElementById("fSubCat").value;
+    subcat=_subSel==="Outro"?document.getElementById("fSubCatCustom").value.trim():_subSel;
+  }
   const casaCat=document.getElementById("fCasaCat").value;
   const cartao=document.getElementById("fCartao").value.trim();
   const recorrente=document.getElementById("fRecorrente").checked;
@@ -4066,6 +4145,7 @@ function saveB(){
     desc,grupo,valor,modalidade,
     vencimento: venc || dstr(TODAY),
     cat:grupo!==CASA?cat:"",
+    subcat:(grupo!==CASA&&cat==="Mercadoria")?subcat:"",
     casaCat:grupo===CASA?casaCat:"",
     cartao:grupo===CASA&&casaCat==="Cartão de Crédito"?cartao:"",
     obs:obsBase,
@@ -4480,10 +4560,12 @@ function onCatChange(){
     }
     document.getElementById("fCatCustom").style.display="none";
     document.getElementById("fCatCustom").value="";
+    updateSubCatVisibility();
     return;
   }
   document.getElementById("fCatCustom").style.display=v==="Outro"?"":"none";
   if(v!=="Outro")document.getElementById("fCatCustom").value="";
+  updateSubCatVisibility();
 }
 
 function onPixTipoChange(){
@@ -4603,6 +4685,11 @@ function duplicateB(id){
   populateCatSel();
   if(allStdCats().includes(_bCat2)){document.getElementById("fCat").value=_bCat2;document.getElementById("fCatCustom").style.display="none";}
   else{document.getElementById("fCat").value="Outro";document.getElementById("fCatCustom").value=_bCat2;document.getElementById("fCatCustom").style.display="";}
+  const _bSubCat2=b.subcat||"";
+  populateSubCatSel();
+  if(_bSubCat2===""||allSubCats().includes(_bSubCat2)){document.getElementById("fSubCat").value=_bSubCat2;document.getElementById("fSubCatCustom").style.display="none";}
+  else{document.getElementById("fSubCat").value="Outro";document.getElementById("fSubCatCustom").value=_bSubCat2;document.getElementById("fSubCatCustom").style.display="";}
+  updateSubCatVisibility();
   const obsRaw = b.obs || "";
   const obsClean = b.modalidade === "pix" ? obsRaw.split("\nPIX")[0].split("PIX ")[0].trim() : obsRaw;
   document.getElementById("fObs").value = obsClean;

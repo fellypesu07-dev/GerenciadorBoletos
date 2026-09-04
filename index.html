@@ -2318,9 +2318,10 @@ tbody tr.row-pago .mono {
     <div class="fi" id="fCatRow">
       <label>Categoria</label>
       <select id="fCat" onchange="onCatChange()">
-        <option>Mercadoria</option><option>Aluguel</option><option>Energia</option>
+        <option>Mercadoria</option><option>Salário</option><option>Aluguel</option><option>Energia</option>
         <option>Água</option><option>Telefone/Internet</option><option>Fornecedor</option>
         <option>Imposto/DAS</option><option>Manutenção</option><option>Outro</option>
+        <option value="__new__">➕ Nova categoria…</option>
       </select>
       <input type="text" id="fCatCustom" placeholder="Digite a categoria…" style="display:none;margin-top:6px;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:7px 9px;outline:none;width:100%;transition:.12s;" onfocus="this.style.borderColor='#00c893'" onblur="this.style.borderColor='var(--border)'">
     </div>
@@ -3109,7 +3110,9 @@ function applyLD(){
   document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
   document.getElementById("fValor").value=lastLD.valor||"";
   document.getElementById("fVenc").value=lastLD.vencimento||dstr(TODAY);
+  populateCatSel();
   document.getElementById("fCat").value="Mercadoria";
+  document.getElementById("fCatCustom").style.display="none";
   const obs = `Banco: ${lastLD.nomeBanco}`;
   document.getElementById("fObs").value=obs;
   document.getElementById("fCasaCat").value="Água";
@@ -3820,6 +3823,39 @@ function populateGrupoSel(){
   if(cur)sel.value=cur;
 }
 
+// ══════════════════════════════════════════════
+// CATEGORIAS PERSONALIZADAS (persistidas no navegador)
+// ══════════════════════════════════════════════
+const BASE_CATS=["Mercadoria","Salário","Aluguel","Energia","Água","Telefone/Internet","Fornecedor","Imposto/DAS","Manutenção"];
+function getCustomCats(){
+  try{return JSON.parse(localStorage.getItem("gb_custom_cats")||"[]");}catch(e){return [];}
+}
+function saveCustomCats(arr){
+  try{localStorage.setItem("gb_custom_cats",JSON.stringify(arr));}catch(e){}
+}
+function addCustomCat(name){
+  name=(name||"").trim();
+  if(!name) return null;
+  const arr=getCustomCats();
+  if(!arr.some(c=>c.toLowerCase()===name.toLowerCase()) && !BASE_CATS.some(c=>c.toLowerCase()===name.toLowerCase())){
+    arr.push(name);
+    saveCustomCats(arr);
+  }
+  return name;
+}
+function allStdCats(){
+  return BASE_CATS.concat(getCustomCats());
+}
+function populateCatSel(selected){
+  const sel=document.getElementById("fCat");
+  if(!sel) return;
+  const cur=selected!==undefined?selected:sel.value;
+  let html=allStdCats().map(c=>`<option>${c}</option>`).join("");
+  html+=`<option>Outro</option><option value="__new__">➕ Nova categoria…</option>`;
+  sel.innerHTML=html;
+  if(cur && allStdCats().includes(cur)) sel.value=cur;
+}
+
 function onGrupoChange(){
   const v=document.getElementById("fGrupo").value,isCasa=v===CASA;
   document.getElementById("fCatRow").style.display=isCasa?"none":"";
@@ -3919,9 +3955,9 @@ function openModal(id){
     document.getElementById("fGrupo").value=b.grupo||"";
     setMaskedValor(b.valor||0);
     document.getElementById("fVenc").value=b.vencimento||"";
-    const _stdCats=["Mercadoria","Aluguel","Energia","Água","Telefone/Internet","Fornecedor","Imposto/DAS","Manutenção","Outro"];
     const _bCat=b.cat||"Mercadoria";
-    if(_stdCats.includes(_bCat)){document.getElementById("fCat").value=_bCat;document.getElementById("fCatCustom").style.display="none";}
+    populateCatSel();
+    if(allStdCats().includes(_bCat)){document.getElementById("fCat").value=_bCat;document.getElementById("fCatCustom").style.display="none";}
     else{document.getElementById("fCat").value="Outro";document.getElementById("fCatCustom").value=_bCat;document.getElementById("fCatCustom").style.display="";}
     // Strip pix info from obs for display
     const obsRaw=b.obs||"";
@@ -3949,7 +3985,9 @@ function openModal(id){
     document.getElementById("fGrupo").value=cnpjFil!=="todos"?cnpjFil:"";
     setMaskedValor(0);
     document.getElementById("fVenc").value=calSel||dstr(TODAY);
+    populateCatSel();
     document.getElementById("fCat").value="Mercadoria";
+    document.getElementById("fCatCustom").style.display="none";
     document.getElementById("fObs").value="";
     document.getElementById("fCasaCat").value="Água";
     document.getElementById("fCartao").value="";
@@ -4430,7 +4468,20 @@ function setModalidade(mode, updateTitle=true){
 }
 
 function onCatChange(){
-  const v=document.getElementById("fCat").value;
+  const sel=document.getElementById("fCat");
+  const v=sel.value;
+  if(v==="__new__"){
+    const name=(prompt("Nome da nova categoria:")||"").trim();
+    if(name){
+      addCustomCat(name);
+      populateCatSel(name);
+    } else {
+      populateCatSel("Mercadoria");
+    }
+    document.getElementById("fCatCustom").style.display="none";
+    document.getElementById("fCatCustom").value="";
+    return;
+  }
   document.getElementById("fCatCustom").style.display=v==="Outro"?"":"none";
   if(v!=="Outro")document.getElementById("fCatCustom").value="";
 }
@@ -4548,9 +4599,9 @@ function duplicateB(id){
   setMaskedValor(b.valor||0);
   // FIX: usa sempre a data original do boleto duplicado, nunca a data de hoje
   document.getElementById("fVenc").value = (b.vencimento && b.vencimento.length === 10) ? b.vencimento : dstr(TODAY);
-  const _stdCats2=["Mercadoria","Aluguel","Energia","Água","Telefone/Internet","Fornecedor","Imposto/DAS","Manutenção","Outro"];
   const _bCat2=b.cat||"Mercadoria";
-  if(_stdCats2.includes(_bCat2)){document.getElementById("fCat").value=_bCat2;document.getElementById("fCatCustom").style.display="none";}
+  populateCatSel();
+  if(allStdCats().includes(_bCat2)){document.getElementById("fCat").value=_bCat2;document.getElementById("fCatCustom").style.display="none";}
   else{document.getElementById("fCat").value="Outro";document.getElementById("fCatCustom").value=_bCat2;document.getElementById("fCatCustom").style.display="";}
   const obsRaw = b.obs || "";
   const obsClean = b.modalidade === "pix" ? obsRaw.split("\nPIX")[0].split("PIX ")[0].trim() : obsRaw;

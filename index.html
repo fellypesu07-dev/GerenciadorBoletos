@@ -2759,7 +2759,7 @@ function initFirebase(){
     });
   }
 
-  db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};_fbRenderDebounced(true);});
+  db.ref("boletos").on("value",snap=>{boletos=snap.val()||{};_fbRenderDebounced(true);},err=>{console.error("[Firebase] boletos:",err);try{toast("Erro ao carregar boletos: "+(err&&err.code||err),"err");}catch(e){}});
   db.ref("cnpjs").on("value",snap=>{cnpjs=snap.val()||{};_fbRenderDebounced(false);});
   db.ref("saldos").on("value",snap=>{saldos=snap.val()||{};_fbRenderDebounced(false);});
   db.ref("gcoll").on("value",snap=>{gcoll=snap.val()||{};_fbRenderDebounced(false);});
@@ -2907,7 +2907,7 @@ function fmtR(v){return"R$ "+Number(v||0).toLocaleString("pt-BR",{minimumFractio
 
 let _fc={};
 function feriadosAno(y){
-  const fx=["01-01","21-04","01-05","07-09","12-10","02-11","15-11","20-11","25-12"].map(s=>`${y}-${s}`);
+  const fx=["01-01","04-21","05-01","09-07","10-12","11-02","11-15","11-20","12-25"].map(s=>`${y}-${s}`); // MM-DD, mesmo formato do dstr()
   function pascoa(yr){const a=yr%19,b=Math.floor(yr/100),c=yr%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mes=Math.floor((h+l-7*m+114)/31),dia=(h+l-7*m+114)%31+1;return new Date(yr,mes-1,dia);}
   const p=pascoa(y),add=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
   const mv=[add(p,-48),add(p,-47),add(p,-2),p,add(p,60)].map(d=>dstr(d));
@@ -2916,7 +2916,19 @@ function feriadosAno(y){
 function isFer(s){const y=+s.slice(0,4);if(!_fc[y])_fc[y]=feriadosAno(y);return _fc[y].has(s);}
 function isWE(d){return d.getDay()===0||d.getDay()===6;}
 function isDU(s){return!isWE(toDate(s))&&!isFer(s);}
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState!=="visible") return;
+  const n=new Date(); n.setHours(0,0,0,0);
+  if(n.getTime()!==TODAY.getTime()){ TODAY.setTime(n.getTime()); try{ renderAll(); }catch(e){} }
+});
 function next7DU(){const r=[];let d=new Date(TODAY);while(r.length<7){const s=dstr(d);if(isDU(s))r.push(s);d.setDate(d.getDate()+1);}return r;}
+function effDU(s){
+  if(!s) return s;
+  if(isDU(s)) return s;
+  const d=toDate(s);
+  for(let i=0;i<10;i++){ d.setDate(d.getDate()+1); const x=dstr(d); if(isDU(x)) return x; }
+  return s;
+}
 function duAte(s){const v=toDate(s);if(v<TODAY)return null;let n=0,d=new Date(TODAY);while(d<v){if(isDU(dstr(d)))n++;d.setDate(d.getDate()+1);}return n;}
 
 function status(b){
@@ -2954,7 +2966,11 @@ function getGroups(){
   ];
 }
 
-function boletoArr(){return Object.entries(boletos).map(([id,b])=>({...b,id}));}
+let _barrSrc=null,_barrCache=null;
+function boletoArr(){
+  if(_barrSrc!==boletos||!_barrCache){ _barrSrc=boletos; _barrCache=Object.entries(boletos).map(([id,b])=>({...b,id})); }
+  return _barrCache;
+}
 
 function addBancoRow(gid){
   const inp = document.getElementById('newBanco_'+gid);
@@ -3220,7 +3236,7 @@ function calClick(s){if(calSel.has(s)){calSel.delete(s);}else{calSel.add(s);}if(
 // ══════════════════════════════════════════════
 function renderDUStrip(){
   const days=next7DU(),bmap={};
-  boletoArr().forEach(b=>{if(!bmap[b.vencimento])bmap[b.vencimento]=[];bmap[b.vencimento].push(b);});
+  boletoArr().forEach(b=>{const k=effDU(b.vencimento);if(!bmap[k])bmap[k]=[];bmap[k].push(b);});
   document.getElementById("duStrip").innerHTML=days.map(s=>{
     const dt=toDate(s),isTod=s===dstr(TODAY),isSel=s===duSel;
     const bs=(bmap[s]||[]).filter(b=>!b.pago),tot=bs.reduce((a,b)=>a+Number(b.valor||0),0);
@@ -3247,7 +3263,7 @@ function updateStats(){
   const d7=new Set(next7DU());
   boletoArr().forEach(b=>{
     const s=status(b);nT++;
-    if(d7.has(b.vencimento)&&!b.pago)n7++;
+    if(d7.has(effDU(b.vencimento))&&!b.pago)n7++;
     if(s==="hoje")nH++;if(s==="vencido")nV++;if(s==="pendente")nP++;if(s==="pago")nPg++;
     if(b.grupo===CASA)nC++;
     if(s!=="pago")ab+=Number(b.valor||0);
@@ -3563,8 +3579,8 @@ function filteredList(){
       }
       return calSel.has(b.vencimento);
     }
-    if(duSel)return b.vencimento===duSel;
-    if(qfAtual==="7du"&&(!d7.has(b.vencimento)||b.pago))return false;
+    if(duSel)return effDU(b.vencimento)===duSel;
+    if(qfAtual==="7du"&&(!d7.has(effDU(b.vencimento))||b.pago))return false;
     if(q&&!_fuzzyMatch(b.desc,q)&&!_fuzzyMatch(b.obs,q)&&!_fuzzyMatch(String(b.valor||''),q))return false;
     return true;
   }).sort((a,b)=>{
@@ -3595,7 +3611,18 @@ const BST={
   hoje:    '<span class="status-pill pill-hoje"><svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c0 0-4 4-4 8a4 4 0 0 0 8 0c0-1.5-.5-3-2-4 0 2-1 3-2 4-1-2-1.5-4 0-8z"/></svg> Hoje</span>'
 };
 
+function pageSize(){ return window.innerWidth <= 480 ? 40 : 80; }   // linhas por grupo antes de "Mostrar mais"
+const _grpLimit = {};
+function showMoreGrp(gid){ _grpLimit[gid]=(_grpLimit[gid]||pageSize())+pageSize(); renderGroups(); }
+function resetGrpLimits(){ for(const k in _grpLimit) delete _grpLimit[k]; }
+function _tagOn(){ try{ return !!_tagFilter; }catch(e){ return false; } }
+let _grpSig = "";
+function _checkGrpSig(){
+  let sig; try{ sig=[qfAtual,cnpjFil,[...calSel].join(","),duSel,_mesFil,viewMode].join("|"); }catch(e){ return; }
+  if(sig!==_grpSig){ _grpSig=sig; resetGrpLimits(); }
+}
 function renderGroups(){
+  _checkGrpSig();
   const list=filteredList();
   const groups=getGroups();
   const d7=new Set(next7DU());
@@ -3609,6 +3636,10 @@ function renderGroups(){
     const pg=glist.filter(b=>status(b)==="pago").reduce((a,b)=>a+Number(b.valor||0),0);
     const hasV=glist.some(b=>status(b)==="vencido");
     const coll=!!gcoll[g.id];
+    const _lim=_tagOn()?Infinity:(_grpLimit[g.id]||pageSize());
+    const glistShown=glist.length>_lim?glist.slice(0,_lim):glist;
+    const _more=glist.length-glistShown.length;
+    const _moreBtn=_more>0?`<div style="text-align:center;padding:12px"><button class="btn btn-g" onclick="showMoreGrp('${g.id}')">Mostrar mais ${Math.min(_more,pageSize())} (restam ${_more})</button></div>`:"";
 
     html+=`<div class="gb">
       <div class="gb-head" onclick="toggleGrp('${g.id}')">
@@ -3633,7 +3664,7 @@ function renderGroups(){
         html+=`<div class="gb-empty">Nenhum boleto neste grupo.</div>`;
       } else if(viewMode==="card" || isMobile()){
         html+=`<div class="card-grid">`;
-        glist.forEach(b=>{
+        glistShown.forEach(b=>{
           const s=status(b),du=duAte(b.vencimento);
           const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):((b.cat||"")+(b.cat==="Mercadoria"&&b.subcat?` › ${b.subcat}`:""));
           let duEl="";
@@ -3655,14 +3686,14 @@ function renderGroups(){
             </div>
           </div>`;
         });
-        html+=`</div>`;
+        html+=`</div>`+_moreBtn;
       } else {
         html+=`<div style="overflow-x:auto"><table><thead><tr>
           <th>Descrição</th><th>Valor</th><th>Vencimento</th><th>D.U.</th><th>Status</th><th><i class="ph ph-check-square"></i> Verif.</th><th>Obs.</th><th>Ações</th>
         </tr></thead><tbody>`;
-        glist.forEach(b=>{
+        glistShown.forEach(b=>{
           const s=status(b),ck=b.checks||{},du=duAte(b.vencimento);
-          const in7=d7.has(b.vencimento)&&!b.pago;
+          const in7=d7.has(effDU(b.vencimento))&&!b.pago;
           const isFerV=isFer(b.vencimento)&&!b.pago,isWEV=isWE(toDate(b.vencimento))&&!b.pago;
           const catLabel=b.grupo===CASA?(b.casaCat||"")+(b.cartao?` · ${b.cartao}`:""):((b.cat||"")+(b.cat==="Mercadoria"&&b.subcat?` › ${b.subcat}`:""));
           let duEl;
@@ -3706,7 +3737,7 @@ function renderGroups(){
             </td>
           </tr>`;
         });
-        html+=`</tbody></table></div>`;
+        html+=`</tbody></table></div>`+_moreBtn;
       }
     }
     html+=`</div>`;
@@ -5075,8 +5106,8 @@ function toggleMobSearch(){
 // ══════════════════════════════════════════════
 let _searchRaf = null;
 function debouncedSearch(){
-  if(_searchRaf) cancelAnimationFrame(_searchRaf);
-  _searchRaf = requestAnimationFrame(() => { _searchRaf = null; renderAll(); });
+  if(_searchRaf) clearTimeout(_searchRaf);
+  _searchRaf = setTimeout(() => { _searchRaf = null; resetGrpLimits(); renderAll(); }, 200);
 }
 
 function syncMobSearch(val){
@@ -5900,13 +5931,7 @@ function _applyFocoDOM(){
 // Mark pago rows with class for foco mode
 const _origRenderGroups_foco = typeof renderGroups === 'function' ? renderGroups : null;
 // We'll patch after renderGroups runs via MutationObserver
-const _focoObserver = new MutationObserver(()=>{
-  document.querySelectorAll('tbody tr').forEach(tr=>{
-    const cell = tr.querySelector('td:nth-child(5)');
-    if(cell && cell.innerHTML.includes('Pago')) tr.classList.add('row-pago');
-  });
-});
-_focoObserver.observe(document.body, { childList: true, subtree: true });
+// (observer global removido: o renderAll já marca as linhas pagas após cada render)
 
 // ════════════════════════════════════════════
 // v5 — TAGS LIVRES
@@ -6917,7 +6942,7 @@ function initSwipe(card, id, isPago){
 }
 
 // Attach swipe after render
-const _origRenderAll = typeof renderAll === "function" ? renderAll : null;
+const _origRenderAllSwipe = typeof renderAll === "function" ? renderAll : null;
 document.addEventListener("DOMContentLoaded", ()=>{
   const observer = new MutationObserver(()=>{
     document.querySelectorAll(".bol-card:not([data-swipe])").forEach(card=>{
